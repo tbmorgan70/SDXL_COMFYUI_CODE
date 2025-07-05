@@ -80,3 +80,13 @@ color_sorted/
 ```
 
 Perfect for organizing AI-generated images by color themes, mood boards, or final collection curation!
+
+## 🔗 Related Projects
+
+Check out my other AI workflow tools:
+- **[AI-Prompt-Builder](https://github.com/yourusername/AI-Prompt-Builder)** - Advanced prompt building tools for AI image generation
+- **[ComfyUI-Workflow-Tools](https://github.com/yourusername/ComfyUI-Workflow-Tools)** - Additional ComfyUI utilities *(coming soon)*
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
