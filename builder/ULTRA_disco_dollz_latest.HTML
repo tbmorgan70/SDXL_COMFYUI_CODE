@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ULTRA Dual Toggle Prompt Builder</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      padding-bottom: 130px;
+      background: linear-gradient(135deg, #1e1b65, #4a148c);
+      color: #eee;
+      text-align: center;
+    }
+
+    #sections {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 200px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .section {
+      flex: 0 0 calc(20% - 10px);
+      margin: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #555;
+    }
+    .section h3 { margin-top: 0; font-size: 14px; }
+    .cat-toggle {
+      display: block;
+      text-align: left;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .section input {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 4px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: #222;
+      margin: 4px 0;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    li:hover { background: #444; }
+    .toggles { margin-bottom: 20px; }
+    .toggles label { margin-right: 20px; font-weight: bold; }
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+    }
+
+    #promptBox {
+      width: 90%;
+      height: 80px;
+      margin: 0;
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 8px 16px;
+      font-size: 14px;
+      background: #3949ab;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #5c6bc0; }
+  </style>
+</head>
+<body>
+<h1>ULTRA Dual Toggle Prompt Builder</h1>
+<div class="toggles">
+  <label><input type="checkbox" id="toggleAB"> ANIME</label>
+  <label><input type="checkbox" id="toggleCD"> NSFW</label>
+</div>
+<div id="sections">
+
+<!-- bodytype / ethnicity FLAVOR -->
+<div class="section" id="bodytype">
+  <h3 id="label-bodytype">bodytype / figure / ethnicity</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked> include</label>
+  <input type="text" value="bodytype / figure / ethnicity" oninput="updateLabel('bodytype', this.value)">
+  <ul>
+    <li onclick="pick('bodytype', this)">classic hourglass curvy figure with large breasts</li>
+    <li onclick="pick('bodytype', this)">european model with petite frame and delicate features</li>
+    <li onclick="pick('bodytype', this)">slender figure with perky breasts</li>
+    <li onclick="pick('bodytype', this)">athletic build with toned muscles and strong legs</li>
+    <li onclick="pick('bodytype', this)">curvy with soft belly and round hips</li>
+    <li onclick="pick('bodytype', this)">tall and athletic with toned abs</li>
+    <li onclick="pick('bodytype', this)">curvy with wide hips and full thighs</li>
+    <li onclick="pick('bodytype', this)">slim with long legs and narrow waist</li>
+    <li onclick="pick('bodytype', this)">petite with small breasts and dainty frame</li>
+    <li onclick="pick('bodytype', this)">voluptuous with soft curves and full breasts</li>
+    <li onclick="pick('bodytype', this)">athletic with defined muscles and strong arms</li>
+    <li onclick="pick('bodytype', this)">busty with large breasts and curvy hips</li>
+    <li onclick="pick('bodytype', this)">curvy with soft belly and round hips</li>
+    <li onclick="pick('bodytype', this)">slender with long neck and graceful posture</li>
+    <li onclick="pick('bodytype', this)">petite with small waist and delicate features</li>
+    <li onclick="pick('bodytype', this)">athletic with toned legs and strong thighs</li>
+    <li onclick="pick('bodytype', this)">curvy with full breasts and wide hips</li>
+    <li onclick="pick('bodytype', this)">Latina with a soft fuller figure</li>
+    <li onclick="pick('bodytype', this)">dark skinned black woman tall and lean with perky breasts</li>
+    <li onclick="pick('bodytype', this)">pale freckled caucasian, slim and petite</li>
+    <li onclick="pick('bodytype', this)">white American with a softer fuller figure</li>
+  </ul>
+</div>
+
+<!-- OUTFIT & FABRIC -->
+<div class="section" id="outfit">
+  <h3 id="label-outfit">Outfit & Fabric</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-outfit" checked> include</label>
+  <input type="text" value="Outfit & Fabric" oninput="updateLabel('outfit', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">vintage sequin halter top and satin bell-bottoms</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">metallic fringe crop top with high-waisted shorts</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">glittery mesh bodysuit with pleated mini skirt</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">shiny leather vest with high waisted pants</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">metallic lamé jumpsuit with wide collar and deep cleavage</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('outfit', this)">mesh overlay tank dress with visible underwear</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">transparent deep cut vinyl blouse and panties</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">latex corset with sheer skirt and thigh-high boots</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">sheer lace bodysuit with strategically placed rhinestones</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">open-front leather jacket with nothing underneath</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">open lace halter with gartered fishnets and boots</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">fur shrug and no bottoms</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('outfit', this)">mesh bralette with ultra-low-rise velvet pants and visible underwear</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">holographic cyber kimono with glowing trim</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">glitchy hologram crop top with animated sleeves</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">neon holographic bodysuit with neon patterns</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">pastel puff jacket with heart-shaped buttons and bubble skirt</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">space-disco track suit with animated LED patches</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('outfit', this)">chromatic armor corset over neon net leggings</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">latex body suit with deep cleavage and belly cutout</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">holographic bikini with glitchy pixel patterns</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">cyberpunk harness with glowing chains and holographic pasties</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">skin-tight shimmer catsuit with exposed cleavage</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">anime-style barely there bikini</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('outfit', this)">bunny girl bodysuit with garter-stocking overlays exposed cleavage</li>
+  </ul>
+</div>
+
+<!-- MAKEUP & HAIR -->
+<div class="section" id="makeup">
+  <h3 id="label-makeup">Makeup & Hair</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-makeup" checked> include</label>
+  <input type="text" value="Makeup & Hair" oninput="updateLabel('makeup', this.value)">
+  <ul>
+    <!-- Realism only (Disco Punk to Paparazzi Glam) -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">glitter-slick lids and glossy pink lips with teased blowout</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">smoky shadow, bold blush stripes, wet-look hair slicked back</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">metallic blue lipstick, silver glitter freckles, and sleek high ponytail</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">bold red lips, shimmering gold eyeshadow, and voluminous curls</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">glittery cat-eye, glossy nude lips, and tousled beach waves</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">neon eyeliner with rhinestone accents and blunt-cut bob</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">crimson lipstick, metallic highlighter, feathered shag cut</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('makeup', this)">pale foundation, dark glitter lashes, center-part disco curls</li>
+
+    <!-- Anime only (Cyber Idol to Holo-Pop Diva) -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">UV-reactive eyeshadow, hologram lashes, candy-colored twin buns</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">glitchy pixel blush, neon eyeliner, and holographic space buns</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">holographic glitter lips, animated star freckles, and pastel pigtails</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">animated sparkle cheeks, glow-blush, spiral side ponytails</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">chrome foil eyeliner, neon freckles, laser-cut bangs</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">glitch shimmer eyes with techno-waved bob</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('makeup', this)">pulsing gradient cheeks, anime tears makeup, floating braid rings</li>
+  </ul>
+</div>
+
+<!-- POSE -->
+<div class="section" id="pose">
+  <h3 id="label-pose">Pose</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-pose" checked> include</label>
+  <input type="text" value="Pose" oninput="updateLabel('pose', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">leaning back on one hand, leg crossed, relaxed stance</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">striking a power pose with hands on hips</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">arms crossed with a confident smirk</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">twirling mid-dance with platform heel kicked up</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">posing in mirror selfie stance with chin raised</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">one hand on hip, other arm raised, confident stance</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('pose', this)">arms raised overhead with eyes closed, frozen in groove</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">bent over a sink with head turned back, club bathroom vibe</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">leaning against a wall, one leg raised, sultry gaze</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">sitting on a bar stool, legs crossed, teasing smile</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">sprawled on velvet couch, legs apart, teasing stare</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">crawling toward camera with glossed lips parted</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('pose', this)">perched on speaker, one knee raised, mid-undress</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">levitating above the dancefloor in ballet stretch pose</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">floating mid-air with arms outstretched, glowing</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">striking a dynamic pose with one leg raised, glowing</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">sitting cross-legged with hands on knees, glowing aura</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">peace sign under chin with one foot off the ground</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">posed like a pop idol mid-spin with glowing mic</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('pose', this)">knees together, arms out like spotlight reveal moment</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">arched back pose with glowing hips and pout</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">floating on a cloud of sparkles, legs crossed, dreamy expression</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">sitting on a floating platform, legs spread, glowing</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">kneeling with hands on thighs, glowing eyes and pout</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">sitting with knees apart, fingers on tongue, flirty smirk</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">bent at waist with neon pigtails flying, rear in view</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('pose', this)">hovering in air, legs spread, eyes glowing</li>
+  </ul>
+</div>
+
+<!-- EXPRESSION -->
+<div class="section" id="expression">
+  <h3 id="label-expression">Expression</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-expression" checked> include</label>
+  <input type="text" value="Expression" oninput="updateLabel('expression', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">playful smirk with knowing side-eye</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">wide-eyed excitement with open mouth</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">confident pout with chin tilted up</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">blissed-out eyes closed mid-spin</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">flirty wink with tongue against teeth</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('expression', this)">brows raised in mock surprise</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">biting lower lip with hooded gaze</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">seductive smirk with tongue out</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">half-lidded eyes with glossy lips</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">mouth parted in breathy tease</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">eyes rolled back, lips glossed and wet</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('expression', this)">open-mouthed moan frozen mid-frame</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">sparkling wide eyes and exaggerated joy</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">glowing cheeks with starry eyes</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">cheeky grin with floating heart emojis</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">determined stare with glowing pupils</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">shy blush with closed-mouth smile</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('expression', this)">mid-giggle with starry cheeks</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">ahegao blush overload with sparkles</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">glitchy eyes with pixelated tears</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">seductive wink with pixelated blush</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">half-lidded stare with glowing blush</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">seductive wink with dripping tongue</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">half-lidded stare, breath cloud on lips</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('expression', this)">silly orgasmic gasp with emoji sweat</li>
+  </ul>
+</div>
+
+<!-- ACCESSORIES & PROPS -->
+<div class="section" id="accessory">
+  <h3 id="label-accessory">Accessories & Props</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-accessory" checked> include</label>
+  <input type="text" value="Accessories & Props" oninput="updateLabel('accessory', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">glitter clutch with gold chain strap</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">oversized sunglasses and rhinestone choker</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">feather boa and rhinestone-studded headband</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">platform heels with</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">disco ball purse and vinyl gloves</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('accessory', this)">spiked collar with heart charm</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('accessory', this)">leather harness with dangling chains</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('accessory', this)">metal ring harness belt</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('accessory', this)">lace blindfold</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('accessory', this)">cell phone with glitter case</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">glowing hover-boombox bag</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">floating pixelated heart-shaped purse</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">LED bunny ears with sparkle wand</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">nipples hard and swollen</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">glittery sweat dripping down her body</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">glitch lines curling off her elbow</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">photochromatic sweat drops that never fall</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">halo of floating hearts orbiting her head</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">pixelated sparkle trails at her fingertips</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">pierced nipples with glitter cleav</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">breasts swollen and glistening</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">topless with erect nipples</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">nipples swollen and hard</li>
+  </ul>
+</div>
+
+<!-- SETTING -->
+<div class="section" id="setting">
+  <h3 id="label-setting">Setting</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-setting" checked> include</label>
+  <input type="text" value="Setting" oninput="updateLabel('setting', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">sticky neon-lit dancefloor at Studio 54</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">glittering rooftop bar with skyline view</li>    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">grungy nightclub bathroom with smeared mirrors</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">rooftop afterparty in Manhattan with skyline glow</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">vintage photo booth with neon lights and glitter</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('setting', this)">crowded hallway backstage at a fashion show</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">red-lit VIP booth in a smoke-filled strip club</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">dark alley behind a nightclub with neon graffiti</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">private dressing room with open champagne bottles</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">mirror-lined hotel hallway with clothes scattered</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">dark alley behind a nightclub with graffiti</li>  
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">private dressing room with open champagne bottles</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">mirror-lined hotel hallway with clothes scattered</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('setting', this)">bathroom stall door half-open at an underground rave</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">cybernetic dance dome with holographic crowd</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">glitchy nightclub with floating lights</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">neon alley karaoke pit with floating signage</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">glitchy arcade with pixelated dance floor</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">techno skate rink surrounded by pixel billboards</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('setting', this)">futuristic elevator lobby with pastel lights and mirrors</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">virtual reality strip club coded in soft pink glitch</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">holographic nightclub with floating pixelated dancers</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">glitchy rooftop party with animated neon skyline</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">abandoned tech club where walls pulse with data leaks</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">hover-bath lounge with glowing glass walls</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('setting', this)">private mech-suit bay turned dressing room</li>
+  </ul>
+</div>
+
+<!-- SIGNATURE DETAILS -->
+<div class="section" id="details">
+  <h3 id="label-details">Signature Details</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-details" checked> include</label>
+  <input type="text" value="Signature Details" oninput="updateLabel('details', this.value)">
+  <ul>
+    <!-- Realism + SFW -->
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('details', this)">smudged eyeliner trailing a little too far</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('details', this)">glitter stuck in collarbones and armpits</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('details', this)">visible tag sticking out of top</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('details', this)">peeling nail polish and busted rings</li>
+
+    <!-- Realism + NSFW -->
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">lipstick smudged below the mouth</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">strap falling off shoulder</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">body glitter at cleavage</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">breasts glistening with sweat</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">nipples hard and swollen</li>
+    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">glittery sweat dripping down her body</li>
+
+    <!-- Anime + SFW -->
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">glitch lines curling off her elbow</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">photochromatic sweat drops that never fall</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">halo of floating hearts orbiting her head</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">pixelated sparkle trails at her fingertips</li>
+
+    <!-- Anime + NSFW -->
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">pierced nipples with glitter cleav</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">breasts swollen and glistening</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">topless with erect nipples</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">nipples swollen and hard</li>
+  </ul>
+</div>
+
+<!-- VIBE & EMOTION -->
+<div class="section" id="vibe">
+  <h3 id="label-vibe">Vibe & Emotion</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-vibe" checked> include</label>
+  <input type="text" value="Vibe & Emotion" oninput="updateLabel('vibe', this.value)">
+  <ul>
+    <li onclick="pick('vibe', this)">chaotic joy and unfiltered nightlife energy</li>
+    <li onclick="pick('vibe', this)">surreal dreaminess with a hint of danger</li>
+    <li onclick="pick('vibe', this)">retro-futuristic glam with a punk edge</li>
+    <li onclick="pick('vibe', this)">rebellious confidence with glam-soaked swagger</li>
+    <li onclick="pick('vibe', this)">melancholic beauty wrapped in shimmer and sweat</li>
+    <li onclick="pick('vibe', this)">hedonistic bliss on the edge of burnout</li>
+    <li onclick="pick('vibe', this)">playful danger behind glitter-covered eyes</li>
+    <li onclick="pick('vibe', this)">unapologetic diva dominance</li>
+    <li onclick="pick('vibe', this)">high-fashion absurdity meets punk grit</li>
+    <li onclick="pick('vibe', this)">magnetic weirdness and crowd-stopping presence</li>
+  </ul>
+</div>
+
+
+<!-- LIGHTING & FX -->
+<div class="section" id="lighting">
+  <h3 id="label-lighting">Lighting & FX</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-lighting" checked> include</label>
+  <input type="text" value="Lighting & FX" oninput="updateLabel('lighting', this.value)">
+  <ul>
+    <li onclick="pick('lighting', this)">flashing strobe lights and paparazzi camera bursts</li>
+    <li onclick="pick('lighting', this)">soft pastel lighting with floating glitter particles</li>
+    <li onclick="pick('lighting', this)">neon glow with animated light trails</li>
+    <li onclick="pick('lighting', this)">harsh spotlight with lens flare and smoke</li>
+    <li onclick="pick('lighting', this)">vibrant disco ball reflections with rainbow hues</li>
+    <li onclick="pick('lighting', this)">glitchy holographic light patterns</li>
+    <li onclick="pick('lighting', this)">dynamic light beams slicing through fog</li
+    <li onclick="pick('lighting', this)">glittery disco ball reflections swirling across the scene</li>
+    <li onclick="pick('lighting', this)">intense pink-blue bi-color lighting with fog</li>
+    <li onclick="pick('lighting', this)">lens flare from spotlight, hazy background</li>
+    <li onclick="pick('lighting', this)">dynamic rave lights slicing through smoky air</li>
+    <li onclick="pick('lighting', this)">overexposed flash like vintage fashion photography</li>
+    <li onclick="pick('lighting', this)">mirrorball speckles layered with cinematic rim light</li>
+    <li onclick="pick('lighting', this)">animated holographic shimmer with flickering neon glow</li>
+  </ul>
+</div>
+
+</div>
+<div class="footer">
+  <textarea id="promptBox" placeholder="Your prompt will appear here..." readonly></textarea>
+  <div>
+    <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+    <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+  </div>
+</div>
+
+<script>
+  const sel = {'bodytype':'', outfit:'', makeup:'', pose:'', expression:'', accessory:'', setting:'', details:'', vibe:'', lighting:''};
+  let toggleState = {t1:'a', t2:'c'};
+
+  const settingOrder = ['bodytype', 'outfit', 'makeup', 'pose', 'expression', 'accessory', 'setting', 'details', 'vibe', 'lighting'];
+
+  function updateLabel(section, value) {
+    document.getElementById('label-'+section).textContent = value || section;
+  }
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    el.style.background='#555';
+    sel[sec] = el.textContent.trim();
+    update();
+  }
+
+  function update() {
+    const parts = ['1girl, solo'];
+    settingOrder.forEach(sec => {
+      if (document.getElementById('enable-' + sec).checked && sel[sec]) {
+        parts.push(sel[sec]);
+      }
+    });
+    const core = parts.join(', ');
+    document.getElementById('promptBox').value = core ? core + ', 8K, ultra-detailed, cinematic lighting, masterpiece' : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied!');
+  }
+
+  function randomize() {
+    settingOrder.forEach(sec => {
+      if (!document.getElementById('enable-' + sec).checked) {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+        return;
+      }
+      const list = Array.from(document.querySelectorAll('#'+sec+' li')).filter(li => {
+        const t1 = li.getAttribute('data-toggle1');
+        const t2 = li.getAttribute('data-toggle2');
+        const ok1 = t1 ? t1 === toggleState.t1 : true;
+        const ok2 = t2 ? t2 === toggleState.t2 : true;
+        return ok1 && ok2;
+      });
+      if (list.length > 0) {
+        const choice = list[Math.floor(Math.random()*list.length)];
+        if (choice) pick(sec, choice);
+      } else {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+      }
+    });
+    update();
+  }
+
+  document.getElementById('toggleAB').addEventListener('change', e => {
+    toggleState.t1 = e.target.checked ? 'b' : 'a';
+    try { localStorage.setItem('toggleAB', toggleState.t1); } catch (err) {}
+  });
+  document.getElementById('toggleCD').addEventListener('change', e => {
+    toggleState.t2 = e.target.checked ? 'd' : 'c';
+    try { localStorage.setItem('toggleCD', toggleState.t2); } catch (err) {}
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    let st1, st2;
+    try {
+      st1 = localStorage.getItem('toggleAB');
+      st2 = localStorage.getItem('toggleCD');
+    } catch (err) {}
+    if (st1) {
+      document.getElementById('toggleAB').checked = st1 === 'b';
+      toggleState.t1 = st1;
+    }
+    if (st2) {
+      document.getElementById('toggleCD').checked = st2 === 'd';
+      toggleState.t2 = st2;
+    }
+  });
+</script>
+
+</body>
+</html>
