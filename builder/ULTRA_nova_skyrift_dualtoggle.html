@@ -1,0 +1,337 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Builder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ffdd57;
+      margin-bottom: 20px;
+    }
+    .section {
+      float: left;
+      width: 23%;
+      margin: 1%;
+      min-width: 150px;
+    }
+    .section h3 {
+      margin-top: 0;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: #ffdd57;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #222;
+      color: #fff;
+      margin: 5px 0;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    li:hover {
+      background: #444;
+    }
+    #promptBox {
+      clear: both;
+      width: 100%;
+      height: 120px;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 14px;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #333;
+      border-radius: 4px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    #copyBtn, #randBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #ffdd57;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #111;
+    }
+    #copyBtn:hover, #randBtn:hover {
+      background: #ffd033;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ULTRA_nova_skyrift_prompt_builder</h1>
+  <label><input type="checkbox" id="nsfwToggle" /> 🔞 NSFW Mode</label>
+  <label><input type="checkbox" id="nsfwToggle" />Glitched</label>
+
+  <!-- Race -->
+  <div class="section" id="race">
+    <h3>Race</h3>
+    <ul>
+      <li onclick="pick('race', this)">pale freckled Caucasian</li>
+      <li onclick="pick('race', this)">dark skinned African American</li>
+      <li onclick="pick('race', this)">Hispanic/Latina</li>
+      <li onclick="pick('race', this)">light skinned African American</li>
+      <li onclick="pick('race', this)">white American with bikini tan lines</li>
+    </ul>
+  </div>
+
+  <!-- Body -->
+  <div class="section" id="body">
+    <h3>Body Type</h3>
+    <ul>
+      <li onclick="pick('body', this)">slim and petite</li>
+      <li onclick="pick('body', this)">curvy hourglass figure</li>
+      <li onclick="pick('body', this)">athletic build</li>
+      <li onclick="pick('body', this)">tall and lean</li>
+      <li onclick="pick('body', this)">naturally busty</li>
+      <li onclick="pick('body', this)">soft fuller figure</li>
+    </ul>
+  </div>
+
+  <!-- Hair -->
+  <div class="section" id="hair">
+    <h3>Hair</h3>
+    <ul>
+      <li onclick="pick('hair', this)">long feathered layers</li>
+      <li onclick="pick('hair', this)">Afro with round shape</li>
+      <li onclick="pick('hair', this)">afropuff pigtails</li>
+      <li onclick="pick('hair', this)">bob cut with bangs</li>
+      <li onclick="pick('hair', this)">straight, center-parted</li>
+      <li onclick="pick('hair', this)">curly mop-top style</li>
+      <li onclick="pick('hair', this)">shoulder-length waves</li>
+    </ul>
+  </div>
+
+  <!-- Makeup (Face) -->
+  <div class="section" id="makeup">
+    <h3>Makeup</h3>
+    <ul>
+      <li onclick="pick('makeup', this)">shimmering bronze eyeshadow, matte nude lips</li>
+      <li onclick="pick('makeup', this)">thick winged eyeliner, peach blush</li>
+      <li onclick="pick('makeup', this)">soft pastel eyeshadow, subtle gloss</li>
+      <li onclick="pick('makeup', this)">bold red lips, light cat-eye flick</li>
+      <li onclick="pick('makeup', this)">rose-tinted cheeks, natural brow</li>
+      <li onclick="pick('makeup', this)">bare face with just a hint of mascara</li>
+    </ul>
+  </div>
+
+  <!-- Expression -->
+  <div class="section" id="expression">
+    <h3>Expression</h3>
+    <ul>
+      <li onclick="pick('expression', this)">soft smile, lips closed</li>
+      <li onclick="pick('expression', this)">neutral gaze, lips together</li>
+      <li onclick="pick('expression', this)">pensive look, slight pout</li>
+      <li onclick="pick('expression', this)">subtle smirk, lips sealed</li>
+      <li onclick="pick('expression', this)">dreamy stare, mouth shut</li>
+      <li onclick="pick('expression', this)">calm, serene closed-mouth look</li>
+    </ul>
+  </div>
+
+  <!-- Pose -->
+  <div class="section" id="pose">
+    <h3>Pose</h3>
+    <ul>
+      <li onclick="pick('pose', this)">standing, one hand on hips,leaning forward,seductive pose</li>
+      <li onclick="pick('pose', this)">sitting cross-legged on a retro chair</li>
+      <li onclick="pick('pose', this)">leaning against a wood-paneled wall</li>
+      <li onclick="pick('pose', this)">walking with casual sway, head turned</li>
+      <li onclick="pick('pose', this)">arms folded, casual swagger</li>
+      <li onclick="pick('pose', this)">one leg kicked up, playful vibe</li>
+    </ul>
+  </div>
+
+  <!-- Jewelry -->
+  <div class="section" id="jewelry">
+    <h3>Jewelry</h3>
+    <ul>
+      <li onclick="pick('jewelry', this)">large hoop earrings</li>
+      <li onclick="pick('jewelry', this)">layered beaded necklaces</li>
+      <li onclick="pick('jewelry', this)">colorful plastic bangles</li>
+      <li onclick="pick('jewelry', this)">charm bracelet with peace sign</li>
+      <li onclick="pick('jewelry', this)">thin chain with small locket</li>
+      <li onclick="pick('jewelry', this)">bold statement ring</li>
+    </ul>
+  </div>
+
+  <!-- Eyes -->
+  <div class="section" id="eyes">
+    <h3>Eyes</h3>
+    <ul>
+      <li onclick="pick('eyes', this)">almond-shaped brown eyes</li>
+      <li onclick="pick('eyes', this)">large hazel eyes with heavy lashes</li>
+      <li onclick="pick('eyes', this)">narrow green eyes, mysterious glare</li>
+      <li onclick="pick('eyes', this)">bright blue eyes, high contrast</li>
+      <li onclick="pick('eyes', this)">soft gray eyes, dreamy look</li>
+      <li onclick="pick('eyes', this)">dark eyes with subtle shimmer</li>
+    </ul>
+  </div>
+
+  <!-- setting -->
+  <div class="section" id="setting">
+    <h3>setting</h3>
+    <ul>
+      <li onclick="pick('setting', this)">against graffiti-covered urban alley</li>
+      <li onclick="pick('setting', this)">in a sunlit bedroom with soft curtains</li>
+      <li onclick="pick('setting', this)">by a large window with moonlight shining in</li>
+      <li onclick="pick('setting', this)">on a rooftop under city stars</li>
+      <li onclick="pick('setting', this)">lounging on a vintage velvet sofa</li>
+      <li onclick="pick('setting', this)">at a neon-lit nightclub dancefloor</li>
+      <li onclick="pick('setting', this)">at a neon-lit nightclub dancefloor</li>
+    </ul>
+  </div>
+
+
+  <!-- Outfit (Placeholders with Suggested Prompts) -->
+  <div class="section" id="outfit">
+    <h3>Outfit</h3>
+    <ul id="outfit-sfw">
+      <li onclick="pick('outfit', this)">bell-bottom jeans and tie-dye shirt</li>
+      <li onclick="pick('outfit', this)">floral maxi dress and platform sandals</li>
+      <li onclick="pick('outfit', this)">high-waisted shorts and halter top</li>
+      <li onclick="pick('outfit', this)">denim vest and flared pants</li>
+      <li onclick="pick('outfit', this)">striped turtleneck and mini skirt</li>
+      <li onclick="pick('outfit', this)">torn punk tshirt with ripped jeans</li>
+      <li onclick="pick('outfit', this)">crochet top and low-waisted jean shorts</li>
+      <li onclick="pick('outfit', this)">wearing short cropped fur coat and pinstriped slacks</li>
+      <li onclick="pick('outfit', this)">nightshirt with retro high-waisted briefs</li>
+
+    </ul>
+    <ul id="outfit-nsfw" style="display:none;">
+      <li onclick="pick('outfit', this)">see-through crochet top and lace panties</li>
+      <li onclick="pick('outfit', this)">fully nude with unshaven vagina</li>
+      <li onclick="pick('outfit', this)">wearing only short cropped fur coat and nothing else</li>
+      <li onclick="pick('outfit', this)">torn vintage T-shirt exposing breasts and low-waisted jean shorts revealing panties underneath</li>
+      <li onclick="pick('outfit', this)">topless with retro high-waisted briefs</li>
+    </ul>
+  </div>
+
+  <!-- Prompt Box & Controls -->
+  <textarea id="promptBox" placeholder="Your assembled prompt will appear here…" readonly></textarea><br />
+  <button id="randBtn">🎲 Randomize</button>
+  <button id="copyBtn">📋 Copy Prompt</button>
+
+  <script>
+    // Store current selections
+    const sel = {
+      race: '',
+      body: '',
+      hair: '',
+      makeup: '',
+      expression: '',
+      pose: '',
+      jewelry: '',
+      eyes: '',
+      setting: '',
+      outfit: ''
+    };
+
+    // Handle clicking on a list item
+    function pick(category, el) {
+      // Clear previous highlight
+      document.querySelectorAll('#' + category + ' li').forEach(li => {
+        li.style.background = '#222';
+      });
+      // Highlight this choice
+      el.style.background = '#555';
+      // Save selection
+      sel[category] = el.textContent.trim();
+      updatePrompt();
+    }
+
+    // Build and update the prompt text
+    function updatePrompt() {
+      const parts = [
+        '1girl, solo',
+        sel.race,
+        sel.body,
+        sel.outfit,
+        sel.setting,
+        sel.hair,
+        sel.makeup,
+        sel.expression,
+        sel.pose,
+        sel.jewelry,
+        sel.eyes,
+      
+        sel.setting
+      ].filter(v => v && v !== '');
+
+      const suffix = 'cinematic lighting, photorealistic, 8K, ultra-detailed, masterpiece';
+      document.getElementById('promptBox').value = parts.length
+        ? parts.join(', ') + ', ' + suffix
+        : '';
+    }
+
+    // Copy prompt to clipboard
+    function copyPrompt() {
+      const box = document.getElementById('promptBox');
+      box.select();
+      document.execCommand('copy');
+      alert('Like Magic! ✨');
+    }
+
+    // Randomize across all categories (including placeholders)
+    function randomize() {
+      const nsfw = document.getElementById('nsfwToggle').checked;
+      // Show/hide appropriate outfit UL
+      document.getElementById('outfit-sfw').style.display = nsfw ? 'none' : 'block';
+      document.getElementById('outfit-nsfw').style.display = nsfw ? 'block' : 'none';
+
+      function randomPickFromList(id) {
+        const items = Array.from(document.querySelectorAll('#' + id + ' li'));
+        if (!items.length) return '';
+        const choice = items[Math.floor(Math.random() * items.length)];
+        // Highlight selection
+        items.forEach(li => li.style.background = '#222');
+        choice.style.background = '#555';
+        return choice.textContent.trim();
+      }
+
+      sel.race       = randomPickFromList('race');
+      sel.body       = randomPickFromList('body');
+      sel.hair       = randomPickFromList('hair');
+      sel.makeup     = randomPickFromList('makeup');
+      sel.expression = randomPickFromList('expression');
+      sel.pose       = randomPickFromList('pose');
+      sel.jewelry    = randomPickFromList('jewelry');
+      sel.eyes       = randomPickFromList('eyes');
+      sel.analog     = randomPickFromList('analog');
+      sel.digital    = randomPickFromList('digital');
+      sel.setting    = randomPickFromList('setting');
+      sel.outfit     = nsfw
+        ? randomPickFromList('outfit-nsfw')
+        : randomPickFromList('outfit-sfw');
+
+      updatePrompt();
+    }
+
+    document.getElementById('randBtn').onclick = randomize;
+    document.getElementById('copyBtn').onclick = copyPrompt;
+  </script>
+
+</body>
+</html>
