@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nova Skyrift Portrait Prompt Builder</title>
+  <style>
+    body { font-family: sans-serif; padding:20px; background:#111; color:#fff; }
+    .section { float:left; width:13%; margin:1%; min-width:150px; }
+    .section h3 { margin-top:0; text-transform: uppercase; }
+    ul { list-style:none; padding:0; }
+    li { background:#222; color:#fff; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444; }
+    #promptBox { clear:both; width:100%; height:120px; margin-top:20px; padding:10px; font-size:14px; background:#222; color:#fff; }
+    #copyBtn, #randBtn { margin-top:10px; padding:10px 20px; font-size:16px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<!-- Outfit -->
+<div class="section" id="outfit">
+  <h3>Outfit</h3>
+  <ul>
+    <li onclick="pick('outfit',this)">lace corset top with sheer sleeves</li>
+    <li onclick="pick('outfit',this)">silk halter crop top with deep neckline</li>
+    <li onclick="pick('outfit',this)">strapped leather bustier and choker</li>
+    <li onclick="pick('outfit',this)">off-shoulder white lace blouse</li>
+    <li onclick="pick('outfit',this)">vinyl bralette with metallic accents</li>
+  </ul>
+</div>
+
+<!-- Body Type -->
+<div class="section" id="body">
+  <h3>Body Type</h3>
+  <ul>
+    <li onclick="pick('body',this)">slim figure, delicate curves</li>
+    <li onclick="pick('body',this)">soft and chubby, playful vibe</li>
+    <li onclick="pick('body',this)">voluptuous hourglass silhouette</li>
+    <li onclick="pick('body',this)">athletic build, toned abs</li>
+    <li onclick="pick('body',this)">petite frame with exaggerated bust</li>
+  </ul>
+</div>
+
+<!-- Makeup & Nails -->
+<div class="section" id="makeup">
+  <h3>Makeup & Nails</h3>
+  <ul>
+    <li onclick="pick('makeup',this)">dramatic smokey eyes, black lipstick, blood red nails</li>
+    <li onclick="pick('makeup',this)">holographic eyeshadow, glossy nude lips, white pearl nails</li>
+    <li onclick="pick('makeup',this)">winged eyeliner, matte crimson lips, sharp black nails</li>
+    <li onclick="pick('makeup',this)">subtle shimmer eyes, pale pink lips, soft white nails</li>
+    <li onclick="pick('makeup',this)">glitter tears, dark purple lips, silver chrome nails</li>
+  </ul>
+</div>
+
+<!-- Accessories -->
+<div class="section" id="accessories">
+  <h3>Accessories</h3>
+  <ul>
+    <li onclick="pick('accessories',this)">stacked silver rings and layered necklaces</li>
+    <li onclick="pick('accessories',this)">dark sunglasses and a wide-brimmed hat</li>
+    <li onclick="pick('accessories',this)">lace gloves and pearl choker</li>
+    <li onclick="pick('accessories',this)">chain harness and thigh garter</li>
+    <li onclick="pick('accessories',this)">spiked choker and oversized hoop earrings</li>
+  </ul>
+</div>
+
+<!-- Background -->
+<div class="section" id="background">
+  <h3>Background</h3>
+  <ul>
+    <li onclick="pick('background',this)">misty gothic cathedral ruins, pale moonlight</li>
+    <li onclick="pick('background',this)">cyberpunk skyline glowing white and crimson</li>
+    <li onclick="pick('background',this)">vintage boudoir with velvet curtains</li>
+    <li onclick="pick('background',this)">industrial loft, fog and neon lights</li>
+    <li onclick="pick('background',this)">luxury penthouse with panoramic city view</li>
+  </ul>
+</div>
+
+<!-- Pose -->
+<div class="section" id="pose">
+  <h3>Pose</h3>
+  <ul>
+    <li onclick="pick('pose',this)">leaning seductively against a velvet chair</li>
+    <li onclick="pick('pose',this)">laying on her side with arched back</li>
+    <li onclick="pick('pose',this)">seated with legs crossed and a knowing smirk</li>
+    <li onclick="pick('pose',this)">standing tall, one hand on hip, chin lifted defiantly</li>
+    <li onclick="pick('pose',this)">coyly biting her finger while looking away</li>
+  </ul>
+</div>
+
+<!-- Mood -->
+<div class="section" id="mood">
+  <h3>Mood</h3>
+  <ul>
+    <li onclick="pick('mood',this)">sultry and mysterious</li>
+    <li onclick="pick('mood',this)">playful and teasing</li>
+    <li onclick="pick('mood',this)">cold and dominant stare</li>
+    <li onclick="pick('mood',this)">soft vulnerability behind confident facade</li>
+    <li onclick="pick('mood',this)">dangerously alluring femme fatale</li>
+  </ul>
+</div>
+
+<!-- Spice -->
+<div class="section" id="spice">
+  <h3>Spice</h3>
+  <ul>
+    <li onclick="pick('spice',this)">a barely visible tattoo trailing along her hip</li>
+    <li onclick="pick('spice',this)">delicate chains hanging from her wrists</li>
+    <li onclick="pick('spice',this)">silhouetted against sheer white curtains</li>
+    <li onclick="pick('spice',this)">strappy high heels catching the candlelight</li>
+    <li onclick="pick('spice',this)">a soft smirk hiding a dangerous secret</li>
+  </ul>
+</div>
+
+<textarea id="promptBox" placeholder="Your Nova Portrait Prompt Will Appear Here…" readonly></textarea><br>
+<button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+<button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+
+<script>
+  const sel = {outfit:'', body:'', makeup:'', accessories:'', background:'', pose:'', mood:'', spice:''};
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    el.style.background='#555';
+    sel[sec] = el.textContent;
+    update();
+  }
+
+  function update() {
+    const core = [sel.outfit, sel.body, sel.makeup, sel.accessories, sel.background, sel.pose, sel.mood, sel.spice]
+      .filter(v => v).join(', ');
+    document.getElementById('promptBox').value = core
+      ? "1girl, solo, " + core + ", gothic femme fatale, highly detailed, soft lighting, photorealistic, 4k, masterpiece"
+      : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied! 💄✨');
+  }
+
+  function randomize() {
+    ['outfit','body','makeup','accessories','background','pose','mood','spice'].forEach(sec => {
+      const list = document.querySelectorAll('#'+sec+' li');
+      const choice = list[Math.floor(Math.random()*list.length)];
+      choice.click();
+    });
+  }
+</script>
+
+</body>
+</html>
