@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>dual_toggle_prompt_builder</title>
+  <style>
+    body { font-family: sans-serif; padding:20px; background:#113; color:#427bf5; }
+    .section { float:left; width:15%; margin:1%; }
+    .section h3 { margin-top:0 }
+    ul { list-style:none; padding:0 }
+    li { background:#222; color:#5a758a; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444 }
+    #promptBox { clear:both; width:100%; height:100px; margin-top:20px; padding:10px; font-size:14px; background:#222; color:#707fba; }
+    #copyBtn, #randBtn, #cyberBtn, #gothicBtn { margin-top:10px; padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+
+<h1>dual_toggle_prompt_builder</h1>
+
+<div class="section" id="setting">
+  <h3>Setting</h3>
+  <ul>
+    <li data-theme="cyber">abandoned cathedral laced with fiber optic cables</li>
+<li data-theme="cyber">retro future bondage dumgeon</li>
+    <li data-theme="cyber">cobblestone alley glowing with glitching neon signage</li>
+    <li data-theme="gothic">foggy Victorian graveyard under gaslight</li>
+   <li data-theme="gothic">eerie swamp filled with toxic sludge</li>
+    <li data-theme="gothic">ancient crypt wreathed in incense and ivy</li>
+  </ul>
+</div>
+
+<div class="section" id="subject">
+  <h3>Subject</h3>
+  <ul>
+    <li data-theme="cyber">1girl kneeling in rain-soaked cyber alley, neon pulsing on her skin</li>
+    <li data-theme="cyber">1girl spinning beneath a red HUD projection in sheer bodysuit</li>
+    <li data-theme="cyber">1girl dancing in a cloud of laser beams</li>
+    <li data-theme="gothic">1girl lounging in vintage lingerie, sipping dark wine</li>
+    <li data-theme="gothic">1girl in the throwing her hands in the air and screaming in terror” </li>
+    <li data-theme="gothic">1girl crouched on gravestone in shredded black lace</li>
+  </ul>
+</div>
+
+<div class="section" id="background">
+  <h3>Background</h3>
+  <ul>
+    <li data-theme="cyber">burning candles beside analog screens</li>
+   <li data-theme="cyber">sci-fi laboratory with bizarre equipment</li>
+
+    <li data-theme="cyber">glitchy control interface buried in ivy and brick</li>
+    <li data-theme="gothic">moonlit mausoleum with shattered stained glass</li>
+    <li data-theme="gothic">stone altar surrounded by ivy and shadows</li>
+<li data-theme="gothic">rooftop pool at night lit by eerie lights</li>
+
+  </ul>
+</div>
+
+<div class="section" id="style">
+  <h3>Style</h3>
+  <ul>
+    <li data-theme="cyber">cyber-goth cinematic blend</li>
+    <li data-theme="cyber">nightmare futurism</li>
+  <li data-theme="cyber">vintage sci-fi</li>
+    <li data-theme="cyber">glitch-punk editorial style with deep shadows</li>
+    <li data-theme="gothic">dark romantic realism</li>
+    <li data-theme="gothic">fantasy retro</li>
+    <li data-theme="gothic">film noir-inspired with heavy shadows</li>
+  </ul>
+</div>
+
+<div class="section" id="flavor">
+  <h3>Flavor</h3>
+  <ul>
+    <li data-theme="cyber">faint scanlines over her face</li>
+<li data-theme="gothic">blood dripping on her exposed breasts</li>
+    <li data-theme="cyber">power cables wrapping around her boots</li>
+   <li data-theme="cyber">thigh high space boots match her super sexy short dress</li>
+ <li data-theme="gothic">lipstick smear and chipped nail polish, tattered lace dress exposing her body</li>
+    <li data-theme="gothic">lace gloves and silver rings catching the light</li>
+  </ul>
+</div>
+
+<div class="section" id="spice">
+  <h3>Spice</h3>
+  <ul>
+    <li data-theme="cyber">glowing tattoo revealed through torn fishnet</li>
+    <li data-theme="cyber">see-through top catching flickering control lights</li>
+<li data-theme="cyber">tight latex suit with cybernetic circuits imprinted across her body </li>
+    <li data-theme="gothic">arched back under candlelight</li>
+    <li data-theme="gothic">bare shoulders glowing in firelight</li>
+ <li data-theme="gothic">black leather dominatrix outfit</li>
+
+  </ul>
+</div>
+
+<textarea id="promptBox" placeholder="Your Nova prompt will appear here…" readonly></textarea><br>
+<button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+<button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+<button id="cyberBtn" onclick="toggleTheme('cyber')">🟦 Cyber Mode: ON</button>
+<button id="gothicBtn" onclick="toggleTheme('gothic')">🕯 Gothic Mode: ON</button>
+
+<script>
+  const sel = {setting:'', subject:'', background:'', style:'', flavor:'', spice:''};
+  let themeStatus = { cyber: true, gothic: true };
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    el.style.background='#555';
+    sel[sec] = el.textContent;
+    update();
+  }
+
+  function update() {
+    const core = ['1girl, solo', sel.setting, sel.subject, sel.background, sel.style, sel.flavor, sel.spice]
+      .filter(v => v).join(', ');
+    document.getElementById('promptBox').value = core
+      ? core + ', ultra-detailed, photorealistic, cinematic lighting, 4K render'
+      : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied! 🔥');
+  }
+
+  function randomize() {
+    Object.keys(sel).forEach(sec => {
+      const list = Array.from(document.querySelectorAll('#'+sec+' li')).filter(li => {
+        const theme = li.getAttribute('data-theme');
+        return themeStatus[theme];
+      });
+      if (list.length > 0) {
+        const choice = list[Math.floor(Math.random()*list.length)];
+        if (choice) pick(sec, choice);
+      } else {
+        sel[sec] = '';
+      }
+    });
+    update();
+  }
+
+  function toggleTheme(theme) {
+    themeStatus[theme] = !themeStatus[theme];
+    document.getElementById(theme + 'Btn').innerText = themeStatus[theme]
+      ? (theme === 'cyber' ? '🟦 Cyber Mode: ON' : '🕯 Gothic Mode: ON')
+      : (theme === 'cyber' ? '🟥 Cyber Mode: OFF' : '🕸 Gothic Mode: OFF');
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById('cyberBtn').innerText = '🟦 Cyber Mode: ON';
+    document.getElementById('gothicBtn').innerText = '🕯 Gothic Mode: ON';
+  });
+</script>
+
+</body>
+</html>
