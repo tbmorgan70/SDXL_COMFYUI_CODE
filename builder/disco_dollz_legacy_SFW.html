@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disco Dollz Prompt Builder</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    h1 { text-align: center; color: #f0c; }
+    .section { float: left; width: 30%; margin: 1%; }
+    .section h3 { margin: 0 0 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+    ul { list-style: none; padding: 0; }
+    li { background: #222; margin: 5px 0; padding: 8px; cursor: pointer; border-radius: 4px; }
+    li:hover { background: #333; }
+    li.selected { background: #444; }
+    .hidden { display: none; }
+    #promptBox { clear: both; width: 100%; height: 100px; margin-top: 20px; padding: 10px; background: #222; color: #eee; font-size: 14px; }
+    button { margin: 10px 5px; padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 4px; }
+    #copyBtn { background: #0a0; color: #fff; }
+    #randBtn { background: #08f; color: #fff; }
+    #toggleBtn { background: #f30; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Disco Dollz Prompt Builder</h1>
+  <button id="toggleBtn">🔞 NSFW: OFF</button>
+
+  <div class="section" id="setting">
+    <h3>Setting</h3>
+    <ul>
+      <li data-nsfw="false">Mirrorball-lit dancefloor with rainbow reflections</li>
+      <li data-nsfw="false">Neon corridor lined with disco balls</li>
+      <li data-nsfw="false">Dark club booth with laser beams</li>
+      <li data-nsfw="false">Backstage glamour corner with purple haze</li>
+      <li data-nsfw="false">Glitter walls and pulsating LED grid</li>
+      <li data-nsfw="false">Foggy stage under pink spotlights</li>
+    </ul>
+  </div>
+
+  <div class="section" id="outfit">
+    <h3>Outfit</h3>
+    <ul>
+      <!-- 6 SFW -->
+      <li data-nsfw="false">Sequin mini skirt and metallic bralette</li>
+      <li data-nsfw="false">Glossy vinyl corset with fishnet stockings</li>
+      <li data-nsfw="false">Shiny pleated skirt and chrome crop top</li>
+      <li data-nsfw="false">Holographic mesh top with high-waist shorts</li>
+      <li data-nsfw="false">Neon body harness over sheer top</li>
+      <li data-nsfw="false">Futuristic metallic blazer and micro shorts</li>
+      <!-- 6 NSFW -->
+      <li data-nsfw="true">Bare chest harness with chrome nipple caps</li>
+      <li data-nsfw="true">See-through PVC catsuit revealing curves</li>
+      <li data-nsfw="true">Micro bikini chainmail ensemble</li>
+      <li data-nsfw="true">Strappy leather bondage bodysuit</li>
+      <li data-nsfw="true">Sheer lace bodice exposing torso</li>
+      <li data-nsfw="true">Metallic cage bra with open cup</li>
+    </ul>
+  </div>
+
+  <div class="section" id="pose">
+    <h3>Pose</h3>
+    <ul>
+      <!-- 6 SFW -->
+      <li data-nsfw="false">One hand on hip, head tilted back</li>
+      <li data-nsfw="false">Leaning against wall, legs crossed</li>
+      <li data-nsfw="false">Arms raised under disco ball light</li>
+      <li data-nsfw="false">Back arched slightly, gazing sideways</li>
+      <li data-nsfw="false">Sitting on edge of platform, legs extended</li>
+      <li data-nsfw="false">Twirling hair with a playful smirk</li>
+      <!-- 6 NSFW -->
+      <li data-nsfw="true">Arching back with eyes closed</li>
+      <li data-nsfw="true">Squatting low, hands gripping thighs</li>
+      <li data-nsfw="true">Spreading legs with a provocative stare</li>
+      <li data-nsfw="true">Lying on floor with chest pressed against ground</li>
+      <li data-nsfw="true">Fingers tracing curves of hips</li>
+      <li data-nsfw="true">Kneeling with arms above head</li>
+    </ul>
+  </div>
+
+  <div class="section" id="lighting">
+    <h3>Lighting Effects</h3>
+    <ul>
+      <li data-nsfw="false">Strobing pink and blue lasers</li>
+      <li data-nsfw="false">Soft purple ambient glow</li>
+      <li data-nsfw="false">Sharp white spotlight edge</li>
+      <li data-nsfw="false">Rainbow lens flares across frame</li>
+      <li data-nsfw="false">Pulsing bi-color neon bars</li>
+      <li data-nsfw="false">Holographic projection patterns</li>
+    </ul>
+  </div>
+
+  <div class="section" id="fx">
+    <h3>FX</h3>
+    <ul>
+      <li data-nsfw="false">Glitch hologram fragments</li>
+      <li data-nsfw="false">Particle dust and sparkles</li>
+      <li data-nsfw="false">Chromatic aberration halo</li>
+      <li data-nsfw="false">Refraction ripple on edges</li>
+      <li data-nsfw="false">Mirror reflection distortions</li>
+      <li data-nsfw="false">Bokeh neon orbs floating</li>
+    </ul>
+  </div>
+
+  <div class="section" id="spice">
+    <h3>Spice</h3>
+    <ul>
+      <!-- 6 SFW -->
+      <li data-nsfw="false">Glitter confetti raining down</li>
+      <li data-nsfw="false">Multi-colored sparkles floating</li>
+      <li data-nsfw="false">Retro disco ball close-up reflection</li>
+      <li data-nsfw="false">Streaks of iridescent light beams</li>
+      <li data-nsfw="false">Holographic prism flares</li>
+      <li data-nsfw="false">Fur stole draped over shoulder</li>
+      <!-- 6 NSFW -->
+      <li data-nsfw="true">Lipstick-stained mouth with smoldering gaze</li>
+      <li data-nsfw="true">Melting candle wax dripped on skin</li>
+      <li data-nsfw="true">Chains and leather flogger draped</li>
+      <li data-nsfw="true">Gleaming bondage rings on thighs</li>
+      <li data-nsfw="true">Lustrous body oil sheen</li>
+      <li data-nsfw="true">Sensual latex gloves</li>
+    </ul>
+  </div>
+
+  <textarea id="promptBox" readonly placeholder="Your prompt will appear here..."></textarea><br>
+  <button id="randBtn">🎲 Randomize</button>
+  <button id="copyBtn">📋 Copy Prompt</button>
+
+  <script>
+    const prefix = '1girl, solo';
+    const suffix = '8K, highly detailed, ultra textural, masterpiece';
+    let nsfw = false;
+
+    document.getElementById('toggleBtn').addEventListener('click', () => {
+      nsfw = !nsfw;
+      document.getElementById('toggleBtn').textContent = nsfw ? '🔞 NSFW: ON' : '🔞 NSFW: OFF';
+      updateVisibility();
+      randomize();
+    });
+
+    function updateVisibility() {
+      document.querySelectorAll('li').forEach(li => {
+        const isN = li.getAttribute('data-nsfw') === 'true';
+        if (!nsfw && isN) li.classList.add('hidden');
+        else li.classList.remove('hidden');
+        li.classList.remove('selected');
+      });
+    }
+
+    function pickRandom(sectionId) {
+      const items = Array.from(document.querySelectorAll('#'+sectionId+' li:not(.hidden)'));
+      if (!items.length) return '';
+      const choice = items[Math.floor(Math.random() * items.length)];
+      choice.classList.add('selected');
+      return choice.textContent;
+    }
+
+    function randomize() {
+      ['setting','outfit','pose','lighting','fx','spice'].forEach(sec => {
+        document.querySelectorAll('#'+sec+' li').forEach(li => li.classList.remove('selected'));
+      });
+      const parts = [prefix];
+      ['setting','outfit','pose','lighting','fx','spice'].forEach(sec => {
+        const txt = pickRandom(sec);
+        if (txt) parts.push(txt);
+      });
+      parts.push(suffix);
+      document.getElementById('promptBox').value = parts.join(', ');
+    }
+
+    document.getElementById('randBtn').addEventListener('click', randomize);
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const box = document.getElementById('promptBox');
+      box.select(); document.execCommand('copy');
+      alert('✅ Prompt copied!');
+    });
+
+    updateVisibility();
+    randomize();
+  </script>
+</body>
+</html>
