@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Retro Sci-Fi Control Room Prompt Builder</title>
+  <style>
+    body { font-family: sans-serif; padding:20px; background:#111; color:#fff; }
+    .section { float:left; width:18%; margin:1%; }
+    .section h3 { margin-top:0 }
+    ul { list-style:none; padding:0 }
+    li { background:#222; color:#fff; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444 }
+    #promptBox { clear:both; width:100%; height:80px; margin-top:20px; padding:10px; font-size:14px; background:#222; color:#fff; }
+    #copyBtn, #randBtn { margin-top:10px; padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+
+<div class="section" id="setting">
+  <h3>Setting</h3>
+  <ul>
+    <li onclick="pick('setting',this)">retro-futuristic space station control bay</li>
+    <li onclick="pick('setting',this)">abandoned lunar base with analog terminals</li>
+    <li onclick="pick('setting',this)">deep-sea command pod with old dials</li>
+    <li onclick="pick('setting',this)">cold war-era silo reimagined in sci-fi</li>
+    <li onclick="pick('setting',this)">orbiting observation deck with glitchy panels</li>
+  </ul>
+</div>
+
+<div class="section" id="subject">
+  <h3>Subject</h3>
+  <ul>
+    <li onclick="pick('subject',this)">female pilot in a sleek pressure suit</li>
+    <li onclick="pick('subject',this)">cyber-medic with glowing visor</li>
+    <li onclick="pick('subject',this)">maintenance android with exposed wiring</li>
+    <li onclick="pick('subject',this)">resistance hacker in leather uniform</li>
+    <li onclick="pick('subject',this)">interstellar comms officer mid-alert</li>
+  </ul>
+</div>
+
+<div class="section" id="background">
+  <h3>Background</h3>
+  <ul>
+    <li onclick="pick('background',this)">glowing dials and blinking indicator bulbs</li>
+    <li onclick="pick('background',this)">static CRT screens and circuit panels</li>
+    <li onclick="pick('background',this)">red warning displays and hazard labels</li>
+    <li onclick="pick('background',this)">modular synth racks and weapons console</li>
+    <li onclick="pick('background',this)">data cards and coffee cup on console</li>
+  </ul>
+</div>
+
+<div class="section" id="style">
+  <h3>Style</h3>
+  <ul>
+    <li onclick="pick('style',this)">cinematic realism with dramatic lighting</li>
+    <li onclick="pick('style',this)">comic-book cel shading and bold outlines</li>
+    <li onclick="pick('style',this)">anime-inspired retro with warm tones</li>
+    <li onclick="pick('style',this)">Moebius-style neon line art</li>
+    <li onclick="pick('style',this)">VHS-grain with chromatic bloom</li>
+  </ul>
+</div>
+
+<div class="section" id="flavor">
+  <h3>Flavor</h3>
+  <ul>
+    <li onclick="pick('flavor',this)">red and white suit accents echoing emergency signage</li>
+    <li onclick="pick('flavor',this)">glowing visor with encrypted data</li>
+    <li onclick="pick('flavor',this)">sparks and smoke from an overloaded panel</li>
+    <li onclick="pick('flavor',this)">reflections of control lights in helmet visors</li>
+    <li onclick="pick('flavor',this)">secret faction insignias and mission badges</li>
+  </ul>
+</div>
+
+<textarea id="promptBox" placeholder="Your retro sci-fi prompt will appear here…" readonly></textarea><br>
+<button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+<button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+
+<script>
+  const sel = {setting:'', subject:'', background:'', style:'', flavor:''};
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    el.style.background='#555';
+    sel[sec] = el.textContent;
+    update();
+  }
+
+  function update() {
+    const core = [sel.setting, sel.subject, sel.background, sel.style, sel.flavor]
+      .filter(v => v).join(', ');
+    document.getElementById('promptBox').value = core
+      ? core + ', retro sci-fi control room, ultra-detailed, cinematic lighting, 4K render'
+      : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied! 🔧✨');
+  }
+
+  function randomize() {
+    ['setting','subject','background','style','flavor'].forEach(sec => {
+      const list = document.querySelectorAll('#'+sec+' li');
+      const choice = list[Math.floor(Math.random()*list.length)];
+      choice.click();
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Full Prompt Elements Dashboard</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .category {
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .category-header {
+    background: #222;
+    cursor: pointer;
+    padding: 12px 16px;
+    user-select: none;
+    font-weight: bold;
+  }
+  .category-header:hover {
+    background: #333;
+  }
+  .category-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 16px;
+    background: #111;
+  }
+  .category-content.open {
+    padding: 12px 16px;
+  }
+  pre {
+    white-space: pre-wrap;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  button.copy-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: #39f;
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    cursor: pointer;
+  }
+  button.copy-btn:hover {
+    background: #58a;
+  }
+  #copyAllBtn {
+    margin: 30px auto;
+    display: block;
+    padding: 10px 24px;
+    font-size: 16px;
+    background: #39f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #copyAllBtn:hover {
+    background: #58a;
+  }
+</style>
+</head>
+<body>
+
+<h1>Full Prompt Elements Dashboard</h1>
+
+<div id="categories-container"></div>
+
+<button id="copyAllBtn">Copy All Categories</button>
+
+<script>
+  // Your combined promptData object here:
+  const promptData = {
+  // From control_room_1girl_prompt_builder.html
+  "Setting": [
+    "holographic operations hub on a mining colony",
+    "alien tech-infused jungle bunker",
+    "orbiting control pod above a dying planet",
+    "retro-style mission control beneath a volcano",
+    "sunken tech temple running on forgotten power",
+    "abandoned cathedral laced with fiber optic cables",
+    "cobblestone alley glowing with glitching neon signage",
+    "foggy Victorian graveyard under gaslight",
+    "ancient crypt wreathed in incense and ivy"
+  ],
+  "Subject": [
+    "1girl in latex tactical uniform with helmet off",
+    "1girl as space cowgirl with holographic revolver",
+    "1girl as alien princess with glimmering bodysuit",
+    "1girl, seated calmly, adjusting a visor interface",
+    "1girl, interstellar engineer with toolbelt and bruises",
+    "1girl kneeling in rain-soaked cyber alley, neon pulsing on her skin",
+    "1girl spinning beneath a red HUD projection in sheer bodysuit",
+    "1girl lounging in vintage lingerie, sipping dark wine",
+    "1girl crouched on gravestone in shredded black lace"
+  ],
+  "Background": [
+    "glowing red and blue analog interfaces",
+    "chaotic wire tangle spilling out from wall panels",
+    "misty atmosphere with hazard labels and blinking lights",
+    "weathered console with warning tape and bullet holes",
+    "metallic grid floor scattered with torn data sheets",
+    "burning candles beside analog screens",
+    "glitchy control interface buried in ivy and brick",
+    "moonlit mausoleum with shattered stained glass",
+    "stone altar surrounded by ivy and shadows"
+  ],
+  "Style": [
+    "1980s sci-fi pulp cover style with vibrant grain",
+    "high-gloss cyberpunk aesthetic with moody haze",
+    "digital painting with volumetric lighting",
+    "retro anime cel shading with futuristic tones",
+    "stylized neon brutalism",
+    "cyber-goth cinematic blend",
+    "glitch-punk editorial style with deep shadows",
+    "dark romantic realism",
+    "film noir-inspired with heavy shadows"
+  ],
+  "Flavor": [
+    "tight minimal uniform with glowing accents",
+    "badge-insignia across chestplate glinting under lights",
+    "cracks in her visor and ambient sparks",
+    "fingerless gloves gripping a joystick",
+    "reflection of fire or explosions across glass screens",
+    "faint scanlines over her face",
+    "power cables wrapping around her boots",
+    "lipstick smear and chipped nail polish",
+    "lace gloves and silver rings catching the light"
+  ],
+  "Spice": [
+    "tentacle-like cables wrapped sensually around her legs",
+    "neon tattoos glowing on her back under blacklight",
+    "red hologram projected over her exposed midriff",
+    "sensual pose contrasting with grim surroundings",
+    "robotic hand gently brushing her hair aside"
+  ],
+  
+  // From super_heavy_glitch.html
+  "Composition": [
+    "Giclee spot color graphic print",
+    "Museum-quality graphic print",
+    "Contemporary minimal graphic art",
+    "Hyper-realistic scene",
+    "Hyper-detailed graphic illustration",
+    "3D abstract rendering"
+  ],
+  "Effects": [
+    "heavy deinterlaced video glitch",
+    "glitch chromatic aberration",
+    "geometric static interference",
+    "random pixelation splashes",
+    "drone deinterlaced glitch effect",
+    "VHS-spectrum distortion",
+    "digital deinterlaced glitch",
+    "binary high-pass filter"
+  ],
+  "Colors": [
+    "neon binary spectrum palette",
+    "bright 90s VHS color scheme",
+    "dark, moody special-effects lighting",
+    "crisp desaturated black matte background",
+    "toxic neon cyberpunk hues",
+    "chromatic diffusion acid nightmare",
+    "blood-dripping red pixelation",
+    "glowing tertiary neon primaries"
+  ],
+  "Mood": [
+    "horror movie aesthetic",
+    "dystopian doomsday vibe",
+    "Afrofuturism horror flair",
+    "cyberpunk dystopia ambiance",
+    "gothic burlesque scene",
+    "futuristic sci-fi ritual",
+    "dark cinematic clarity"
+  ],
+  "Finish": [
+    "8K resolution",
+    "cinematic clarity",
+    "ultra-minimal composition",
+    "perfect composition snapshot",
+    "photorealistic detail",
+    "ultra-textural finish",
+    "masterpiece quality"
+  ],
+
+  // From 1girl_solo_cybergoth_face_nsfw.html
+  "Facial Expressions": [
+    "sultry gaze with half-lidded eyes",
+    "manic laugh with glitching teeth",
+    "wide-eyed terror framed by static",
+    "teardrop sliding through digital shards",
+    "smirk with flickering neon veins",
+    "blank stare interrupted by pixel tears",
+    "angry snarl with fractal eyebrows",
+    "ecstatic grin under glitch halo",
+    "wistful look as if haunted by code",
+    "feral grin with data shards in mouth"
+  ],
+  "Settings": [
+    "dancing on the altar of an old gothic church",
+    "hospital operating room under fluorescent lights",
+    "neon-lit adult entertainment district window",
+    "abandoned cathedral laced with glitching holograms",
+    "underground cyberpunk rave bunker",
+    "foggy Victorian graveyard under gaslight",
+    "retro futurist control pod above a dying planet",
+    "novelty store window with disco balls",
+    "glitching VR nightclub in zero gravity",
+    "dali-esque melting architecture cityscape",
+    "data center with flickering server stacks",
+    "underwater techno cathedral of coral"
+  ],
+  "Colors (Alt)": [
+    "neon pink & electric orange high contrast",
+    "90s VHS bright color scheme",
+    "desaturated dark palette on matte black",
+    "tertiary neon spectrum (cyan/magenta/yellow)",
+    "chromatic diffusion over fractal spirals",
+    "vivid Afrofuturism contrasts",
+    "hyper-detailed 8K neon glow",
+    "UV blacklight neon highlight",
+    "psychedelic fractal gradient",
+    "iridescent metallic sheen",
+    "silicon valley glow (cool blues and teals)"
+  ],
+  "Spices": [
+    "floating glitch drones orbiting her head",
+    "lipstick smear & chipped nail polish",
+    "satanic symbols & demonic iconography",
+    "fractaled portal beacon in background",
+    "shattered mirror fragments raining down",
+    "holographic glitch butterflies fluttering around",
+    "electric glitch veins pulsating under skin",
+    "levitating shards of corrupted glass",
+    "neon code rain cascading off her shoulders",
+    "ghostly pixel silhouettes emerging from shadows",
+    "runic circuit tattoos glowing on her flesh",
+    "dripping data shards melting off form",
+    "fractured RGB halos flickering overhead",
+    "smoke rings made of binary bits"
+  ],
+  "Adult Spices": [
+    "erotic dancer in lace lingerie and garter belts",
+    "sensual sheen of wet skin with droplets glistening",
+    "silhouette teasingly backlit, full nudity implied",
+    "lace corset & fishnet stockings, high heels",
+    "candlelit curves with soft-focus glow, sensual",
+    "whisper of fetish harness straps and leather",
+    "delicate hands trailing along thigh",
+    "bare torso draped in silk sheets"
+  ],
+  "Cameras": [
+    "fisheye close-up portrait",
+    "ultra-wide cinematic angle",
+    "low-angle dramatic shot",
+    "macro extreme close-up",
+    "bird's-eye top-down view",
+    "3-point studio lighting frame",
+    "dynamic POV handheld vibe",
+    "abstract reflection in broken glass"
+  ],
+
+  // From 1girl_solo_vintage_expanded_nsfw.html
+  "Race": [
+    "pale freckled Caucasian",
+    "dark skinned African American",
+    "Hispanic/Latina",
+    "light skinned African American",
+    "white American with bikini tan lines"
+  ],
+  "Body Type": [
+    "slim and petite",
+    "curvy hourglass figure",
+    "athletic build",
+    "tall and lean",
+    "naturally busty",
+    "soft fuller figure"
+  ],
+  "Hair": [
+    "long feathered layers",
+    "Afro with round shape",
+    "afropuff pigtails",
+    "bob cut with bangs",
+    "straight, center-parted",
+    "curly mop-top style",
+    "shoulder-length waves"
+  ],
+  "Makeup": [
+    "shimmering bronze eyeshadow, matte nude lips",
+    "thick winged eyeliner, peach blush",
+    "soft pastel eyeshadow, subtle gloss",
+    "bold red lips, light cat-eye flick",
+    "rose-tinted cheeks, natural brow",
+    "bare face with just a hint of mascara"
+  ],
+  "Expression": [
+    "soft smile, lips closed",
+    "neutral gaze, lips together",
+    "pensive look, slight pout",
+    "subtle smirk, lips sealed",
+    "dreamy stare, mouth shut",
+    "calm, serene closed-mouth look"
+  ],
+  "Pose": [
+    "standing with one hand on hip, slight lean",
+    "sitting cross-legged on a retro chair",
+    "leaning against a wood-paneled wall",
+    "walking with casual sway, head turned",
+    "arms folded, casual swagger",
+    "one leg kicked up, playful vibe"
+  ],
+  "Jewelry": [
+    "large hoop earrings",
+    "layered beaded necklaces",
+    "colorful plastic bangles",
+    "charm bracelet with peace sign",
+    "thin chain with small locket",
+    "bold statement ring"
+  ],
+  "Eyes": [
+    "almond-shaped brown eyes",
+    "large hazel eyes with heavy lashes",
+    "narrow green eyes, mysterious glare",
+    "bright blue eyes, high contrast",
+    "soft gray eyes, dreamy look",
+    "dark eyes with subtle shimmer"
+  ],
+  "Setting (Vintage)": [
+    "against graffiti-covered urban alley",
+    "in a sunlit bedroom with soft curtains",
+    "by a large window with moonlight shining in",
+    "on a rooftop under city stars",
+    "lounging on a vintage velvet sofa",
+    "at a neon-lit nightclub dancefloor"
+  ],
+  "Outfit (SFW)": [
+    "bell-bottom jeans and tie-dye shirt",
+    "floral maxi dress and platform sandals",
+    "high-waisted shorts and halter top",
+    "denim vest and flared pants",
+    "striped turtleneck and mini skirt",
+    "torn punk tshirt with ripped jeans",
+    "crochet top and low-waisted jean shorts",
+    "wearing short cropped fur coat and pinstriped slacks",
+    "nightshirt with retro high-waisted briefs"
+  ],
+  "Outfit (NSFW)": [
+    "see-through crochet top and lace panties",
+    "fully nude with unshaven vagina",
+    "wearing only short cropped fur coat and nothing else",
+    "torn vintage T-shirt exposing breasts and low-waisted jean shorts revealing panties underneath",
+    "topless with retro high-waisted briefs"
+  ],
+
+  // From nova_skydrift_cybergoth_sfw.html
+  "Poses": [
+    "standing,one hand on thighs,one hand on hips,leaning forward,seductive pose",
+    "leaning against an alley wall, subtle smirk, captivating gaze",
+    "dancing alone on an empty dance floor",
+    "sultry pose, seated recline, one leg propped up, resting arm casually sofa arm",
+    "looking at the viewer, posing sexy, flirty, Dutch angle, high angle view",
+    "open mouth, looking back at viewer, part profile, teasing look"
+  ],
+  "Elements": [
+    "cyberpunk city neon rain",
+    "gothic cathedral arches",
+    "anime speed-lines",
+    "glitch holograms",
+    "dynamic ink splatter",
+    "bioluminescent flora"
+  ],
+  "Outfits (Nova)": [
+    "latex bodysuit, tight,glossy, hugging her nice hips and large breasts",
+    "lace-up leather corset hugs her svelte smooth curves",
+    "PVC thigh-high boots with chain accents, mini skirt, and tight tanktop. medium breasts",
+    "cage skirt with glowing ribbons, tight top ripped down the sides, medium perky breasts",
+    "gothic bunny suit, exposed midrift, bunny ears, punk rock centerfold vibe",
+    "a flower patterned mini dress with pastels and light colors contrasts with the darkness of her gothic vibe and the yearning sexy body"
+  ],
+  "Makeup Styles": [
+    "neon UV face paint, new wave jewelry",
+    "holo chrome eyeshadow, bright lips, slightly puckered",
+    "smoky black tear streaks across her lovely face",
+    "glitter-dusted dark lips, eyes framed by effervescent sprinkles of sex magik",
+    "electric blue eyeliner wings, fierce eyeliner comnpliments her razor tight punk aesthetic",
+    "metallic silver contour, silver necklace hangs like milten shiny metal"
+  ],
+  "Locations": [
+    "crowded futuristic dancefloor, laser lights",
+    "abandoned cemetery at midnight, dark, mysterious",
+    "underground rave bunker, concrete, dirty, smokey, dark with intense flashes of rave laser lights",
+    "moonlit gothic chapel, sexy gothic priestess summoning demons with her intensely perfect body",
+    "neon-lit alleyway, red light district, she matches the scene with her hooker on LSD aesthetic",
+    "foggy urban junkyard, police lights in the background"
+  ],
+  "Secret Spice": [
+    "eyeball necklace dripping neon goo",
+    "floating glitch drones orbiting head",
+    "melting candle wax hair",
+    "glitchy TV static border",
+    "levitating disembodied hands",
+    "fractaled portal beacon"
+  ]
+};
+
+  const container = document.getElementById("categories-container");
+
+  function createCategory(name, prompts) {
+    const catDiv = document.createElement("div");
+    catDiv.className = "category";
+
+    const header = document.createElement("div");
+    header.className = "category-header";
+    header.textContent = name;
+    header.addEventListener("click", () => {
+      content.classList.toggle("open");
+      if (content.style.maxHeight) {
+        content.style.maxHeight = null;
+      } else {
+        content.style.maxHeight = content.scrollHeight + "px";
+      }
+    });
+
+    const content = document.createElement("div");
+    content.className = "category-content";
+
+    const pre = document.createElement("pre");
+    pre.textContent = prompts.join("\n");
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.textContent = `Copy All ${name}`;
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(pre.textContent).then(() => {
+        alert(`Copied all prompts from ${name}!`);
+      });
+    });
+
+    content.appendChild(pre);
+    content.appendChild(copyBtn);
+
+    catDiv.appendChild(header);
+    catDiv.appendChild(content);
+
+    container.appendChild(catDiv);
+  }
+
+  // Build all categories
+  Object.entries(promptData).forEach(([catName, prompts]) => {
+    createCategory(catName, prompts);
+  });
+
+  // Copy all categories button
+  const copyAllBtn = document.getElementById("copyAllBtn");
+  copyAllBtn.addEventListener("click", () => {
+    let allText = "";
+    Object.entries(promptData).forEach(([catName, prompts]) => {
+      allText += `${catName}:\n${prompts.join("\n")}\n\n`;
+    });
+    navigator.clipboard.writeText(allText).then(() => {
+      alert("Copied all categories!");
+    });
+  });
+</script>
+
+</body>
+</html>
