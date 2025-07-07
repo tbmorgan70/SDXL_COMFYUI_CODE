@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>💥 Pink Guns Prompt Builder (Updated)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ff4d94;
+      margin-bottom: 20px;
+    }
+    .section {
+      float: left;
+      width: 23%;
+      margin: 1%;
+      min-width: 150px;
+    }
+    .section h3 {
+      margin-top: 0;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: #ff4d94;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #222;
+      color: #fff;
+      margin: 5px 0;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    li:hover {
+      background: #444;
+    }
+    #promptBox {
+      clear: both;
+      width: 100%;
+      height: 140px;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 14px;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #333;
+      border-radius: 4px;
+      resize: none;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #ff4d94;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #111;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #e63a7b;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💥 Pink Guns Prompt Builder (Updated)</h1>
+  <label>
+    <input type="checkbox" id="animeToggle" />
+    🎨 Anime Style Mode
+  </label>
+
+  <!-- Subject Count & Pose -->
+  <div class="section" id="subject">
+    <h3>Subject</h3>
+    <ul>
+      <li onclick="pick('subject', this)">1girl, solo, full-body, aiming gun</li>
+      <li onclick="pick('subject', this)">1girl, solo, waist-up, standing close</li>
+      <li onclick="pick('subject', this)">1girl, solo, waist-up, pointing guns at camera</li>
+      <li onclick="pick('subject', this)">1girl, solo, full-body, dynamic action pose</li>
+      <li onclick="pick('subject', this)">1girl, solo, half-body, looking over shoulder</li>
+      <li onclick="pick('subject', this)">1girl, solo, waist-up, intense stare</li>
+    </ul>
+  </div>
+
+  <!-- Outfit Style -->
+  <div class="section" id="outfit">
+    <h3>Outfit</h3>
+    <ul>
+      <li onclick="pick('outfit', this)">bright pink bikini tops & bottoms</li>
+      <li onclick="pick('outfit', this)">hot pink and black reflective latex catsuits</li>
+      <li onclick="pick('outfit', this)">pastel streetwear: crop tops & cargo pants</li>
+      <li onclick="pick('outfit', this)">tactical gear with exagerrated digital camo accents</li>
+      <li onclick="pick('outfit', this)">glossy pink swimsuits, wet look</li>
+      <li onclick="pick('outfit', this)">furry white baggy track pants and jacket</li>
+      <li onclick="pick('outfit', this)">soft pink silk lingerie sets</li>
+    </ul>
+  </div>
+
+  <!-- Face Covering / Accessory -->
+  <div class="section" id="face">
+    <h3>Face / Accessory</h3>
+    <ul>
+      <li onclick="pick('face', this)">white ski masks with pink lipstick</li>
+      <li onclick="pick('face', this)">oversized white sunglasses, reflective lenses</li>
+      <li onclick="pick('face', this)">black balaclavas with neon pink trim</li>
+      <li onclick="pick('face', this)">futuristic pink visors, glowing edges</li>
+      <li onclick="pick('face', this)">furry white headbands & mirrored shades</li>
+      <li onclick="pick('face', this)">bare face, bold pink eyeshadow</li>
+    </ul>
+  </div>
+
+  <!-- Weapon / Prop (Anime vs. Realistic) -->
+  <div class="section" id="weapon">
+    <h3>Weapon / Prop</h3>
+    <!-- Anime Weapons (shown when animeToggle is checked) -->
+    <ul id="weapon-anime">
+      <li onclick="pick('weapon', this)">submachine guns with pink accents</li>
+      <li onclick="pick('weapon', this)">silenced pink pistols, close-up</li>
+      <li onclick="pick('weapon', this)">tommy guns, pink paint details</li>
+      <li onclick="pick('weapon', this)">dual pistols, neon pink grips</li>
+      <li onclick="pick('weapon', this)">assault rifles, pink camo wrap</li>
+      <li onclick="pick('weapon', this)">handgun, pink leather holster visible</li>
+    </ul>
+    <!-- Realistic Props (shown when animeToggle is NOT checked) -->
+    <ul id="weapon-real" style="display: none;">
+      <li onclick="pick('weapon', this)">spray paint cans, neon splattered</li>
+      <li onclick="pick('weapon', this)">graffiti markers, bright pink tags</li>
+      <li onclick="pick('weapon', this)">all white automatic pistol</li>
+      <li onclick="pick('weapon', this)">chain wrapped in furry white cloth</li>
+      <li onclick="pick('weapon', this)">giving the peace sign</li>
+      <li onclick="pick('weapon', this)">flashlight casting  a pink white glow</li>
+    </ul>
+  </div>
+
+  <!-- Background -->
+  <div class="section" id="background">
+    <h3>Background</h3>
+    <ul>
+      <li onclick="pick('background', this)">poolside at sunset, pink reflections</li>
+      <li onclick="pick('background', this)">neon-lit alley with graffiti</li>
+      <li onclick="pick('background', this)">luxury mansion courtyard, glowing lights</li>
+      <li onclick="pick('background', this)">abandoned warehouse, neon signage</li>
+      <li onclick="pick('background', this)">rooftop helipad with cityscape</li>
+      <li onclick="pick('background', this)">bathroom tile walls, pink neon tubes</li>
+    </ul>
+  </div>
+
+  <!-- Style / Genre -->
+  <div class="section" id="style">
+    <h3>Style / Genre</h3>
+    <ul>
+      <li onclick="pick('style', this)">photorealistic, hyper-detailed</li>
+      <li onclick="pick('style', this)">anime style, cel-shaded neon</li>
+      <li onclick="pick('style', this)">hyperrealistic, glossy highlights</li>
+      <li onclick="pick('style', this)">stylized artstation 8K render</li>
+      <li onclick="pick('style', this)">cinematic neon noir, film grain</li>
+      <li onclick="pick('style', this)">vibrant pastel colors, soft focus</li>
+    </ul>
+  </div>
+
+  <!-- Lighting / Effects -->
+  <div class="section" id="lighting">
+    <h3>Lighting / Effects</h3>
+    <ul>
+      <li onclick="pick('lighting', this)">cinematic neon lighting, pink & teal</li>
+      <li onclick="pick('lighting', this)">HDR, dramatic shadows, lens flare</li>
+      <li onclick="pick('lighting', this)">wet pavement reflections, glossy skin</li>
+      <li onclick="pick('lighting', this)">soft rim light, glowing edges</li>
+      <li onclick="pick('lighting', this)">rain droplets, neon bokeh</li>
+      <li onclick="pick('lighting', this)">spotlight on subjects, moody contrast</li>
+    </ul>
+  </div>
+
+  <!-- Extras / Suffix -->
+  <div class="section" id="extras">
+    <h3>Extras</h3>
+    <ul>
+      <li onclick="pick('extras', this)">8K resolution, sharp focus</li>
+      <li onclick="pick('extras', this)">ultra-wide lens perspective</li>
+      <li onclick="pick('extras', this)">cinematic depth of field</li>
+      <li onclick="pick('extras', this)">high dynamic range, vivid colors</li>
+      <li onclick="pick('extras', this)">film grain overlay</li>
+      <li onclick="pick('extras', this)">digital noise, gritty vibe</li>
+    </ul>
+  </div>
+
+  <!-- Prompt Box & Controls -->
+  <textarea id="promptBox" placeholder="Your assembled prompt will appear here…" readonly></textarea><br />
+  <button id="randBtn">🎲 Randomize</button>
+  <button id="copyBtn">📋 Copy Prompt</button>
+
+  <script>
+    // Store current selections
+    const sel = {
+      subject: '',
+      outfit: '',
+      face: '',
+      weapon: '',
+      background: '',
+      style: '',
+      lighting: '',
+      extras: ''
+    };
+
+    // Handle clicking on a list item
+    function pick(category, el) {
+      // Clear previous highlight for that category (and both weapon lists)
+      if (category === 'weapon') {
+        document.querySelectorAll('#weapon-anime li, #weapon-real li').forEach(li => {
+          li.style.background = '#222';
+        });
+      } else {
+        document.querySelectorAll(`#${category} li`).forEach(li => {
+          li.style.background = '#222';
+        });
+      }
+      // Highlight this choice
+      el.style.background = '#555';
+      // Save selection
+      sel[category] = el.textContent.trim();
+      updatePrompt();
+    }
+
+    // Toggle which weapon list is visible based on animeToggle
+    function toggleWeaponList() {
+      const animeMode = document.getElementById('animeToggle').checked;
+      // Show anime weapons if animeMode, else show realistic props
+      document.getElementById('weapon-anime').style.display = animeMode ? 'block' : 'none';
+      document.getElementById('weapon-real').style.display = animeMode ? 'none' : 'block';
+      // Clear any previous weapon highlight & selection
+      document.querySelectorAll('#weapon-anime li, #weapon-real li').forEach(li => {
+        li.style.background = '#222';
+      });
+      sel.weapon = '';
+      updatePrompt();
+    }
+
+    // Build and update the prompt text
+    function updatePrompt() {
+      const animeMode = document.getElementById('animeToggle').checked;
+      // Force style to anime if toggle is on
+      const styleText = animeMode
+        ? 'anime style, cel-shaded neon, vibrant colors'
+        : sel.style;
+
+      // Assemble visible selections
+      const parts = [
+        sel.subject,
+        sel.outfit,
+        sel.face,
+        sel.weapon,
+        sel.background,
+        styleText,
+        sel.lighting,
+        sel.extras
+      ].filter(v => v && v !== '');
+
+      const suffix = animeMode 
+        ? '– vivid pastel palette, high detail, 8K' 
+        : '– photorealistic, ultra-detailed, 8K';
+
+      document.getElementById('promptBox').value = parts.length
+        ? parts.join(', ') + ', ' + suffix
+        : '';
+    }
+
+    // Copy prompt to clipboard
+    function copyPrompt() {
+      const box = document.getElementById('promptBox');
+      box.select();
+      document.execCommand('copy');
+      alert('Prompt copied to clipboard! 🤘');
+    }
+
+    // Randomize across all visible categories
+    function randomize() {
+      const animeMode = document.getElementById('animeToggle').checked;
+
+      function randomPickFromVisible(id) {
+        // Grab all <li> under the given id that are currently visible
+        const allLis = Array.from(document.querySelectorAll(`#${id} li`));
+        const visibleLis = allLis.filter(li => li.offsetParent !== null);
+        if (!visibleLis.length) return '';
+        const choice = visibleLis[Math.floor(Math.random() * visibleLis.length)];
+        // Highlight selection
+        allLis.forEach(li => (li.style.background = '#222'));
+        choice.style.background = '#555';
+        return choice.textContent.trim();
+      }
+
+      sel.subject    = randomPickFromVisible('subject');
+      sel.outfit     = randomPickFromVisible('outfit');
+      sel.face       = randomPickFromVisible('face');
+      // Weapon category will pick from the visible list automatically
+      sel.weapon     = randomPickFromVisible('weapon-anime') || randomPickFromVisible('weapon-real');
+      sel.background = randomPickFromVisible('background');
+      // For style: if anime toggle ON, skip randomizing style (we force anime style)
+      sel.style      = animeMode ? '' : randomPickFromVisible('style');
+      sel.lighting   = randomPickFromVisible('lighting');
+      sel.extras     = randomPickFromVisible('extras');
+
+      updatePrompt();
+    }
+
+    // Event listeners
+    document.getElementById('randBtn').onclick = randomize;
+    document.getElementById('copyBtn').onclick = copyPrompt;
+    document.getElementById('animeToggle').onchange = () => {
+      toggleWeaponList();
+      updatePrompt();
+    };
+
+    // Initialize (ensure correct weapon list on page load)
+    toggleWeaponList();
+  </script>
+
+</body>
+</html>
