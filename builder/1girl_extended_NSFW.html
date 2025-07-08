@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>1Girl Solo Extended Prompt Builder</title>
+  <style>
+    body { font-family: sans-serif; background:#111; color:#fff; padding:20px; }
+    .section { float:left; width:18%; margin:1%; }
+    .section h3 { margin-top:0; text-transform: uppercase; }
+    ul { list-style:none; padding:0; }
+    li { background:#222; color:#fff; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444; }
+    #promptBox { clear:both; width:100%; height:120px; margin-top:20px; padding:10px; font-size:14px; background:#222; color:#0f0; }
+    #copyBtn, #randBtn { margin-top:10px; padding:10px 20px; font-size:16px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<h1>🔥 1Girl sole Extended Prompt Builder 🔥</h1>
+<label><input type="checkbox" id="nsfwToggle"> 🔞 NSFW Mode</label>
+
+<div class="section" id="body"><h3>Body</h3><ul></ul></div>
+<div class="section" id="outfit"><h3>Outfit</h3><ul></ul></div>
+<div class="section" id="makeup"><h3>Face</h3><ul></ul></div>
+<div class="section" id="expression"><h3>Expression</h3><ul></ul></div>
+<div class="section" id="pose"><h3>Pose</h3><ul></ul></div>
+<div class="section" id="accessories"><h3>Accessories</h3><ul></ul></div>
+<div class="section" id="mood"><h3>Mood</h3><ul></ul></div>
+<div class="section" id="setting"><h3>Setting</h3><ul></ul></div>
+
+<textarea id="promptBox" placeholder="Prompt will appear here..." readonly></textarea><br>
+<button id="randBtn">🎲 Randomize</button>
+<button id="copyBtn">📋 Copy Prompt</button>
+
+<script>
+const options = {
+  body: [
+    "slim and athletic build with firm and sculpted breasts", "voluptuous hourglass figure with taut and flushed breasts",
+    "petite frame with large soft and heaving bust", "curvy with thick thighs", "chubby body with playful proportions and plump and inviting breasts",
+    "Petite with perky assets and smooth curves",
+    "Busty with a slender waist and rounded hips - smooth and curvaceous ass", "Toned physique with sculpted abs and firm glutes",
+    "Full-figured with soft, generous curves and thick legs", "Athletic with a tight, shapely rear and defined arms"
+  ],
+  outfit: {
+    sfw: [
+      "tight crop top and ripped jeans", "casual hoodie and shorts", "lace blouse and pencil skirt",
+      "tank top with cargo pants", "sport bra and leggings", "tight latex suit with cybernetic circuits imprinted across her body",
+      "thigh high space boots match her super sexy short dress", "tight shiny slacks with a pushup bra fluffy fur coat"
+    ],
+    nsfw: [
+      "see-through lace lingerie and garter belt", "wet sheer top clinging to skin - her body silken and pulsing",
+      "leather bondage harness and thigh-high boots", "braless in a tuxedo style vest and striped pants", "open corset and lace panties",
+      "wrapped in a brightly patterned silk sheet with exposed body", "sexy cheerlead with firm perky breasts",
+      "braless with cute panties", "Mesh crop top with high-waisted garters", "Fishnet bodysuit with strappy heels",
+      "tight crop top and ripped jeans", "lace blouse and panties - peaking from under a pencil skirt", "sport bra and skin tight biker shorts",
+      "tight shiny slacks with a pushup bra under a fluffy fur coat", "thigh high space boots match her super sexy short dress"
+    ],
+  },
+  makeup: [
+    "sharp winged eyeliner and glossy lips", "glitter eyeshadow and blushed cheeks",
+    "natural look with soft pink tones", "black lipstick and smudged mascara",
+    "glitter tears and bold contour", "bright red lipstick and exaggerrated eye shawdow"
+  ],
+  expression: [
+    "smirking confidently", "teasing wink with parted lips", "wide-eyed innocence",
+    "cold dominant stare", "soft sadness with downcast eyes", "air kiss with closed eyes"
+  ],
+  pose: [
+    "hand on hip, chin lifted", "laying on her side, arched back", "arm extended with a beckoning gesture",
+    "standing with leg bent and arms crossed", "kneeling with head tilted", "slightly bent forward hands cupping her breasts"
+  ],
+  accessories: [
+    "silver bangles and hoop earrings", "lace gloves and pearl choker", "costume bunny ears", 
+    "spiked collar and chain necklace", "nose ring and stacked rings", "gold rope necklace hanging between her breasts"
+  ],
+  mood: [
+    "playful and flirty", "cold and dangerous", "shy and vulnerable",
+    "bold and seductive", "melancholic and dreamy", "Sultry and teasing", "Soft and yearning", "Intense and possessive", "Confident and commanding",
+    "Wistful and sensual"
+  ],
+  setting: [
+    "in a sunlit bedroom with soft curtains", "at a neon-lit nightclub dancefloor",
+    "lounging on a vintage velvet sofa", "against graffiti-covered urban alley",
+    "beneath fairy lights in a boho garden", "on a rooftop under city stars",
+    "in a candle-lit bathroom with misty mirrors", "inside a dim cyberpunk bar",
+    "on a messy bed with silk sheets", "by a large window with moonlight shining in"
+  ]
+};
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function randomize() {
+  const nsfw = document.getElementById('nsfwToggle').checked;
+  const outfitList = nsfw ? options.outfit.nsfw : options.outfit.sfw;
+  const prompt = [
+    "1girl, solo",
+    pick(options.body),
+    pick(outfitList),
+    pick(options.makeup),
+    pick(options.expression),
+    pick(options.pose),
+    pick(options.accessories),
+    pick(options.mood),
+    pick(options.setting),
+    nsfw ? "NSFW details emphasized" : "tasteful detailing",
+    "8K, cinematic lighting, ultra-detailed"
+  ].join(", ");
+  document.getElementById('promptBox').value = prompt;
+}
+
+function copyPrompt() {
+  const ta = document.getElementById('promptBox');
+  ta.select();
+  document.execCommand('copy');
+  alert('Prompt copied to clipboard!');
+}
+
+document.getElementById('randBtn').onclick = randomize;
+document.getElementById('copyBtn').onclick = copyPrompt;
+</script>
+
+</body>
+</html>

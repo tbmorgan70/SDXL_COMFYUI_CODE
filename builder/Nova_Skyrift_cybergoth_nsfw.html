@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ULTRA Nova Skyrift Prompt Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+    h1 { text-align: center; color: #39f; }
+    button { margin: 10px 5px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    textarea { width: 100%; height: 120px; margin-top: 10px; font-size: 14px; }
+    .container { max-width: 600px; margin: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Nova Skyrift Prompt Generator</h1>
+    <button id="generate">Generate Random Prompt</button>
+    <button id="copy">Copy to Clipboard</button>
+    <textarea id="prompt" readonly placeholder="Your Nova Skyrift prompt will appear here..."></textarea>
+  </div>
+
+  <script>
+    const poses = [
+      "standing,one hand on thighs,one hand on hips,leaning forward,seductive pose",
+      "leaning against an alley wall, subtle smirk, captivating gaze",
+      "dancing alone on an empty dance floor",
+      "sultry pose, seated recline, one leg propped up, resting arm casually sofa arm",
+      "looking at the viewer, posing sexy, flirty, Dutch angle, high angle view",
+      "open mouth, looking back at viewer, part profile, teasing look",
+    ];
+
+    const elements = [
+      "cyberpunk city neon rain",
+      "gothic cathedral arches",
+      "anime speed-lines",
+      "glitch holograms",
+      "dynamic ink splatter",
+      "bioluminescent flora"
+    ];
+
+    const outfits = [
+      "latex bodysuit, tight,glossy, hugging her nice hips and large breasts",
+      "lace-up leather corset hugs her svelte smooth curves",
+      "PVC thigh-high boots with chain accents, mini skirt, and tight tanktop. medium breasts",
+      "cage skirt with glowing ribbons, tight top ripped down the sides, medium perky breasts",
+      "gothic bunny suit, exposed midrift, bunny ears, punk rock centerfold vibe",
+      "a flower patterned mini dress with pastels and light colors contrasts with the darkness of her gothic vibe and the yearning sexy body"
+    ];
+
+    const makeupStyles = [
+      "neon UV face paint, new wave jewelry",
+      "holo chrome eyeshadow, bright lips, slightly puckered",
+      "smoky black tear streaks across her lovely face",
+      "glitter-dusted dark lips, eyes framed by effervescent sprinkles of sex magik",
+      "electric blue eyeliner wings, fierce eyeliner comnpliments her razor tight punk aesthetic",
+      "metallic silver contour, silver necklace hangs like milten shiny metal"
+    ];
+
+    const locations = [
+      "crowded futuristic dancefloor, laser lights",
+      "abandoned cemetery at midnight, dark, mysterious",
+      "underground rave bunker, concrete, dirty, smokey, dark with intense flashes of rave laser lights",
+      "moonlit gothic chapel, sexy gothic priestess summoning demons with her intensely perfect body",
+      "neon-lit alleyway, red light district, she matches the scene with her hooker on LSD aesthetic",
+      "foggy urban junkyard, police lights in the background"
+    ];
+
+    const secretSpice = [
+      "eyeball necklace dripping neon goo",
+      "floating glitch drones orbiting head",
+      "melting candle wax hair",
+      "glitchy TV static border",
+      "levitating disembodied hands",
+      "fractaled portal beacon"
+    ];
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    document.getElementById('generate').addEventListener('click', () => {
+      const prompt = `1girl, solo, ${pick(poses)}, ${pick(elements)}, wearing ${pick(outfits)}, styled with ${pick(makeupStyles)}, set on a ${pick(locations)}, plus ${pick(secretSpice)}, hyper-detailed, cinematic lighting, 8K, ultra textural`; 
+      document.getElementById('prompt').value = prompt;
+    });
+
+    document.getElementById('copy').addEventListener('click', () => {
+      const ta = document.getElementById('prompt');
+      ta.select();
+      document.execCommand('copy');
+      alert('Prompt copied to clipboard!');
+    });
+  </script>
+</body>
+</html>

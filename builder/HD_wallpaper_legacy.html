@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Wallpaper Prompt Builder</title>
+  <!--
+  ==========================================================================
+  HD WALLPAPER LEGACY PROMPT BUILDER
+  ==========================================================================
+  
+  PURPOSE:
+  - Generate high-definition wallpaper prompts
+  - Abstract and geometric art focused
+  - Desktop/mobile wallpaper optimization
+  - Suitable for ultra-HD displays
+  
+  SPECIALIZATION:
+  This builder creates prompts specifically for abstract wallpapers
+  featuring digital art, sci-fi aesthetics, and geometric patterns.
+  Perfect for generating desktop backgrounds, phone wallpapers, and
+  digital art displays.
+  
+  FEATURES:
+  - 4-category prompt assembly system
+  - Sci-fi and digital art focus
+  - High-resolution optimization tags
+  - Randomization for creative exploration
+  - Copy-to-clipboard functionality
+  - Ultra-HD quality suffixes included
+  
+  CATEGORIES:
+  - Intro: Core visual concept and main subject
+  - Colors: Color palettes and schemes
+  - Style: Artistic approach and rendering technique
+  - Scene: Detailed description of visual elements
+  
+  VISUAL THEMES:
+  - Abstract digital art
+  - Sci-fi and cyberpunk aesthetics
+  - Geometric and fractal patterns
+  - Neon and glitch effects
+  - Futuristic and technological imagery
+  - High-contrast compositions
+  
+  OUTPUT OPTIMIZATION:
+  - Automatic inclusion of "8K, ultra HD wallpaper"
+  - Ultra-detailed and cinematic lighting tags
+  - Quality enhancement suffixes
+  - Desktop/mobile display optimization
+  
+  USAGE:
+  1. Select one element from each of the 4 categories
+  2. Watch real-time prompt assembly in text area
+  3. Use randomize to generate creative combinations
+  4. Copy finished prompt for wallpaper generation
+  5. Works best with landscape/portrait aspect ratios
+  
+  TECHNICAL:
+  - Legacy codebase - proven and stable
+  - Minimal dependencies
+  - Fast loading and responsive
+  - Compatible with all modern browsers
+  
+  QUALITY TAGS:
+  Automatically appends: "8K, ultra HD wallpaper, ultra-detailed, 
+  cinematic lighting" for optimal wallpaper generation results.
+  
+  VERSION: Legacy v1.5
+  THEME: HD Abstract Wallpapers
+  RATING: Safe for All Audiences
+  LAST UPDATED: July 2025
+  ==========================================================================
+  -->
+  <style>
+    body { font-family: sans-serif; padding:20px; }
+    .section { float:left; width:23%; margin:1%; }
+    .section h3 { margin-top:0 }
+    ul { list-style:none; padding:0 }
+    li { background:#222; color:#fff; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444 }
+    #promptBox { clear:both; width:100%; height:60px; margin-top:20px; padding:10px; font-size:14px; }
+    #copyBtn, #randBtn { margin-top:10px; padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+  <!-- INTRO -->
+  <div class="section" id="intro">
+    <h3>Intro</h3>
+    <ul>
+      <li onclick="pick('intro',this)">an abstract image of layered glitch stripes</li>
+      <li onclick="pick('intro',this)">a burst of intersecting neon prisms</li>
+      <li onclick="pick('intro',this)">a radiant disco-ball sphere floating in space</li>
+      <li onclick="pick('intro',this)">a swirling vortex of chromatic brushstrokes</li>
+      <li onclick="pick('intro',this)">a futuristic circuitry corridor leading to an orb</li>
+      <li onclick="pick('intro',this)">an explosion of fractal shards in mid-air</li>
+      <li onclick="pick('intro',this)">a cosmic web of glowing neurons</li>
+      <li onclick="pick('intro',this)">a neon wireframe city skyline</li>
+      <!-- NEW -->
+      <li onclick="pick('intro',this)">a crystalline fractal landscape at dawn</li>
+      <li onclick="pick('intro',this)">an infinite digital tunnel of neon glyphs</li>
+    </ul>
+  </div>
+
+  <!-- COLORS -->
+  <div class="section" id="colors">
+    <h3>Colors</h3>
+    <ul>
+      <li onclick="pick('colors',this)">neon pink, electric orange, soft lavender, stark white, deep black</li>
+      <li onclick="pick('colors',this)">fiery yellow, ultraviolet purple, vibrant cyan, hot magenta</li>
+      <li onclick="pick('colors',this)">midnight blue, sunset gold, electric magenta, teal accent</li>
+      <li onclick="pick('colors',this)">hot pink, electric blue, deep black</li>
+      <li onclick="pick('colors',this)">metallic red, polished silver, soft mint glow, white highlights</li>
+      <li onclick="pick('colors',this)">crimson red, obsidian black, ash gray</li>
+      <li onclick="pick('colors',this)">deep navy, electric cobalt, bright white specks</li>
+      <li onclick="pick('colors',this)">neon red, pitch black</li>
+      <!-- NEW -->
+      <li onclick="pick('colors',this)">emerald green, neon yellow, obsidian black</li>
+      <li onclick="pick('colors',this)">rose gold, cerulean blue, pure white</li>
+    </ul>
+  </div>
+
+  <!-- STYLE -->
+  <div class="section" id="style">
+    <h3>Style</h3>
+    <ul>
+      <li onclick="pick('style',this)">high-contrast digital glitch aesthetic with sharp-edged bands and organic gradients</li>
+      <li onclick="pick('style',this)">dynamic sci-fi neon with bold highlights and glowing outlines</li>
+      <li onclick="pick('style',this)">futuristic synthwave with crisp grid lines and smooth metallic sheen</li>
+      <li onclick="pick('style',this)">fluid digital painting with motion-blur streaks and gradient transitions</li>
+      <li onclick="pick('style',this)">3D sci-fi architectural render with high-detail surfaces</li>
+      <li onclick="pick('style',this)">hyper-real CGI debris with wireframe accents and micro-particles</li>
+      <li onclick="pick('style',this)">macro sci-fi splash with delicate filament lines and bokeh nodes</li>
+      <li onclick="pick('style',this)">minimal cyberpunk noir with fine grid lines and ambient glow</li>
+      <!-- NEW -->
+      <li onclick="pick('style',this)">psychedelic fractal art with crystalline details</li>
+      <li onclick="pick('style',this)">infinite corridor style with vanishing perspective and glowing hieroglyphs</li>
+    </ul>
+  </div>
+
+  <!-- SCENE -->
+  <div class="section" id="scene">
+    <h3>Scene</h3>
+    <ul>
+      <li onclick="pick('scene',this)">iridescent ribbons ripple and overlap in offset slices, like a corrupted signal folding into itself</li>
+      <li onclick="pick('scene',this)">geometric beams collide at a blazing core, scattering refracted light across a dark void</li>
+      <li onclick="pick('scene',this)">a glowing wireframe globe hovers above a reflective plane, casting a surreal halo</li>
+      <li onclick="pick('scene',this)">circular arcs and pulses wrap around an invisible core, as if sonic waves visualized</li>
+      <li onclick="pick('scene',this)">endless panels of tech plating guide the eye toward a hovering luminescent sphere</li>
+      <li onclick="pick('scene',this)">geometric fragments erupt outward, connected by glowing red filaments</li>
+      <li onclick="pick('scene',this)">messy clusters of luminescent threads weave through a dark void like neural pathways</li>
+      <li onclick="pick('scene',this)">towering outlines of skyscrapers rise from a horizon grid, dotted with drifting light orbs</li>
+      <!-- NEW -->
+      <li onclick="pick('scene',this)">shimmering tessellated surfaces rise like digital mountains under a glowing horizon</li>
+      <li onclick="pick('scene',this)">glyph-like patterns scroll along tunnel walls toward a bright vanishing point</li>
+    </ul>
+  </div>
+
+  <!-- OUTPUT & CONTROLS -->
+  <textarea id="promptBox" placeholder="Your assembled prompt…" readonly></textarea><br>
+  <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+  <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+
+  <script>
+    const sel = {intro:'', colors:'', style:'', scene:''};
+    const suffix = '8K, ultra HD wallpaper, ultra-detailed, cinematic lighting';
+
+    function pick(sec,el) {
+      document.querySelectorAll('#'+sec+' li').forEach(li=>li.style.background='#222');
+      el.style.background='#555';
+      sel[sec] = el.textContent;
+      update();
+    }
+
+    function update() {
+      const core = [sel.intro, sel.colors, sel.style, sel.scene]
+                    .filter(v=>v).join(', ');
+      document.getElementById('promptBox').value = core
+        ? core + ', ' + suffix
+        : '';
+    }
+
+    function copyPrompt() {
+      const box = document.getElementById('promptBox');
+      box.select();
+      document.execCommand('copy');
+      alert('Prompt copied! 🚀');
+    }
+
+    function randomize() {
+      ['intro','colors','style','scene'].forEach(sec => {
+        const list = document.querySelectorAll('#'+sec+' li');
+        const choice = list[Math.floor(Math.random()*list.length)];
+        choice.click();
+      });
+    }
+  </script>
+</body>
+</html>

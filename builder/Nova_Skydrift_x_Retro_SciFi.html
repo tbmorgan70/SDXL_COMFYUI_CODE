@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nova Skyrift x Control Room Prompt Builder</title>
+  <style>
+    body { font-family: sans-serif; padding:20px; background:#111; color:#fff; }
+    .section { float:left; width:15%; margin:1%; }
+    .section h3 { margin-top:0 }
+    ul { list-style:none; padding:0 }
+    li { background:#222; color:#fff; margin:5px 0; padding:8px; cursor:pointer; border-radius:4px; }
+    li:hover { background:#444 }
+    #promptBox { clear:both; width:100%; height:100px; margin-top:20px; padding:10px; font-size:14px; background:#222; color:#fff; }
+    #copyBtn, #randBtn, #toggleWeirdBtn { margin-top:10px; padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+
+<h1>Nova Skyrift x Retro Sci-Fi Prompt Builder</h1>
+
+<div class="section" id="setting">
+  <h3>Setting</h3>
+  <ul>
+    <li onclick="pick('setting',this)">holographic operations hub on a mining colony</li>
+    <li onclick="pick('setting',this)">alien tech-infused jungle bunker</li>
+    <li onclick="pick('setting',this)">orbiting control pod above a dying planet</li>
+    <li onclick="pick('setting',this)">retro-style mission control beneath a volcano</li>
+    <li onclick="pick('setting',this)">sunken tech temple running on forgotten power</li>
+  </ul>
+</div>
+
+<div class="section" id="subject">
+  <h3>Subject</h3>
+  <ul>
+    <li onclick="pick('subject',this)">1girl in a revealing latex bodysuit with holographic straps</li>
+    <li onclick="pick('subject',this)">1girl in mesh combat wear with glowing tattoos</li>
+    <li onclick="pick('subject',this)">1girl as a rebellious space officer with a torn uniform</li>
+    <li onclick="pick('subject',this)">1girl in a chromed bikini armor with neural uplink visor</li>
+    <li onclick="pick('subject',this)">1girl lounging in a skin-tight synth-leather jumpsuit</li>
+  </ul>
+</div>
+
+<div class="section" id="background">
+  <h3>Background</h3>
+  <ul>
+    <li onclick="pick('background',this)">glowing red and blue analog interfaces</li>
+    <li onclick="pick('background',this)">chaotic wire tangle spilling out from wall panels</li>
+    <li onclick="pick('background',this)">misty atmosphere with hazard labels and blinking lights</li>
+    <li onclick="pick('background',this)">weathered console with warning tape and bullet holes</li>
+    <li onclick="pick('background',this)">metallic grid floor scattered with torn data sheets</li>
+  </ul>
+</div>
+
+<div class="section" id="style">
+  <h3>Style</h3>
+  <ul>
+    <li onclick="pick('style',this)">1980s sci-fi pulp cover style with vibrant grain</li>
+    <li onclick="pick('style',this)">high-gloss cyberpunk aesthetic with moody haze</li>
+    <li onclick="pick('style',this)">digital painting with volumetric lighting</li>
+    <li onclick="pick('style',this)">retro anime cel shading with futuristic tones</li>
+    <li onclick="pick('style',this)">stylized neon brutalism</li>
+  </ul>
+</div>
+
+<div class="section" id="flavor">
+  <h3>Flavor</h3>
+  <ul>
+    <li onclick="pick('flavor',this)">tight minimal uniform with glowing accents</li>
+    <li onclick="pick('flavor',this)">badge-insignia across chestplate glinting under lights</li>
+    <li onclick="pick('flavor',this)">cracks in her visor and ambient sparks</li>
+    <li onclick="pick('flavor',this)">fingerless gloves gripping a joystick</li>
+    <li onclick="pick('flavor',this)">reflection of fire or explosions across glass screens</li>
+  </ul>
+</div>
+
+<div class="section" id="spice">
+  <h3>Spice</h3>
+  <ul>
+    <li onclick="pick('spice',this)">tentacle-like cables wrapped sensually around her legs</li>
+    <li onclick="pick('spice',this)">neon tattoos glowing on her back under blacklight</li>
+    <li onclick="pick('spice',this)">red hologram projected over her exposed midriff</li>
+    <li onclick="pick('spice',this)">sensual pose contrasting with grim surroundings</li>
+    <li onclick="pick('spice',this)">robotic hand gently brushing her hair aside</li>
+  </ul>
+</div>
+
+<textarea id="promptBox" placeholder="Your Nova Skyrift prompt will appear here…" readonly></textarea><br>
+<button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+<button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+
+<script>
+  const sel = {setting:'', subject:'', background:'', style:'', flavor:'', spice:''};
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    el.style.background='#555';
+    sel[sec] = el.textContent;
+    update();
+  }
+
+  function update() {
+    const core = ['1girl, solo', sel.setting, sel.subject, sel.background, sel.style, sel.flavor, sel.spice]
+      .filter(v => v).join(', ');
+    document.getElementById('promptBox').value = core
+      ? core + ', retro sci-fi control room, ultra-detailed, cinematic lighting, 4K render'
+      : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied! 🚀');
+  }
+
+  function randomize() {
+    ['setting','subject','background','style','flavor','spice'].forEach(sec => {
+      const list = document.querySelectorAll('#'+sec+' li');
+      const choice = list[Math.floor(Math.random()*list.length)];
+      choice.click();
+    });
+  }
+</script>
+
+</body>
+</html>

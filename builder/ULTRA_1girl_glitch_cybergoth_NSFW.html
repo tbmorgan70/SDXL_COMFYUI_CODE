@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🔥 Ultra-Heavy Glitch Prompt Generator 🔥</title>
+  <style>
+    body { background:#111; color:#eee; font-family:sans-serif; text-align:center; padding:20px; }
+    button { margin:10px; padding:12px 24px; font-size:16px; cursor:pointer; border:none; border-radius:4px; }
+    #genBtn { background:#e91e63; color:#fff; }
+    #copyBtn { background:#03a9f4; color:#fff; }
+    textarea { width:100%; height:140px; margin-top:10px; padding:10px; font-size:14px; background:#222; color:#0f0; border:none; border-radius:4px; }
+  </style>
+</head>
+<body>
+
+<!-- add this right above your buttons -->
+<label style="display:block; margin:10px 0; font-size:14px;">
+  <input type="checkbox" id="nsfwToggle" />
+  🔞 NSFW: Adults Only
+</label>
+
+
+  <h1>Ultimate Glitch-Goth Prompt Maker</h1>
+  <button id="genBtn">🎲 Generate Prompt</button>
+  <button id="copyBtn">📋 Copy to Clipboard</button>
+  <textarea id="promptBox" readonly placeholder="Your next-level prompt appears here…"></textarea>
+
+  <script>
+  const subjects = [
+    "1girl in gothic burlesque attire",
+    "female erotic dancer with round breasts",
+    "hyper-shiny vinyl mannequin",
+    "woman demon overlord with glowing horns",
+    "android performer in sheer mesh",
+    "abstract fractal humanoid entity",
+    "cyberpunk cyborg goddess",
+    "gilded cyber-siren with broken pixel wings",
+    "mirror-polished androgynous statue",
+    "neon punk ballerina with glitch tears",
+    "dystopian priestess in data robes",
+    "bioluminescent forest nymph glitch variant"
+  ];
+
+  // ← NEW Facial Expressions category
+  const facialExpressions = [
+    "sultry gaze with half-lidded eyes",
+    "manic laugh with glitching teeth",
+    "wide-eyed terror framed by static",
+    "teardrop sliding through digital shards",
+    "smirk with flickering neon veins",
+    "blank stare interrupted by pixel tears",
+    "angry snarl with fractal eyebrows",
+    "ecstatic grin under glitch halo",
+    "wistful look as if haunted by code",
+    "feral grin with data shards in mouth"
+  ];
+
+  const settings = [
+    "dancing on the altar of an old gothic church",
+    "hospital operating room under fluorescent lights",
+    "neon-lit adult entertainment district window",
+    "abandoned cathedral laced with glitching holograms",
+    "underground cyberpunk rave bunker",
+    "foggy Victorian graveyard under gaslight",
+    "retro futurist control pod above a dying planet",
+    "novelty store window with disco balls",
+    "glitching VR nightclub in zero gravity",
+    "dali-esque melting architecture cityscape",
+    "data center with flickering server stacks",
+    "underwater techno cathedral of coral"
+  ];
+
+  const effects = [
+    "heavy deinterlaced video glitch",
+    "intricate geometric static interference",
+    "glitch chromatic aberration",
+    "matryoshka effect of nested shards",
+    "fractured diamond shards explosion",
+    "digital VHS-style glitch aesthetic",
+    "drone deinterlaced glitch bursts",
+    "binary high-pass filter distortion",
+    "audio-reactive waveform distortions",
+    "pixel-sorting snow glitch",
+    "scanline synchronized stutter",
+    "RGB splitting rainbow trails"
+  ];
+
+  const colors = [
+    "neon pink & electric orange high contrast",
+    "90s VHS bright color scheme",
+    "desaturated dark palette on matte black",
+    "tertiary neon spectrum (cyan/magenta/yellow)",
+    "chromatic diffusion over fractal spirals",
+    "vivid Afrofuturism contrasts",
+    "hyper-detailed 8K neon glow",
+    "UV blacklight neon highlight",
+    "psychedelic fractal gradient",
+    "iridescent metallic sheen",
+    "silicon valley glow (cool blues and teals)"
+  ];
+
+  const spices = [
+    "floating glitch drones orbiting her head",
+    "lipstick smear & chipped nail polish",
+    "satanic symbols & demonic iconography",
+    "fractaled portal beacon in background",
+    "shattered mirror fragments raining down",
+    "holographic glitch butterflies fluttering around",
+    "electric glitch veins pulsating under skin",
+    "levitating shards of corrupted glass",
+    "neon code rain cascading off her shoulders",
+    "ghostly pixel silhouettes emerging from shadows",
+    "runic circuit tattoos glowing on her flesh",
+    "dripping data shards melting off form",
+    "fractured RGB halos flickering overhead",
+    "smoke rings made of binary bits"
+  ];
+
+  const adultSpices = [
+    "erotic dancer in lace lingerie and garter belts",
+    "sensual sheen of wet skin with droplets glistening",
+    "silhouette teasingly backlit, full nudity implied",
+    "lace corset & fishnet stockings, high heels",
+    "candlelit curves with soft-focus glow, sensual",
+    "whisper of fetish harness straps and leather",
+    "delicate hands trailing along thigh",
+    "bare torso draped in silk sheets"
+  ];
+
+  const cameras = [
+    "fisheye close-up portrait",
+    "ultra-wide cinematic angle",
+    "low-angle dramatic shot",
+    "macro extreme close-up",
+    "bird's-eye top-down view",
+    "3-point studio lighting frame",
+    "dynamic POV handheld vibe",
+    "abstract reflection in broken glass"
+  ];
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  document.getElementById('genBtn').onclick = () => {
+    const useNSFW = document.getElementById('nsfwToggle').checked;
+    const chosenSpice = useNSFW ? pick(adultSpices) : pick(spices);
+
+    const prompt = [
+      "1girl, solo",
+      pick(subjects),
+      pick(facialExpressions),    // ← inserted here
+      pick(settings),
+      pick(effects),
+      pick(colors),
+      "plus",
+      chosenSpice,
+      pick(cameras),
+      "hyper-detailed, cinematic lighting, 8K, ultra textural"
+    ].join(', ');
+
+    document.getElementById('promptBox').value = prompt;
+  };
+
+  document.getElementById('copyBtn').onclick = () => {
+    const ta = document.getElementById('promptBox');
+    ta.select();
+    document.execCommand('copy');
+    alert('Prompt copied! Let’s get this bread. 🍞');
+  };
+</script>
+
+</body>
+</html>

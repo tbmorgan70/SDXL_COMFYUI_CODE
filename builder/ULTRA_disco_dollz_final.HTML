@@ -1,9 +1,80 @@
 <!DOCTYPE html>
+<!-- ULTRA Dual Toggle Prompt Builder -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ULTRA Dual Toggle Prompt Builder</title>
+  <title>ULTRA Disco Dollz Prompt Builder</title>
   <style>
+    /* Disco Glitch Effects */
+    #disco-static {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,0,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255,215,0,0.1) 0%, transparent 50%);
+      animation: discoFlicker 0.12s steps(3) infinite;
+      z-index: 1000;
+    }
+
+    @keyframes discoFlicker {
+      0% { opacity: 0.05; transform: scale(1); }
+      33% { opacity: 0.15; transform: scale(1.01); }
+      66% { opacity: 0.08; transform: scale(0.99); }
+      100% { opacity: 0.12; transform: scale(1.02); }
+    }
+
+    #disco-scanlines {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255,0,255,0.03) 25%,
+          transparent 50%,
+          rgba(0,255,255,0.03) 75%,
+          transparent 100%
+        ),
+        linear-gradient(
+          rgba(255,215,0,0.02) 50%, 
+          transparent 50%
+        ) 0 0 / 100% 2px;
+      animation: scanlineShift 3s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes scanlineShift {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(20px); }
+    }
+
+    /* Disco Ball Sparkles */
+    #disco-sparkles {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.8) 1px, transparent 2px),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 1px, transparent 2px),
+        radial-gradient(circle at 70% 10%, rgba(255,255,255,0.7) 1px, transparent 2px),
+        radial-gradient(circle at 30% 90%, rgba(255,255,255,0.5) 1px, transparent 2px);
+      background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px;
+      animation: sparkleRotate 8s linear infinite;
+      z-index: 998;
+    }
+
+    @keyframes sparkleRotate {
+      0% { transform: rotate(0deg); opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { transform: rotate(360deg); opacity: 0.3; }
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
@@ -12,6 +83,78 @@
       background: linear-gradient(135deg, #1e1b65, #4a148c);
       color: #eee;
       text-align: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff6ec7, #ffe066, #66ff99, #66ccff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: discoTitle 3s ease-in-out infinite, titleGlitch 0.1s infinite;
+      position: relative;
+      text-shadow: 0 0 10px rgba(255,110,199,0.5);
+    }
+
+    @keyframes discoTitle {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes titleGlitch {
+      0%, 90%, 100% { transform: translate(0); }
+      95% { transform: translate(-2px, 1px) skew(-0.5deg); }
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      overflow: hidden;
+    }
+
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -2px 0 #ff6ec7;
+      animation: glitchTop 2s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: 2px 0 #66ccff;
+      animation: glitchBottom 2.5s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    @keyframes glitchTop {
+      0%, 100% { clip: rect(2px, 9999px, 8px, 0); }
+      10% { clip: rect(8px, 9999px, 16px, 0); }
+      20% { clip: rect(4px, 9999px, 12px, 0); }
+      30% { clip: rect(12px, 9999px, 20px, 0); }
+      40% { clip: rect(6px, 9999px, 14px, 0); }
+    }
+
+    @keyframes glitchBottom {
+      0%, 100% { clip: rect(15px, 9999px, 23px, 0); }
+      10% { clip: rect(20px, 9999px, 28px, 0); }
+      20% { clip: rect(18px, 9999px, 26px, 0); }
+      30% { clip: rect(22px, 9999px, 30px, 0); }
+      40% { clip: rect(16px, 9999px, 24px, 0); }
     }
 
     #sections {
@@ -22,6 +165,8 @@
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
+      position: relative;
+      z-index: 10;
     }
 
     .section {
@@ -34,8 +179,30 @@
       box-sizing: border-box;
       border-radius: 8px;
       border: 1px solid #555;
+      position: relative;
+      animation: sectionPulse 4s ease-in-out infinite;
     }
-    .section h3 { margin-top: 0; font-size: 14px; }
+
+    @keyframes sectionPulse {
+      0%, 100% { 
+        box-shadow: 0 0 5px rgba(255,110,199,0.3);
+        border-color: #555;
+      }
+      50% { 
+        box-shadow: 0 0 15px rgba(102,204,255,0.4);
+        border-color: #66ccff;
+      }
+    }
+
+    .section:nth-child(even) {
+      animation-delay: 2s;
+    }
+
+    .section h3 { 
+      margin-top: 0; 
+      font-size: 14px;
+      position: relative;
+    }
     .cat-toggle {
       display: block;
       text-align: left;
@@ -60,43 +227,127 @@
       border-radius: 4px;
       transition: background 0.2s;
     }
-    li:hover { background: #444; }
-    .toggles { margin-bottom: 20px; }
-    .toggles label { margin-right: 20px; font-weight: bold; }
+    li:hover { 
+      background: #444; 
+      transform: translateX(2px);
+      box-shadow: 0 0 8px rgba(255,110,199,0.4);
+      transition: all 0.2s ease;
+    }
+    
+    li.selected {
+      background: rgba(255,110,199,0.3);
+      box-shadow: 0 0 10px rgba(255,110,199,0.6);
+      animation: selectedPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes selectedPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(255,110,199,0.6); }
+      50% { box-shadow: 0 0 20px rgba(255,110,199,0.8); }
+    }
+
     .footer {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
       padding: 10px 0;
+      border-top: 1px solid rgba(255,110,199,0.3);
+      animation: footerGlow 3s ease-in-out infinite;
+      z-index: 1001;
+    }
+
+    @keyframes footerGlow {
+      0%, 100% { border-top-color: rgba(255,110,199,0.3); }
+      50% { border-top-color: rgba(102,204,255,0.5); }
     }
 
     #promptBox {
       width: 90%;
       height: 80px;
       margin: 0;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid rgba(255,110,199,0.5);
+      color: #eee;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      position: relative;
+      animation: promptGlitch 0.2s infinite;
+    }
+
+    @keyframes promptGlitch {
+      0%, 95%, 100% { transform: translate(0); }
+      98% { transform: translate(-1px, 1px); }
+    }
+
+    .toggles { 
+      margin-bottom: 20px; 
+      position: relative;
+      z-index: 10;
+    }
+    .toggles label { 
+      margin-right: 20px; 
+      font-weight: bold;
+      padding: 8px 12px;
+      background: rgba(255,110,199,0.1);
+      border-radius: 15px;
+      border: 1px solid rgba(255,110,199,0.3);
+      transition: all 0.3s ease;
+    }
+    .toggles label:hover {
+      background: rgba(255,110,199,0.2);
+      box-shadow: 0 0 10px rgba(255,110,199,0.4);
     }
 
     button {
       margin: 0 5px;
       padding: 8px 16px;
       font-size: 14px;
-      background: #3949ab;
+      background: linear-gradient(45deg, #3949ab, #5c6bc0);
       color: #fff;
       border: none;
-      border-radius: 4px;
+      border-radius: 20px;
       cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(57,73,171,0.3);
     }
-    button:hover { background: #5c6bc0; }
+    button:hover { 
+      background: linear-gradient(45deg, #5c6bc0, #7986cb);
+      box-shadow: 0 0 20px rgba(57,73,171,0.6);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
   </style>
 </head>
 <body>
-<h1>ULTRA Dual Toggle Prompt Builder</h1>
+<div id="disco-static"></div>
+<div id="disco-scanlines"></div>
+<div id="disco-sparkles"></div>
+
+<h1 class="glitch-text" data-text="ULTRA Dual Toggle Prompt Builder">ULTRA Dual Toggle Prompt Builder</h1>
 <div class="toggles">
   <label><input type="checkbox" id="toggleAB"> ANIME</label>
   <label><input type="checkbox" id="toggleCD"> NSFW</label>
@@ -109,27 +360,23 @@
   <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked> include</label>
   <input type="text" value="bodytype / figure / ethnicity" oninput="updateLabel('bodytype', this.value)">
   <ul>
-    <li onclick="pick('bodytype', this)">classic hourglass curvy figure with large breasts</li>
-    <li onclick="pick('bodytype', this)">european model with petite frame and delicate features</li>
+    <li onclick="pick('bodytype', this)">classic curvy figure with large breasts</li>
+    <li onclick="pick('bodytype', this)">petite frame and delicate features</li>
     <li onclick="pick('bodytype', this)">slender figure with perky breasts</li>
     <li onclick="pick('bodytype', this)">athletic build with toned muscles and strong legs</li>
     <li onclick="pick('bodytype', this)">curvy with soft belly and round hips</li>
-    <li onclick="pick('bodytype', this)">tall and athletic with toned abs</li>
+    <li onclick="pick('bodytype', this)">busty with large breasts and curvy hips</li>
     <li onclick="pick('bodytype', this)">curvy with wide hips and full thighs</li>
     <li onclick="pick('bodytype', this)">slim with long legs and narrow waist</li>
     <li onclick="pick('bodytype', this)">petite with small breasts and dainty frame</li>
     <li onclick="pick('bodytype', this)">voluptuous with soft curves and full breasts</li>
-    <li onclick="pick('bodytype', this)">athletic with defined muscles and strong arms</li>
     <li onclick="pick('bodytype', this)">busty with large breasts and curvy hips</li>
-    <li onclick="pick('bodytype', this)">curvy with soft belly and round hips</li>
     <li onclick="pick('bodytype', this)">slender with long neck and graceful posture</li>
     <li onclick="pick('bodytype', this)">petite with small waist and delicate features</li>
-    <li onclick="pick('bodytype', this)">athletic with toned legs and strong thighs</li>
     <li onclick="pick('bodytype', this)">curvy with full breasts and wide hips</li>
     <li onclick="pick('bodytype', this)">Latina with a soft fuller figure</li>
-    <li onclick="pick('bodytype', this)">dark skinned black woman tall and lean with perky breasts</li>
-    <li onclick="pick('bodytype', this)">pale freckled caucasian, slim and petite</li>
-    <li onclick="pick('bodytype', this)">white American with a softer fuller figure</li>
+    <li onclick="pick('bodytype', this)">tall and lean with perky breasts</li>
+    <li onclick="pick('bodytype', this)">pale freckled, slim and petite</li>
   </ul>
 </div>
 
@@ -295,7 +542,7 @@
     <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">glitter clutch with gold chain strap</li>
     <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">oversized sunglasses and rhinestone choker</li>
     <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">feather boa and rhinestone-studded headband</li>
-    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">platform heels with</li>
+    <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">platform heels with ankle straps</li>
     <li data-toggle1="a" data-toggle2="c" onclick="pick('accessory', this)">disco ball purse and vinyl gloves</li>
 
     <!-- Realism + NSFW -->
@@ -309,20 +556,15 @@
     <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">glowing hover-boombox bag</li>
     <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">floating pixelated heart-shaped purse</li>
     <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">LED bunny ears with sparkle wand</li>
-    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">nipples hard and swollen</li>
-    <li data-toggle1="a" data-toggle2="d" onclick="pick('details', this)">glittery sweat dripping down her body</li>
-
-    <!-- Anime + SFW -->
-    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">glitch lines curling off her elbow</li>
-    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">photochromatic sweat drops that never fall</li>
-    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">halo of floating hearts orbiting her head</li>
-    <li data-toggle1="b" data-toggle2="c" onclick="pick('details', this)">pixelated sparkle trails at her fingertips</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">holographic visor with floating emojis</li>
+    <li data-toggle1="b" data-toggle2="c" onclick="pick('accessory', this)">anime-style cat ears with glow effects</li>
 
     <!-- Anime + NSFW -->
-    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">pierced nipples with glitter cleav</li>
-    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">breasts swollen and glistening</li>
-    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">topless with erect nipples</li>
-    <li data-toggle1="b" data-toggle2="d" onclick="pick('details', this)">nipples swollen and hard</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('accessory', this)">cyberpunk collar with LED display</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('accessory', this)">holographic body chains</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('accessory', this)">pixelated pasties with heart patterns</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('accessory', this)">glowing nipple piercings</li>
+    <li data-toggle1="b" data-toggle2="d" onclick="pick('accessory', this)">virtual reality headset with trailing cables</li>
   </ul>
 </div>
 
@@ -433,7 +675,7 @@
     <li onclick="pick('lighting', this)">harsh spotlight with lens flare and smoke</li>
     <li onclick="pick('lighting', this)">vibrant disco ball reflections with rainbow hues</li>
     <li onclick="pick('lighting', this)">glitchy holographic light patterns</li>
-    <li onclick="pick('lighting', this)">dynamic light beams slicing through fog</li
+    <li onclick="pick('lighting', this)">dynamic light beams slicing through fog</li>
     <li onclick="pick('lighting', this)">glittery disco ball reflections swirling across the scene</li>
     <li onclick="pick('lighting', this)">intense pink-blue bi-color lighting with fog</li>
     <li onclick="pick('lighting', this)">lens flare from spotlight, hazy background</li>
@@ -464,8 +706,12 @@
   }
 
   function pick(sec, el) {
-    document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+    document.querySelectorAll('#'+sec+' li').forEach(li => {
+      li.style.background='#222';
+      li.classList.remove('selected');
+    });
     el.style.background='#555';
+    el.classList.add('selected');
     sel[sec] = el.textContent.trim();
     update();
   }

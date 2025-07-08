@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>1970s Vintage 1Girl Prompt Builder</title>
+  <!--
+  ==========================================================================
+  ULTRA 1GIRL VINTAGE NSFW PROMPT BUILDER
+  ==========================================================================
+  
+  PURPOSE:
+  - Generate 1970s vintage-inspired female character prompts
+  - Specialized for retro aesthetic and vintage styling
+  - NSFW content toggle for mature themes
+  - Optimized for SDXL and ComfyUI workflows
+  
+  FEATURES:
+  - NSFW toggle for content filtering
+  - Era-appropriate vintage styling options
+  - Comprehensive character customization
+  - Real-time prompt assembly
+  - Randomization for creative inspiration
+  - One-click copy functionality
+  
+  CATEGORIES:
+  - Race: Diverse ethnicity options with period-appropriate descriptions
+  - Body Type: Various body types and physical characteristics
+  - Hair: 1970s hairstyles and colors
+  - Clothing: Vintage fashion and retro outfits
+  - Makeup: Period-appropriate cosmetics and styling
+  - Accessories: Vintage jewelry and props
+  - Background: 1970s settings and environments
+  - Poses: Era-appropriate poses and stances
+  - Mood: Emotional expressions and atmosphere
+  
+  CONTENT WARNING:
+  - Contains adult/NSFW content options
+  - Age verification recommended
+  - Toggle switch provides content filtering
+  - Suitable for mature audiences only
+  
+  USAGE:
+  1. Enable/disable NSFW mode using the toggle
+  2. Click elements from each category to build your prompt
+  3. Use "🎲 Randomize" for creative combinations
+  4. Copy completed prompt with "📋 Copy" button
+  5. Use in SDXL/ComfyUI for vintage character generation
+  
+  TECHNICAL:
+  - Responsive design for desktop/mobile
+  - Pure HTML/CSS/JavaScript implementation
+  - No external dependencies
+  - Dark theme optimized for extended use
+  
+  VERSION: ULTRA v3.0
+  THEME: 1970s Vintage
+  RATING: NSFW (18+)
+  LAST UPDATED: July 2025
+  ==========================================================================
+  -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #ffdd57;
+      margin-bottom: 20px;
+    }
+    .section {
+      float: left;
+      width: 23%;
+      margin: 1%;
+      min-width: 150px;
+    }
+    .section h3 {
+      margin-top: 0;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: #ffdd57;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #222;
+      color: #fff;
+      margin: 5px 0;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    li:hover {
+      background: #444;
+    }
+    #promptBox {
+      clear: both;
+      width: 100%;
+      height: 120px;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 14px;
+      background: #222;
+      color: #0f0;
+      border: 1px solid #333;
+      border-radius: 4px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    #copyBtn, #randBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #ffdd57;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #111;
+    }
+    #copyBtn:hover, #randBtn:hover {
+      background: #ffd033;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎬 1970s Vintage 1Girl Prompt Builder</h1>
+  <label><input type="checkbox" id="nsfwToggle" /> 🔞 NSFW Mode</label>
+
+  <!-- Race -->
+  <div class="section" id="race">
+    <h3>Race</h3>
+    <ul>
+      <li onclick="pick('race', this)">pale freckled Caucasian</li>
+      <li onclick="pick('race', this)">dark skinned African American</li>
+      <li onclick="pick('race', this)">Hispanic/Latina</li>
+      <li onclick="pick('race', this)">light skinned African American</li>
+      <li onclick="pick('race', this)">white American with bikini tan lines</li>
+    </ul>
+  </div>
+
+  <!-- Body -->
+  <div class="section" id="body">
+    <h3>Body Type</h3>
+    <ul>
+      <li onclick="pick('body', this)">slim and petite</li>
+      <li onclick="pick('body', this)">curvy hourglass</li>
+      <li onclick="pick('body', this)">athletic build</li>
+      <li onclick="pick('body', this)">tall and lean</li>
+      <li onclick="pick('body', this)">naturally busty</li>
+      <li onclick="pick('body', this)">soft fuller figure</li>
+    </ul>
+  </div>
+
+  <!-- Hair -->
+  <div class="section" id="hair">
+    <h3>Hair</h3>
+    <ul>
+      <li onclick="pick('hair', this)">long feathered layers</li>
+      <li onclick="pick('hair', this)">Afro with round shape</li>
+      <li onclick="pick('hair', this)">bob cut with bangs</li>
+      <li onclick="pick('hair', this)">straight, center-parted</li>
+      <li onclick="pick('hair', this)">curly mop-top style</li>
+      <li onclick="pick('hair', this)">shoulder-length waves</li>
+    </ul>
+  </div>
+
+  <!-- Makeup (Face) -->
+  <div class="section" id="makeup">
+    <h3>Makeup</h3>
+    <ul>
+      <li onclick="pick('makeup', this)">shimmering bronze eyeshadow, matte nude lips</li>
+      <li onclick="pick('makeup', this)">thick winged eyeliner, peach blush</li>
+      <li onclick="pick('makeup', this)">soft pastel eyeshadow, subtle gloss</li>
+      <li onclick="pick('makeup', this)">bold red lips, light cat-eye flick</li>
+      <li onclick="pick('makeup', this)">rose-tinted cheeks, natural brow</li>
+      <li onclick="pick('makeup', this)">bare face with just a hint of mascara</li>
+    </ul>
+  </div>
+
+  <!-- Expression -->
+  <div class="section" id="expression">
+    <h3>Expression</h3>
+    <ul>
+      <li onclick="pick('expression', this)">soft smile, lips closed</li>
+      <li onclick="pick('expression', this)">neutral gaze, lips together</li>
+      <li onclick="pick('expression', this)">pensive look, slight pout</li>
+      <li onclick="pick('expression', this)">subtle smirk, lips sealed</li>
+      <li onclick="pick('expression', this)">dreamy stare, mouth shut</li>
+      <li onclick="pick('expression', this)">calm, serene closed-mouth look</li>
+    </ul>
+  </div>
+
+  <!-- Pose -->
+  <div class="section" id="pose">
+    <h3>Pose</h3>
+    <ul>
+      <li onclick="pick('pose', this)">standing with one hand on hip, slight lean</li>
+      <li onclick="pick('pose', this)">sitting cross-legged on a retro chair</li>
+      <li onclick="pick('pose', this)">leaning against a wood-paneled wall</li>
+      <li onclick="pick('pose', this)">walking with casual sway, head turned</li>
+      <li onclick="pick('pose', this)">arms folded, casual swagger</li>
+      <li onclick="pick('pose', this)">one leg kicked up, playful vibe</li>
+    </ul>
+  </div>
+
+  <!-- Jewelry -->
+  <div class="section" id="jewelry">
+    <h3>Jewelry</h3>
+    <ul>
+      <li onclick="pick('jewelry', this)">large hoop earrings</li>
+      <li onclick="pick('jewelry', this)">layered beaded necklaces</li>
+      <li onclick="pick('jewelry', this)">colorful plastic bangles</li>
+      <li onclick="pick('jewelry', this)">charm bracelet with peace sign</li>
+      <li onclick="pick('jewelry', this)">thin chain with small locket</li>
+      <li onclick="pick('jewelry', this)">bold statement ring</li>
+    </ul>
+  </div>
+
+  <!-- Eyes -->
+  <div class="section" id="eyes">
+    <h3>Eyes</h3>
+    <ul>
+      <li onclick="pick('eyes', this)">almond-shaped brown eyes</li>
+      <li onclick="pick('eyes', this)">large hazel eyes with heavy lashes</li>
+      <li onclick="pick('eyes', this)">narrow green eyes, mysterious glare</li>
+      <li onclick="pick('eyes', this)">bright blue eyes, high contrast</li>
+      <li onclick="pick('eyes', this)">soft gray eyes, dreamy look</li>
+      <li onclick="pick('eyes', this)">dark eyes with subtle shimmer</li>
+    </ul>
+  </div>
+
+  <!-- Setting (CSV tags + Descriptions) -->
+  <div class="section" id="setting">
+    <h3>Setting</h3>
+    <ul>
+      <li onclick="pick('setting', this)">vintage bar, wooden counter, brass foot rail</li>
+      <li onclick="pick('setting', this)">disco floor, mirror ball, colored lights</li>
+      <li onclick="pick('setting', this)">retro uniform, patrol car interior, badge</li>
+      <li onclick="pick('setting', this)">70s classroom, chalkboard, wooden desk</li>
+      <li onclick="pick('setting', this)">vintage hospital ward, white uniform, stethoscope</li>
+      <li onclick="pick('setting', this)">wood-paneled living room, shag carpet, lava lamp</li>
+      <li onclick="pick('setting', this)">vinyl-covered diner booth, jukebox, neon sign</li>
+      <li onclick="pick('setting', this)">flower-patterned wallpaper backdrop, macramé plant hanger</li>
+      <li onclick="pick('setting', this)">retro convertible car interior, bench seat, chrome dashboard</li>
+      <li onclick="pick('setting', this)">sunlit park with vintage benches, large trees, warm glow</li>
+    </ul>
+  </div>
+
+  <!-- Outfit (Placeholders with Suggested Prompts) -->
+  <div class="section" id="outfit">
+    <h3>Outfit</h3>
+    <ul id="outfit-sfw">
+      <li onclick="pick('outfit', this)">bell-bottom jeans and tirn tie-dye half-shirt shirt</li>
+      <li onclick="pick('outfit', this)">floral maxi dress and platform sandals</li>
+      <li onclick="pick('outfit', this)">high-waisted shorts and halter top</li>
+      <li onclick="pick('outfit', this)">denim vest and flared pants</li>
+      <li onclick="pick('outfit', this)">striped turtleneck and mini skirt</li>
+    </ul>
+    <ul id="outfit-nsfw" style="display:none;">
+      <li onclick="pick('outfit', this)">see-through crochet top and lace panties</li>
+      <li onclick="pick('outfit', this)">fully nude with unshaven vagina</li>
+      <li onclick="pick('outfit', this)">wearing only short cropped fur coat and nothing else</li>
+      <li onclick="pick('outfit', this)">torn vintage T-shirt exposing breasts and low-waisted jean shorts revealing panties underneath</li>
+      <li onclick="pick('outfit', this)">topless with retro high-waisted briefs</li>
+      <li onclick="pick('outfit', this)">boarding school jacket and pleated skirt, knee socks</li>
+    </ul>
+  </div>
+
+  <!-- Prompt Box & Controls -->
+  <textarea id="promptBox" placeholder="Your assembled prompt will appear here…" readonly></textarea><br />
+  <button id="randBtn">🎲 Randomize</button>
+  <button id="copyBtn">📋 Copy Prompt</button>
+
+  <script>
+    // Store current selections
+    const sel = {
+      race: '',
+      body: '',
+      hair: '',
+      makeup: '',
+      expression: '',
+      pose: '',
+      jewelry: '',
+      eyes: '',
+      setting: '',
+      outfit: ''
+    };
+
+    // Handle clicking on a list item
+    function pick(category, el) {
+      // Clear previous highlight
+      document.querySelectorAll('#' + category + ' li').forEach(li => {
+        li.style.background = '#222';
+      });
+      // Highlight this choice
+      el.style.background = '#555';
+      // Save selection
+      sel[category] = el.textContent.trim();
+      updatePrompt();
+    }
+
+    // Build and update the prompt text
+    function updatePrompt() {
+      const parts = [
+        '1girl, solo',
+        sel.race,
+        sel.body,
+        sel.outfit,
+        sel.hair,
+        sel.makeup,
+        sel.expression,
+        sel.pose,
+        sel.jewelry,
+        sel.eyes,
+        sel.setting
+      ].filter(v => v && v !== '');
+
+      const suffix = 'vintage 1970s style, film grain, warm tones, soft focus, photorealistic';
+      document.getElementById('promptBox').value = parts.length
+        ? parts.join(', ') + ', ' + suffix
+        : '';
+    }
+
+    // Copy prompt to clipboard
+    function copyPrompt() {
+      const box = document.getElementById('promptBox');
+      box.select();
+      document.execCommand('copy');
+      alert('Prompt copied to clipboard! ✨');
+    }
+
+    // Randomize across all categories (including placeholders)
+    function randomize() {
+      const nsfw = document.getElementById('nsfwToggle').checked;
+      // Show/hide appropriate outfit UL
+      document.getElementById('outfit-sfw').style.display = nsfw ? 'none' : 'block';
+      document.getElementById('outfit-nsfw').style.display = nsfw ? 'block' : 'none';
+
+      function randomPickFromList(id) {
+        const items = Array.from(document.querySelectorAll('#' + id + ' li'));
+        if (!items.length) return '';
+        const choice = items[Math.floor(Math.random() * items.length)];
+        // Highlight selection
+        items.forEach(li => li.style.background = '#222');
+        choice.style.background = '#555';
+        return choice.textContent.trim();
+      }
+
+      sel.race       = randomPickFromList('race');
+      sel.setting    = randomPickFromList('setting');
+      sel.body       = randomPickFromList('body');
+      sel.hair       = randomPickFromList('hair');
+      sel.makeup     = randomPickFromList('makeup');
+      sel.expression = randomPickFromList('expression');
+      sel.pose       = randomPickFromList('pose');
+      sel.jewelry    = randomPickFromList('jewelry');
+      sel.eyes       = randomPickFromList('eyes');
+      sel.outfit     = nsfw
+        ? randomPickFromList('outfit-nsfw')
+        : randomPickFromList('outfit-sfw');
+
+      updatePrompt();
+    }
+
+    document.getElementById('randBtn').onclick = randomize;
+    document.getElementById('copyBtn').onclick = copyPrompt;
+  </script>
+
+</body>
+</html>
