@@ -48,13 +48,28 @@ def extract_comfyui_metadata(image_path):
 
 def filter_metadata_for_grouping(metadata):
     base = None
+    base_candidates = []
     loras = []
-    for entry in metadata.values():
+    
+    for node_id, entry in metadata.items():
+        class_type = entry.get('class_type', '')
         inputs = entry.get('inputs', {})
-        if base is None and 'ckpt_name' in inputs:
-            base = inputs['ckpt_name']
+        
+        # Collect checkpoint candidates, but skip refiner nodes
+        if 'ckpt_name' in inputs:
+            is_refiner = ('refiner' in class_type.lower() or 
+                         'refiner_ckpt' in inputs or 
+                         'refiner_model' in inputs or
+                         ('base_ckpt' in inputs and 'refiner_ckpt' in inputs))
+            
+            if not is_refiner:
+                base_candidates.append(inputs['ckpt_name'])
+        
         if 'lora_name' in inputs:
             loras.append(inputs['lora_name'])
+    
+    # Use the first non-refiner checkpoint as base
+    base = base_candidates[0] if base_candidates else None
     loras = sorted(set(loras))
     return (base or 'None') + (' | ' + ','.join(loras) if loras else '')
 
@@ -134,9 +149,17 @@ def extract_comprehensive_metadata(metadata):
         class_type = entry.get('class_type', '')
         inputs = entry.get('inputs', {})
         
-        # Extract model information
+        # Extract model information - prioritize base models over refiners
         if 'ckpt_name' in inputs:
-            result['models']['checkpoint'] = inputs['ckpt_name']
+            is_refiner = ('refiner' in class_type.lower() or 
+                         'refiner_ckpt' in inputs or 
+                         'refiner_model' in inputs or
+                         ('base_ckpt' in inputs and 'refiner_ckpt' in inputs))
+            
+            # Only set as main checkpoint if it's not a refiner and we haven't found one yet
+            if not is_refiner and 'checkpoint' not in result['models']:
+                result['models']['checkpoint'] = inputs['ckpt_name']
+        
         if 'vae_name' in inputs:
             result['models']['vae'] = inputs['vae_name']
         
@@ -229,15 +252,26 @@ def extract_comprehensive_metadata(metadata):
                             'node_type': 'text_embedded'
                         })
         
-        # Extract sampling parameters
+        # Extract sampling parameters - prioritize base model sampling over refiner
         if class_type in ['KSampler', 'KSamplerAdvanced']:
-            result['sampling'].update({
-                'steps': inputs.get('steps'),
-                'cfg': inputs.get('cfg'),
-                'sampler_name': inputs.get('sampler_name'),
-                'scheduler': inputs.get('scheduler'),
-                'denoise': inputs.get('denoise')
-            })
+            # Check if this is likely a refiner sampler
+            is_refiner_sampler = ('refiner' in class_type.lower() or 
+                                 'start_at_step' in inputs or 
+                                 'end_at_step' in inputs or
+                                 ('switch_at' in str(inputs).lower()))
+            
+            # Only set sampling parameters if we haven't found them yet, or if this is clearly a base model sampler
+            if not result['sampling'] or not is_refiner_sampler:
+                sampling_params = {
+                    'steps': inputs.get('steps'),
+                    'cfg': inputs.get('cfg'),
+                    'sampler_name': inputs.get('sampler_name'),
+                    'scheduler': inputs.get('scheduler'),
+                    'denoise': inputs.get('denoise')
+                }
+                # Only update if we found meaningful parameters
+                if any(v is not None for v in sampling_params.values()):
+                    result['sampling'].update(sampling_params)
         
         # Extract seed information (exclude FaceDetailer and similar noise)
         if 'seed' in inputs:
@@ -502,10 +536,27 @@ def get_base_checkpoint(image_path):
     meta = extract_comfyui_metadata(image_path)
     if not meta:
         return None
+    
+    base_candidates = []
     for entry in meta.values():
-        ckpt = entry.get('inputs', {}).get('ckpt_name')
-        if ckpt:
-            return os.path.splitext(ckpt.replace('\\','/').split('/')[-1])[0]
+        class_type = entry.get('class_type', '')
+        inputs = entry.get('inputs', {})
+        
+        # Look for checkpoint names, but skip refiner nodes
+        if 'ckpt_name' in inputs:
+            is_refiner = ('refiner' in class_type.lower() or 
+                         'refiner_ckpt' in inputs or 
+                         'refiner_model' in inputs or
+                         ('base_ckpt' in inputs and 'refiner_ckpt' in inputs))
+            
+            if not is_refiner:
+                base_candidates.append(inputs['ckpt_name'])
+    
+    # Return the first non-refiner checkpoint found
+    if base_candidates:
+        ckpt = base_candidates[0]
+        return os.path.splitext(ckpt.replace('\\','/').split('/')[-1])[0]
+    
     return None
 
 
