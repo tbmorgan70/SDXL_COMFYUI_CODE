@@ -36,6 +36,8 @@ class UnifiedSorter(ctk.CTk):
         self.color_src = ""
         self.color_out = ""
         self.last_sorted_root = None
+        self.last_output_dir = None
+        self.last_file_count = 0
 
         self._build_ui()
         self._switch_mode()
@@ -61,6 +63,11 @@ class UnifiedSorter(ctk.CTk):
 
         self.run_btn = ctk.CTkButton(self, text="\u23E9 Run", command=self.run)
         self.run_btn.pack(fill="x", pady=(0, 10))
+
+        # Button to open output directory
+        self.open_dir_btn = ctk.CTkButton(self, text="\U0001F4C2 Open Output Folder", 
+                                         command=self.open_output_directory, state="disabled")
+        self.open_dir_btn.pack(fill="x", pady=(0, 10))
 
         self.status = ctk.CTkTextbox(self, width=700, height=400, corner_radius=10)
         self.status.pack(fill="both", expand=True)
@@ -232,17 +239,43 @@ class UnifiedSorter(ctk.CTk):
     def clear_log(self) -> None:
         self.status.delete("0.0", "end")
 
+    def open_output_directory(self) -> None:
+        """Open the last output directory in the file explorer"""
+        if self.last_output_dir and os.path.exists(self.last_output_dir):
+            if sys.platform == "win32":
+                os.startfile(self.last_output_dir)
+            elif sys.platform == "darwin":  # macOS
+                os.system(f'open "{self.last_output_dir}"')
+            else:  # Linux
+                os.system(f'xdg-open "{self.last_output_dir}"')
+        else:
+            messagebox.showwarning("No Output Directory", "No output directory available or directory doesn't exist.")
+
     # --- Sorting operations ---
     def _do_text_sort(self) -> None:
         self.clear_log()
         self.log("Starting text file sort...\n")
+        self.open_dir_btn.configure(state="disabled")
         orig = sys.stdout
         sys.stdout = self
         try:
             placeholders = {k: v.get() or None for k, v in self.placeholders.items()}
+            # Count files before sorting
+            files_before = len([f for f in os.listdir(self.text_dir) if os.path.isfile(os.path.join(self.text_dir, f))])
+            
             text_file_sorter.sort_text_files(self.text_dir, placeholders, move=self.move_text_var.get())
+            
+            # Count files after sorting and calculate moved/copied files
+            files_after = len([f for f in os.listdir(self.text_dir) if os.path.isfile(os.path.join(self.text_dir, f))])
+            processed_files = files_before - files_after if self.move_text_var.get() else files_before
+            
+            self.last_output_dir = self.text_dir
+            self.last_file_count = processed_files
+            self.open_dir_btn.configure(state="normal")
+            
             sys.stdout = orig
-            self.log("\nDone")
+            action = "moved" if self.move_text_var.get() else "copied"
+            self.log(f"\nDone! {processed_files} files {action} and sorted.")
         except Exception as e:
             sys.stdout = orig
             self.log(f"\nError: {e}")
@@ -250,11 +283,17 @@ class UnifiedSorter(ctk.CTk):
     def _do_comfy_sort(self) -> None:
         self.clear_log()
         self.log("Starting ComfyUI batch sort...\n")
+        self.open_dir_btn.configure(state="disabled")
         orig = sys.stdout
         sys.stdout = self
         try:
             sorted_root = self.comfy_out if self.comfy_out else os.path.join(self.comfy_src, "sorted")
             self.last_sorted_root = sorted_root
+            
+            # Count PNG files before processing
+            png_files = [f for f in os.listdir(self.comfy_src) if f.lower().endswith('.png')]
+            total_pngs = len(png_files)
+            
             if os.path.exists(sorted_root) and not self.comfy_retain_var.get():
                 shutil.rmtree(sorted_root)
 
@@ -263,16 +302,25 @@ class UnifiedSorter(ctk.CTk):
             comfy_sort.create_gen_meta_files(self.comfy_src, renamed, gen_data_dir)
             comfy_sort.sort_by_base(self.comfy_src, sorted_root, move=self.comfy_move_var.get())
 
+            # Count other files moved
+            other_files_moved = 0
             other_root = os.path.join(sorted_root, 'Other Files')
             os.makedirs(other_root, exist_ok=True)
             for fn in os.listdir(self.comfy_src):
                 p = os.path.join(self.comfy_src, fn)
                 if os.path.isfile(p) and not fn.lower().endswith('.png'):
                     shutil.move(p, os.path.join(other_root, fn))
+                    other_files_moved += 1
                     print(f"[Moved Other] {fn}")
 
+            self.last_output_dir = sorted_root
+            self.last_file_count = total_pngs + other_files_moved
+            self.open_dir_btn.configure(state="normal")
+            
             sys.stdout = orig
-            self.log("\nDone")
+            action = "moved" if self.comfy_move_var.get() else "copied"
+            self.log(f"\nDone! {total_pngs} PNG files {action} and sorted, {other_files_moved} other files moved.")
+            self.log(f"Output directory: {sorted_root}")
         except Exception as e:
             sys.stdout = orig
             self.log(f"\nError: {e}")
@@ -280,6 +328,7 @@ class UnifiedSorter(ctk.CTk):
     def _do_color_sort(self) -> None:
         self.clear_log()
         self.log("Starting color-based image sort...\n")
+        self.open_dir_btn.configure(state="disabled")
         orig = sys.stdout
         sys.stdout = self
         try:
@@ -303,14 +352,19 @@ class UnifiedSorter(ctk.CTk):
             if self.color_preview_var.get():
                 color_sorter.create_color_preview(output_dir, color_stats)
             
+            self.last_output_dir = output_dir
+            self.last_file_count = len(processed_files)
+            self.open_dir_btn.configure(state="normal")
+            
             sys.stdout = orig
-            self.log("\n=== Color Sorting Summary ===")
-            self.log(f"Total images processed: {len(processed_files)}")
+            action = "moved" if self.color_move_var.get() else "copied"
+            self.log(f"\n=== Color Sorting Summary ===")
+            self.log(f"Total images processed: {len(processed_files)} files {action}")
             self.log("Color distribution:")
             for color, count in sorted(color_stats.items()):
                 self.log(f"  {color}: {count} files")
             self.log(f"\nOutput directory: {output_dir}")
-            self.log("\nDone! 🎨")
+            self.log(f"\nDone! 🎨 {len(processed_files)} images {action} and sorted by color.")
             
         except Exception as e:
             sys.stdout = orig
