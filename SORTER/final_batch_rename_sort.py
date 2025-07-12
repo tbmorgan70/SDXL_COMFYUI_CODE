@@ -142,8 +142,9 @@ def extract_comprehensive_metadata(metadata):
         
         # Extract refiner information - improved detection
         if ('refiner' in class_type.lower() or 
-            any(key in inputs for key in ['refiner_ckpt', 'refiner_model', 'base_ckpt']) or
-            class_type in ['KSamplerAdvanced'] and 'start_at_step' in inputs):
+            any(key in inputs for key in ['refiner_ckpt', 'refiner_model']) or
+            (class_type in ['KSamplerAdvanced'] and 'start_at_step' in inputs and 'refiner' in str(inputs).lower()) or
+            ('base_ckpt' in inputs and 'refiner_ckpt' in inputs)):  # Only treat base_ckpt as refiner if refiner_ckpt is also present
             
             refiner_info = {}
             
@@ -153,8 +154,8 @@ def extract_comprehensive_metadata(metadata):
             elif 'refiner_model' in inputs:
                 refiner_info['model'] = inputs['refiner_model']
             
-            # Extract base model for refiner
-            if 'base_ckpt' in inputs:
+            # Extract base model for refiner - only if this is actually a refiner node
+            if 'base_ckpt' in inputs and ('refiner_ckpt' in inputs or 'refiner_model' in inputs or 'refiner' in class_type.lower()):
                 refiner_info['base_model'] = inputs['base_ckpt']
                 
             # Extract refiner timing settings
