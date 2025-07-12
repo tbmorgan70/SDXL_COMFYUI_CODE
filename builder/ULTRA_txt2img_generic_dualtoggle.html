@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<!-- ULTRA Dual Toggle Prompt Builder -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ULTRA Punk Rock Princess</title>
+  <style>
+    /* Punk Static Effects */
+    #disco-static {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0,255,65,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      animation: punkFlicker 0.08s steps(4) infinite;
+      z-index: 1000;
+    }
+
+    @keyframes punkFlicker {
+      0% { opacity: 0.1; transform: scale(1) rotate(0deg); }
+      25% { opacity: 0.25; transform: scale(1.02) rotate(0.5deg); }
+      50% { opacity: 0.05; transform: scale(0.98) rotate(-0.3deg); }
+      75% { opacity: 0.18; transform: scale(1.01) rotate(0.2deg); }
+      100% { opacity: 0.15; transform: scale(1) rotate(0deg); }
+    }
+
+    #disco-scanlines {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255,0,64,0.05) 25%,
+          transparent 50%,
+          rgba(0,255,65,0.04) 75%,
+          transparent 100%
+        ),
+        linear-gradient(
+          rgba(255,255,255,0.02) 50%, 
+          transparent 50%
+        ) 0 0 / 100% 1px;
+      animation: punkScanlines 2s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes punkScanlines {
+      0% { transform: translateX(0) skew(0deg); }
+      100% { transform: translateX(30px) skew(0.5deg); }
+    }
+
+    /* Disco Ball Sparkles */
+    #disco-sparkles {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.8) 1px, transparent 2px),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 1px, transparent 2px),
+        radial-gradient(circle at 70% 10%, rgba(255,255,255,0.7) 1px, transparent 2px),
+        radial-gradient(circle at 30% 90%, rgba(255,255,255,0.5) 1px, transparent 2px);
+      background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px;
+      animation: sparkleRotate 8s linear infinite;
+      z-index: 998;
+    }
+
+    @keyframes sparkleRotate {
+      0% { transform: rotate(0deg); opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { transform: rotate(360deg); opacity: 0.3; }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      padding-bottom: 130px;
+      background: 
+        linear-gradient(45deg, #000000 0%, #1a0000 25%, #000000 50%, #001a00 75%, #000000 100%),
+        radial-gradient(circle at 30% 70%, #ff0040 0%, transparent 40%),
+        radial-gradient(circle at 70% 30%, #00ff41 0%, transparent 30%);
+      background-size: 100% 100%, 300px 300px, 200px 200px;
+      color: #ffffff;
+      text-align: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff0040, #ffffff, #00ff41, #ff0040);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: punkTitle 2s ease-in-out infinite, titleGlitch 0.15s infinite;
+      position: relative;
+      text-shadow: 0 0 20px rgba(255,0,64,0.8);
+      font-weight: 900;
+    }
+
+    @keyframes punkTitle {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes titleGlitch {
+      0%, 85%, 100% { transform: translate(0); }
+      90% { transform: translate(-3px, 2px) skew(-1deg); }
+      95% { transform: translate(2px, -1px) skew(0.5deg); }
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      overflow: hidden;
+    }
+
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -2px 0 #ff0040;
+      animation: glitchTop 1.5s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: 2px 0 #00ff41;
+      animation: glitchBottom 1.8s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    @keyframes glitchTop {
+      0%, 100% { clip: rect(2px, 9999px, 8px, 0); }
+      10% { clip: rect(8px, 9999px, 16px, 0); }
+      20% { clip: rect(4px, 9999px, 12px, 0); }
+      30% { clip: rect(12px, 9999px, 20px, 0); }
+      40% { clip: rect(6px, 9999px, 14px, 0); }
+    }
+
+    @keyframes glitchBottom {
+      0%, 100% { clip: rect(15px, 9999px, 23px, 0); }
+      10% { clip: rect(20px, 9999px, 28px, 0); }
+      20% { clip: rect(18px, 9999px, 26px, 0); }
+      30% { clip: rect(22px, 9999px, 30px, 0); }
+      40% { clip: rect(16px, 9999px, 24px, 0); }
+    }
+
+    #sections {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 200px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .section {
+      flex: 0 0 calc(20% - 10px);
+      margin: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(20,0,0,0.9) 50%, rgba(0,20,0,0.8) 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 3px;
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      position: relative;
+      animation: punkSectionPulse 3s ease-in-out infinite;
+      transform: skew(-1deg);
+    }
+
+    @keyframes punkSectionPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 8px rgba(255,0,64,0.4),
+          inset 0 0 20px rgba(0,0,0,0.5);
+        border-left-color: #ff0040;
+        transform: skew(-1deg);
+      }
+      50% { 
+        box-shadow: 
+          0 0 20px rgba(0,255,65,0.5),
+          inset 0 0 30px rgba(0,0,0,0.7);
+        border-left-color: #00ff41;
+        transform: skew(-0.5deg);
+      }
+    }
+
+    .section:nth-child(even) {
+      animation-delay: 2s;
+    }
+
+    .section h3 { 
+      margin-top: 0; 
+      font-size: 14px;
+      position: relative;
+    }
+    .cat-toggle {
+      display: block;
+      text-align: left;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .section input {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 4px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: linear-gradient(90deg, #1a1a1a 0%, #222 100%);
+      margin: 4px 0;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 2px;
+      border-left: 2px solid #333;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    li:hover { 
+      background: linear-gradient(90deg, #333 0%, #444 100%);
+      transform: translateX(3px) skew(-0.5deg);
+      border-left-color: #ff0040;
+      box-shadow: 
+        0 0 12px rgba(255,0,64,0.6),
+        inset 0 0 10px rgba(255,0,64,0.1);
+      transition: all 0.15s ease;
+    }
+    
+    li.selected {
+      background: linear-gradient(90deg, rgba(255,0,64,0.2) 0%, rgba(0,255,65,0.2) 100%);
+      border-left: 3px solid #00ff41;
+      box-shadow: 
+        0 0 15px rgba(0,255,65,0.8),
+        inset 0 0 15px rgba(0,255,65,0.2);
+      animation: selectedPunkPulse 2s ease-in-out infinite;
+      transform: translateX(2px) skew(-0.3deg);
+    }
+
+    @keyframes selectedPunkPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 15px rgba(0,255,65,0.8),
+          inset 0 0 15px rgba(0,255,65,0.2);
+      }
+      50% { 
+        box-shadow: 
+          0 0 25px rgba(255,0,64,0.9),
+          inset 0 0 20px rgba(255,0,64,0.3);
+      }
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: 
+        linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(20,0,0,0.95) 100%),
+        radial-gradient(circle at 50% 0%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 3px solid #333;
+      border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+      animation: punkFooterGlow 2.5s ease-in-out infinite;
+      z-index: 1001;
+    }
+
+    @keyframes punkFooterGlow {
+      0%, 100% { 
+        border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+      }
+      50% { 
+        border-image: linear-gradient(90deg, #00ff41, #ff0040, #00ff41) 1;
+        box-shadow: 0 -5px 30px rgba(255,0,64,0.3);
+      }
+    }
+
+    #promptBox {
+      width: 90%;
+      height: 80px;
+      margin: 0;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,0,0,0.9) 100%),
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.1) 0%, transparent 60%);
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      position: relative;
+      animation: punkPromptGlitch 0.3s infinite;
+      padding: 8px;
+      box-shadow: 
+        0 0 15px rgba(255,0,64,0.3),
+        inset 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    @keyframes punkPromptGlitch {
+      0%, 92%, 100% { transform: translate(0) skew(0deg); }
+      94% { transform: translate(-1px, 1px) skew(-0.2deg); }
+      96% { transform: translate(1px, -1px) skew(0.1deg); }
+    }
+
+    .toggles { 
+      margin-bottom: 20px; 
+      position: relative;
+      z-index: 10;
+    }
+    .toggles label { 
+      margin-right: 20px; 
+      font-weight: bold;
+      padding: 8px 12px;
+      background: rgba(255,110,199,0.1);
+      border-radius: 15px;
+      border: 1px solid rgba(255,110,199,0.3);
+      transition: all 0.3s ease;
+    }
+    .toggles label:hover {
+      background: rgba(255,110,199,0.2);
+      box-shadow: 0 0 10px rgba(255,110,199,0.4);
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      background: 
+        linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.2) 0%, transparent 70%);
+      color: #ffffff;
+      border: 2px solid #333;
+      border-left: 3px solid #ff0040;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.15s ease;
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.3),
+        inset 0 0 15px rgba(0,0,0,0.5);
+      transform: skew(-2deg);
+    }
+    button:hover { 
+      background: 
+        linear-gradient(135deg, #333 0%, #555 50%, #333 100%),
+        radial-gradient(circle at 30% 30%, rgba(0,255,65,0.3) 0%, transparent 70%);
+      border-left-color: #00ff41;
+      box-shadow: 
+        0 0 20px rgba(0,255,65,0.6),
+        inset 0 0 20px rgba(0,255,65,0.1);
+      transform: translateY(-2px) skew(-1deg);
+      text-shadow: 0 0 8px rgba(0,255,65,0.8);
+    }
+
+    button:active {
+      transform: translateY(0) skew(-2deg);
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.8),
+        inset 0 0 25px rgba(0,0,0,0.8);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,0,64,0.3), transparent);
+      transition: left 0.3s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="disco-static"></div>
+<div id="disco-scanlines"></div>
+  <div id="disco-sparkles"></div>
+
+<h1 class="glitch-text" data-text="ULTRA Dual Toggle Prompt Builder">ULTRA <span id="style-title">Punk Rock</span> Princess</h1>      
+<div class="toggles">
+  <label><input type="checkbox" id="togglePunkGoth"> 🖤 GOTHIC MODE</label>
+  <label><input type="checkbox" id="toggleSfwNsfw"> 🔞 NSFW MODE</label>
+</div>
+<div id="sections">
+
+<!-- body type options -->
+<div class="section" id="bodytype">
+  <h3 id="label-bodytype">Body Type</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked> include</label>
+  <input type="text" value="Body Type" oninput="updateLabel('bodytype', this.value)">
+<ul>
+    <li onclick="pick('bodytype', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Body type: describe physique, build, proportions]</li>
+  </ul>
+</div>
+
+<!-- Hair & Makeup -->
+<div class="section" id="hairmakeup">
+  <h3 id="label-hairmakeup">Hair & Makeup</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-hairmakeup" checked> include</label>
+  <input type="text" value="Hair & Makeup" oninput="updateLabel('hairmakeup', this.value)">
+<ul>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Hair & makeup: style, color, texture, vibe]</li>
+  </ul>
+</div>
+
+<!-- Camera Angle -->
+<div class="section" id="cameraangle">
+  <h3 id="label-cameraangle">Camera Angle</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-cameraangle" checked> include</label>
+  <input type="text" value="Camera Angle" oninput="updateLabel('cameraangle', this.value)">
+<ul>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Camera angle: perspective, lens, framing]</li>
+  </ul>
+</div>
+
+<!-- pose -->
+<div class="section" id="pose">
+  <h3 id="label-pose">Pose</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-pose" checked> include</label>
+  <input type="text" value="Pose" oninput="updateLabel('pose', this.value)">
+<ul>
+    <li onclick="pick('pose', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Pose: body position, gesture, attitude]</li>
+  </ul>
+</div>
+
+<!-- clothing -->
+<div class="section" id="clothing">
+  <h3 id="label-clothing">Clothing</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-clothing" checked> include</label>
+  <input type="text" value="Clothing" oninput="updateLabel('clothing', this.value)">
+<ul>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Clothing: style, color, material, fit]</li>
+  </ul>
+</div>
+
+<!-- accessories -->
+<div class="section" id="accessories">
+  <h3 id="label-accessories">Accessories</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-accessories" checked> include</label>
+  <input type="text" value="Accessories" oninput="updateLabel('accessories', this.value)">
+<ul>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Accessories: jewelry, props, extras]</li>
+  </ul>
+</div>
+
+<!-- settings -->
+<div class="section" id="settings">
+  <h3 id="label-settings">Settings</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-settings" checked> include</label>
+  <input type="text" value="Settings" oninput="updateLabel('settings', this.value)">
+<ul>
+    <li onclick="pick('settings', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Setting: environment, location, mood]</li>
+  </ul>
+</div>
+
+<!-- style reference -->
+<div class="section" id="style">
+  <h3 id="label-style">Style Reference</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-style" checked> include</label>
+  <input type="text" value="Style" oninput="updateLabel('style', this.value)">
+<ul>
+    <li onclick="pick('style', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Style reference: genre, inspiration, art style]</li>
+  </ul>
+</div>
+
+<!-- vibe -->
+<div class="section" id="vibe">
+  <h3 id="label-vibe">Vibe</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-vibe" checked> include</label>
+  <input type="text" value="Vibe" oninput="updateLabel('vibe', this.value)">
+  <ul>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Vibe: mood, energy, emotional impact]</li>
+  </ul>
+</div>
+
+<!-- LIGHTING -->
+<div class="section" id="lighting">
+  <h3 id="label-lighting">Lighting</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-lighting" checked> include</label>
+  <input type="text" value="Lighting" oninput="updateLabel('lighting', this.value)">
+  <ul>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true" data-toggle-goth="true" data-toggle-nsfw="true">[Lighting: type, color, direction, atmosphere]</li>
+  </ul>
+</div>
+</div>
+<div class="footer">
+  <textarea id="promptBox" placeholder="Your prompt will appear here..." readonly></textarea>
+  <div>
+    <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+    <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+  </div>
+</div>
+
+<script>
+  const sel = {'bodytype':'', 'hairmakeup':'', 'cameraangle':'', 'pose':'', 'clothing':'', 'accessories':'', 'settings':'', 'style':'', 'vibe':'', 'lighting':''};
+  let toggleState = {punkGoth:'punk', sfwNsfw:'sfw'};
+
+  const settingOrder = ['bodytype', 'hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'];
+
+  function updateLabel(section, value) {
+    document.getElementById('label-'+section).textContent = value || section;
+  }
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => {
+      li.style.background='#222';
+      li.classList.remove('selected');
+    });
+    el.style.background='#555';
+    el.classList.add('selected');
+    sel[sec] = el.textContent.trim();
+    update();
+  }
+
+  function toggleItems() {
+    const isPunk = toggleState.punkGoth === 'punk';
+    const isGoth = toggleState.punkGoth === 'goth';
+    const isNsfw = toggleState.sfwNsfw === 'nsfw';
+    
+    // Update title - NSFW doesn't change the main style title
+    let title = isPunk ? 'Punk Rock' : 'Gothic';
+    
+    document.getElementById('style-title').textContent = title;
+    
+    // Show/hide items based on toggle states
+    document.querySelectorAll('[data-toggle-punk]').forEach(item => {
+      const hasNsfw = item.hasAttribute('data-toggle-nsfw');
+      // Show punk items if punk is selected AND (item is SFW OR NSFW mode is on)
+      item.style.display = (isPunk && (!hasNsfw || isNsfw)) ? 'block' : 'none';
+    });
+    
+    document.querySelectorAll('[data-toggle-goth]').forEach(item => {
+      const hasNsfw = item.hasAttribute('data-toggle-nsfw');
+      // Show goth items if goth is selected AND (item is SFW OR NSFW mode is on)
+      item.style.display = (isGoth && (!hasNsfw || isNsfw)) ? 'block' : 'none';
+    });
+    
+    // Handle items that are NSFW but not style-specific (legacy items - should be rare)
+    document.querySelectorAll('[data-toggle-nsfw]:not([data-toggle-punk]):not([data-toggle-goth])').forEach(item => {
+      item.style.display = isNsfw ? 'block' : 'none';
+    });
+    
+    // SFW items are shown by default unless they have specific punk/goth requirements
+    document.querySelectorAll('[data-toggle-sfw]').forEach(item => {
+      // SFW items are always visible (unless overridden by punk/goth logic)
+      if (!item.hasAttribute('data-toggle-punk') && !item.hasAttribute('data-toggle-goth')) {
+        item.style.display = 'block';
+      }
+    });
+    
+    // Clear selections for affected categories
+    const affectedCategories = ['hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'];
+    affectedCategories.forEach(category => {
+      sel[category] = '';
+      document.querySelectorAll('#'+category+' li').forEach(li => {
+        li.style.background='#222';
+        li.classList.remove('selected');
+      });
+    });
+    
+    update();
+  }
+
+  function update() {
+    const parts = ['1girl, solo'];
+    settingOrder.forEach(sec => {
+      if (document.getElementById('enable-' + sec).checked && sel[sec]) {
+        parts.push(sel[sec]);
+      }
+    });
+    const core = parts.join(', ');
+    document.getElementById('promptBox').value = core ? core + ', 8K, ultra-detailed, ultra-textural, masterpiece' : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied!');
+  }
+
+  function randomize() {
+    settingOrder.forEach(sec => {
+      if (!document.getElementById('enable-' + sec).checked) {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+        return;
+      }
+      
+      // Get currently visible items based on toggle states
+      let selector = '#'+sec+' li';
+      if (['hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'].includes(sec)) {
+        // Build selector based on current toggle states
+        const selectors = [];
+        
+        // Get items that match the current style (punk or goth)
+        if (toggleState.punkGoth === 'punk') {
+          // Add punk SFW items
+          selectors.push('#'+sec+' li[data-toggle-punk="true"]:not([data-toggle-nsfw])');
+          // Add punk NSFW items if NSFW is on
+          if (toggleState.sfwNsfw === 'nsfw') {
+            selectors.push('#'+sec+' li[data-toggle-punk="true"][data-toggle-nsfw="true"]');
+          }
+        } else if (toggleState.punkGoth === 'goth') {
+          // Add goth SFW items
+          selectors.push('#'+sec+' li[data-toggle-goth="true"]:not([data-toggle-nsfw])');
+          // Add goth NSFW items if NSFW is on
+          if (toggleState.sfwNsfw === 'nsfw') {
+            selectors.push('#'+sec+' li[data-toggle-goth="true"][data-toggle-nsfw="true"]');
+          }
+        }
+        
+        // Add generic NSFW items if NSFW is on and no style-specific ones exist
+        if (toggleState.sfwNsfw === 'nsfw') {
+          selectors.push('#'+sec+' li[data-toggle-nsfw="true"]:not([data-toggle-punk]):not([data-toggle-goth])');
+        }
+        
+        // If no specific selectors, include all visible items
+        if (selectors.length === 0) {
+          selectors.push('#'+sec+' li');
+        }
+        
+        // Get all matching elements
+        const list = [];
+        selectors.forEach(sel => {
+          list.push(...Array.from(document.querySelectorAll(sel)));
+        });
+        
+        // Filter to only visible items
+        const visibleList = list.filter(li => li.style.display !== 'none');
+        
+        if (visibleList.length > 0) {
+          const choice = visibleList[Math.floor(Math.random()*visibleList.length)];
+          if (choice) pick(sec, choice);
+        } else {
+          sel[sec] = '';
+          document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+        }
+      } else {
+        // For bodytype (not affected by toggles)
+        const list = Array.from(document.querySelectorAll(selector));
+        if (list.length > 0) {
+          const choice = list[Math.floor(Math.random()*list.length)];
+          if (choice) pick(sec, choice);
+        }
+      }
+    });
+    update();
+  }
+
+  document.getElementById('togglePunkGoth').addEventListener('change', e => {
+    toggleState.punkGoth = e.target.checked ? 'goth' : 'punk';
+    toggleItems();
+    try { localStorage.setItem('togglePunkGoth', toggleState.punkGoth); } catch (err) {}
+  });
+  
+  document.getElementById('toggleSfwNsfw').addEventListener('change', e => {
+    toggleState.sfwNsfw = e.target.checked ? 'nsfw' : 'sfw';
+    toggleItems();
+    try { localStorage.setItem('toggleSfwNsfw', toggleState.sfwNsfw); } catch (err) {}
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    let stPunkGoth, stSfwNsfw;
+    try {
+      stPunkGoth = localStorage.getItem('togglePunkGoth');
+      stSfwNsfw = localStorage.getItem('toggleSfwNsfw');
+    } catch (err) {}
+    if (stPunkGoth) {
+      document.getElementById('togglePunkGoth').checked = stPunkGoth === 'goth';
+      toggleState.punkGoth = stPunkGoth;
+    }
+    if (stSfwNsfw) {
+      document.getElementById('toggleSfwNsfw').checked = stSfwNsfw === 'nsfw';
+      toggleState.sfwNsfw = stSfwNsfw;
+    }
+    
+    // Initialize the display
+    toggleItems();
+  });
+</script>
+
+</body>
+</html>
