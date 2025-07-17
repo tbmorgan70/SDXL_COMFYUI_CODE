@@ -37,7 +37,7 @@ git stash pop      # Restore stashed changes
 
 ## Project Structure:
 - `builder/` - HTML prompt builders for SDXL/ComfyUI
-- `SORTER/` - Python utilities for file organization
+- `sorter/` - Python utilities for file organization
 - Root - Documentation and project files
 
 ## Current Work:

@@ -6,12 +6,12 @@
 ```
 builder/
 ├── README.md                           # Main documentation
-├── USAGE_GUIDE.md                     # User guide
-├── TECHNICAL_REFERENCE.md             # This file
+├── usage_guide.md                     # User guide
+├── technical_reference.md             # This file
 ├── prompt_elements_dashboard.html     # Comprehensive reference
-├── HD_wallpaper_legacy.html           # Abstract wallpaper builder
-├── Nova_Skyrift.html                  # Character portrait builder
-├── ULTRA_*.html                       # Enhanced builders
+├── hd_wallpaper_legacy.html           # Abstract wallpaper builder
+├── nova_skyrift.html                  # Character portrait builder
+├── ultra_*.html                       # Enhanced builders
 ├── 1girl_*.html                       # Character-focused builders
 └── [other specialized builders]
 ```
