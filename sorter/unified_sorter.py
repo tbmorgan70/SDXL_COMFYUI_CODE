@@ -15,6 +15,7 @@ from tkinter import filedialog, messagebox
 import text_file_sorter
 import final_batch_rename_sort as comfy_sort
 import color_sorter
+import flatten_images
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -35,6 +36,8 @@ class UnifiedSorter(ctk.CTk):
         self.comfy_out = ""
         self.color_src = ""
         self.color_out = ""
+        self.flatten_src = ""
+        self.flatten_out = ""
         self.last_sorted_root = None
 
         self._build_ui()
@@ -45,7 +48,7 @@ class UnifiedSorter(ctk.CTk):
         top.pack(fill="x", pady=(0, 10))
         ctk.CTkLabel(top, text="Sort Mode:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         mode_menu = ctk.CTkOptionMenu(top, variable=self.mode_var,
-                                     values=["Text File Sorter", "ComfyUI Batch Sorter", "Color Sorter"],
+                                     values=["Text File Sorter", "ComfyUI Batch Sorter", "Color Sorter", "Image Flattener"],
                                      command=lambda _: self._switch_mode())
         mode_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
@@ -58,6 +61,8 @@ class UnifiedSorter(ctk.CTk):
         self._build_comfy_frame()
         self.color_frame = ctk.CTkFrame(self.forms, corner_radius=10)
         self._build_color_frame()
+        self.flatten_frame = ctk.CTkFrame(self.forms, corner_radius=10)
+        self._build_flatten_frame()
 
         self.run_btn = ctk.CTkButton(self, text="\u23E9 Run", command=self.run)
         self.run_btn.pack(fill="x", pady=(0, 10))
@@ -160,6 +165,36 @@ class UnifiedSorter(ctk.CTk):
                                  text_color="#aaa", font=("Arial", 11))
         info_label.pack(pady=5)
 
+    def _build_flatten_frame(self) -> None:
+        # Source folder selection
+        src_row = ctk.CTkFrame(self.flatten_frame)
+        src_row.pack(fill="x", pady=5)
+        ctk.CTkButton(src_row, text="\U0001F4C2 Select Nested Image Folder", command=self._choose_flatten_src).pack(side="left")
+        self.flatten_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.flatten_src_label.pack(side="left", padx=5)
+
+        # Output folder selection
+        out_row = ctk.CTkFrame(self.flatten_frame)
+        out_row.pack(fill="x", pady=5)
+        ctk.CTkButton(out_row, text="\U0001F5C2 Select Output Folder", command=self._choose_flatten_out).pack(side="left")
+        self.flatten_out_label = ctk.CTkLabel(out_row, text="Will create 'flattened_images' folder if not set", text_color="#888")
+        self.flatten_out_label.pack(side="left", padx=5)
+
+        # Options
+        opts = ctk.CTkFrame(self.flatten_frame)
+        opts.pack(fill="x", pady=5)
+        self.flatten_cleanup_var = ctk.BooleanVar(value=True)
+        self.flatten_skip_metadata_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(opts, text="Remove empty folders after flattening", variable=self.flatten_cleanup_var).pack(side="left", padx=5)
+        ctk.CTkCheckBox(opts, text="Skip ComfyUI metadata folders", variable=self.flatten_skip_metadata_var).pack(side="left", padx=5)
+
+        # Info label
+        info_label = ctk.CTkLabel(self.flatten_frame, 
+                                 text="📂 Flattens all images from nested folders into a single directory - Perfect for undoing ComfyUI sorting!\n" +
+                                      "💡 'Skip metadata folders' will ignore 'Gen Data' and 'Other Files' folders",
+                                 text_color="#aaa", font=("Arial", 11))
+        info_label.pack(pady=5)
+
     def _choose_text_dir(self) -> None:
         folder = filedialog.askdirectory()
         if folder:
@@ -190,6 +225,18 @@ class UnifiedSorter(ctk.CTk):
             self.color_out = folder
             self.color_out_label.configure(text=folder)
 
+    def _choose_flatten_src(self) -> None:
+        folder = filedialog.askdirectory()
+        if folder:
+            self.flatten_src = folder
+            self.flatten_src_label.configure(text=folder)
+
+    def _choose_flatten_out(self) -> None:
+        folder = filedialog.askdirectory()
+        if folder:
+            self.flatten_out = folder
+            self.flatten_out_label.configure(text=folder)
+
     def _switch_mode(self) -> None:
         for widget in self.forms.winfo_children():
             widget.pack_forget()
@@ -197,8 +244,10 @@ class UnifiedSorter(ctk.CTk):
             self.text_frame.pack(fill="x")
         elif self.mode_var.get() == "ComfyUI Batch Sorter":
             self.comfy_frame.pack(fill="x")
-        else:
+        elif self.mode_var.get() == "Color Sorter":
             self.color_frame.pack(fill="x")
+        else:  # Image Flattener
+            self.flatten_frame.pack(fill="x")
 
     def run(self) -> None:
         if self.mode_var.get() == "Text File Sorter":
@@ -211,11 +260,16 @@ class UnifiedSorter(ctk.CTk):
                 messagebox.showwarning("Missing Info", "Select image folder and enter user string")
                 return
             threading.Thread(target=self._do_comfy_sort, daemon=True).start()
-        else:
+        elif self.mode_var.get() == "Color Sorter":
             if not self.color_src:
                 messagebox.showwarning("Missing Folder", "Select an image folder to sort by color")
                 return
             threading.Thread(target=self._do_color_sort, daemon=True).start()
+        else:  # Image Flattener
+            if not self.flatten_src:
+                messagebox.showwarning("Missing Folder", "Select a nested image folder to flatten")
+                return
+            threading.Thread(target=self._do_flatten_images, daemon=True).start()
 
     # --- Logging helpers ---
     def write(self, txt: str) -> None:
@@ -315,6 +369,169 @@ class UnifiedSorter(ctk.CTk):
         except Exception as e:
             sys.stdout = orig
             self.log(f"\nError: {e}")
+
+    def _do_flatten_images(self) -> None:
+        self.clear_log()
+        self.log("Starting image flattening...\n")
+        orig = sys.stdout
+        sys.stdout = self
+        try:
+            # Determine output directory
+            output_dir = self.flatten_out if self.flatten_out else "flattened_images"
+            
+            # Check if we should skip metadata folders
+            skip_metadata = self.flatten_skip_metadata_var.get()
+            metadata_folders = {'Gen Data', 'Other Files'} if skip_metadata else set()
+            
+            if skip_metadata:
+                self.log("Skipping ComfyUI metadata folders: 'Gen Data' and 'Other Files'\n")
+            
+            # Call the flatten_images function with optional cleanup and folder exclusions
+            if self.flatten_cleanup_var.get():
+                self._flatten_with_exclusions(self.flatten_src, output_dir, metadata_folders, cleanup=True)
+            else:
+                self._flatten_with_exclusions(self.flatten_src, output_dir, metadata_folders, cleanup=False)
+            
+            sys.stdout = orig
+            self.log("\n=== Image Flattening Complete ===")
+            self.log(f"All images have been moved to: {output_dir}")
+            if self.flatten_cleanup_var.get():
+                self.log("Empty directories have been cleaned up.")
+            if skip_metadata:
+                self.log("ComfyUI metadata folders were preserved.")
+            self.log("\nDone! 📂➡️📁")
+            
+        except Exception as e:
+            sys.stdout = orig
+            self.log(f"\nError: {e}")
+
+    def _flatten_with_exclusions(self, source_dir, target_dir, exclude_folders, cleanup=True):
+        """
+        Flatten images with the ability to exclude certain folders
+        """
+        import os
+        import shutil
+        from pathlib import Path
+        
+        # Create target directory if it doesn't exist
+        target_path = Path(target_dir)
+        target_path.mkdir(exist_ok=True)
+        
+        # Common image extensions
+        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg'}
+        
+        moved_count = 0
+        source_path = Path(source_dir)
+        
+        # Walk through all subdirectories
+        for root, dirs, files in os.walk(source_path):
+            # Check if current folder should be skipped
+            current_folder = Path(root).name
+            if current_folder in exclude_folders:
+                print(f"Skipping metadata folder: {root}")
+                continue
+            
+            # Also check if we're inside an excluded folder (any parent folder is excluded)
+            root_path = Path(root)
+            skip_folder = False
+            for exclude in exclude_folders:
+                # Check if any part of the path matches the excluded folder name
+                if any(part == exclude for part in root_path.parts):
+                    skip_folder = True
+                    break
+            
+            if skip_folder:
+                continue
+            
+            for file in files:
+                file_path = Path(root) / file
+                file_ext = file_path.suffix.lower()
+                
+                # Check if it's an image file
+                if file_ext in image_extensions:
+                    # Create unique filename if there's a collision
+                    target_file = target_path / file
+                    counter = 1
+                    while target_file.exists():
+                        name_part = file_path.stem
+                        target_file = target_path / f"{name_part}_{counter}{file_ext}"
+                        counter += 1
+                    
+                    # Move the file
+                    try:
+                        shutil.move(str(file_path), str(target_file))
+                        print(f"Moved: {file_path} -> {target_file}")
+                        moved_count += 1
+                    except Exception as e:
+                        print(f"Error moving {file_path}: {e}")
+        
+        print(f"\nMoved {moved_count} images to {target_dir}")
+        
+        # Remove empty directories if requested
+        if cleanup:
+            flatten_images.remove_empty_dirs(source_path)
+
+    def _flatten_with_exclusions_copy(self, source_dir, target_dir, exclude_folders, cleanup=True):
+        """
+        Flatten images with the ability to exclude certain folders (copy version for testing)
+        """
+        import os
+        import shutil
+        from pathlib import Path
+        
+        # Create target directory if it doesn't exist
+        target_path = Path(target_dir)
+        target_path.mkdir(exist_ok=True)
+        
+        # Common image extensions
+        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg'}
+        
+        copied_count = 0
+        source_path = Path(source_dir)
+        
+        # Walk through all subdirectories
+        for root, dirs, files in os.walk(source_path):
+            # Check if current folder should be skipped
+            current_folder = Path(root).name
+            if current_folder in exclude_folders:
+                print(f"Skipping metadata folder: {root}")
+                continue
+            
+            # Also check if we're inside an excluded folder (any parent folder is excluded)
+            root_path = Path(root)
+            skip_folder = False
+            for exclude in exclude_folders:
+                # Check if any part of the path matches the excluded folder name
+                if any(part == exclude for part in root_path.parts):
+                    skip_folder = True
+                    break
+            
+            if skip_folder:
+                continue
+            
+            for file in files:
+                file_path = Path(root) / file
+                file_ext = file_path.suffix.lower()
+                
+                # Check if it's an image file
+                if file_ext in image_extensions:
+                    # Create unique filename if there's a collision
+                    target_file = target_path / file
+                    counter = 1
+                    while target_file.exists():
+                        name_part = file_path.stem
+                        target_file = target_path / f"{name_part}_{counter}{file_ext}"
+                        counter += 1
+                    
+                    # Copy the file (for testing)
+                    try:
+                        shutil.copy2(str(file_path), str(target_file))
+                        print(f"Copied: {file_path} -> {target_file}")
+                        copied_count += 1
+                    except Exception as e:
+                        print(f"Error copying {file_path}: {e}")
+        
+        print(f"\nCopied {copied_count} images to {target_dir}")
 
 
 if __name__ == "__main__":

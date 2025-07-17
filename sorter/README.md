@@ -1,9 +1,9 @@
 # SD_COMFYUI_HACKS
 This repo is a curated collection of tools for managing, sorting, and optimizing AI image generation workflows. Built to evolve as your projects grow.
 
-## 🎨 Unified Sorter - Now with Color Sorting!
+## 🎨 Unified Sorter - Complete Image Management Suite!
 
-The **Unified Sorter** is a comprehensive tool featuring three powerful modes:
+The **Unified Sorter** is a comprehensive tool featuring four powerful modes:
 
 ### 1. **Text File Sorter** 📝
 - Organizes text files using customizable placeholders
@@ -16,12 +16,19 @@ The **Unified Sorter** is a comprehensive tool featuring three powerful modes:
 - Sorts images into folders by checkpoint filenames
 - Handles non-PNG files automatically
 
-### 3. **🌈 Color Sorter** ✨ *NEW!*
+### 3. **🌈 Color Sorter** ✨
 - **Dominant Color Analysis**: Automatically detects each image's primary color
 - **Smart Classification**: Sorts into 11 color categories (Red, Blue, Green, Yellow, Purple, Orange, Pink, Brown, Black, White, Gray)
 - **Custom Renaming**: Optional color-based file prefixes (e.g., `[MySet_RED] image.png`)
 - **Visual Preview**: Creates color distribution bar showing your collection breakdown
 - **Perfect Final Step**: Ideal for final organization after other sorting methods
+
+### 4. **📂 Image Flattener** 🆕
+- **Undo ComfyUI Sorting**: Perfect for reversing nested folder organization
+- **Flatten All Images**: Moves all images from nested folders into a single directory
+- **Smart Naming**: Automatically handles filename conflicts with numbered suffixes
+- **Empty Folder Cleanup**: Optionally removes empty directories after flattening
+- **Batch Processing**: Handles large collections efficiently
 
 ## 🚀 Getting Started
 
@@ -48,6 +55,7 @@ python demo_color_sorter.py
 ```
 SD_COMFYUI_HACKS/
 ├── unified_sorter.py          # 🎯 Main application (start here!)
+├── flatten_images.py          # 📂 Image flattening utility
 ├── color_sorter.py            # 🌈 Color sorting engine
 ├── text_file_sorter.py        # 📝 Text file organizer
 ├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor
@@ -80,6 +88,36 @@ color_sorted/
 ```
 
 Perfect for organizing AI-generated images by color themes, mood boards, or final collection curation!
+
+## 📂 Image Flattener Features
+
+- **Universal Image Support**: Works with all common formats (PNG, JPG, JPEG, BMP, TIFF, WebP, SVG)
+- **Conflict Resolution**: Automatically renames files with numeric suffixes when duplicates are found
+- **Selective Cleanup**: Option to remove empty directories after flattening
+- **Preservation Mode**: Can flatten without removing original folder structure
+- **Batch Processing**: Efficiently handles thousands of images
+- **Perfect Undo**: Ideal for reversing ComfyUI sorting or any nested organization
+
+## 📁 Example Flattening Process
+```
+Before (Nested Structure):
+sorted/
+├── checkpoint_a/
+│   ├── lora1/
+│   │   ├── image1.png
+│   │   └── image2.png
+│   └── lora2/
+│       └── image3.png
+└── checkpoint_b/
+    └── image4.png
+
+After Flattening:
+flattened_images/
+├── image1.png
+├── image2.png
+├── image3.png
+└── image4.png
+```
 
 
 # SDXL ComfyUI Prompt Builders Collection
