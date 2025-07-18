@@ -56,7 +56,9 @@ class MetadataSearchSorter:
         move_files: bool = False,
         create_subfolders: bool = True,
         case_sensitive: bool = False,
-        use_regex: bool = False
+        use_regex: bool = False,
+        rename_files: bool = False,
+        user_prefix: str = ''
     ) -> Dict[str, any]:
         """
         Search metadata and sort matching images
@@ -71,6 +73,8 @@ class MetadataSearchSorter:
             create_subfolders: Create subfolders for each search term
             case_sensitive: Whether search should be case sensitive
             use_regex: Whether to treat search terms as regex patterns
+            rename_files: Whether to rename files with sequential numbering
+            user_prefix: Custom prefix for renamed files (e.g. 'myproject')
             
         Returns:
             Dictionary with search results and statistics
@@ -125,7 +129,8 @@ class MetadataSearchSorter:
         # Phase 5: Sort files
         self.logger.start_operation("File Sorting", len(search_matches))
         self._sort_search_results(
-            organized_results, metadata_results, output_dir, move_files
+            organized_results, metadata_results, output_dir, move_files,
+            rename_files, user_prefix
         )
         self.logger.complete_operation()
         
@@ -358,11 +363,19 @@ class MetadataSearchSorter:
         organized_results: Dict[str, List[str]],
         metadata_results: Dict[str, Optional[Dict]],
         output_dir: str,
-        move_files: bool
+        move_files: bool,
+        rename_files: bool = False,
+        user_prefix: str = ''
     ):
         """Sort search results into folders"""
         file_count = 0
         total_files = sum(len(files) for files in organized_results.values())
+        
+        # Initialize renaming counters for each folder
+        rename_counters = {}
+        if rename_files:
+            for folder_name in organized_results.keys():
+                rename_counters[folder_name] = 1
         
         for folder_name, file_list in organized_results.items():
             folder_path = os.path.join(output_dir, folder_name)
@@ -372,11 +385,23 @@ class MetadataSearchSorter:
                 self.logger.update_progress(file_count, os.path.basename(file_path))
                 
                 try:
-                    filename = os.path.basename(file_path)
-                    dest_path = os.path.join(folder_path, filename)
-                    
-                    # Handle filename conflicts
-                    dest_path = self._resolve_filename_conflict(dest_path)
+                    # Generate target filename
+                    if rename_files:
+                        # Create sequential numbered filename
+                        counter = rename_counters[folder_name]
+                        file_ext = os.path.splitext(file_path)[1]
+                        if user_prefix:
+                            new_name = f"{user_prefix}_{folder_name.lower()}_img{counter}{file_ext}"
+                        else:
+                            new_name = f"{folder_name.lower()}_img{counter}{file_ext}"
+                        dest_path = os.path.join(folder_path, new_name)
+                        rename_counters[folder_name] += 1
+                    else:
+                        # Use original filename with conflict resolution
+                        filename = os.path.basename(file_path)
+                        dest_path = os.path.join(folder_path, filename)
+                        # Handle filename conflicts
+                        dest_path = self._resolve_filename_conflict(dest_path)
                     
                     # Move or copy the file
                     if move_files:

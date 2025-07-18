@@ -95,7 +95,8 @@ class ColorSorter:
         return best_category
     
     def sort_by_color(self, source_dir, output_dir, move_files=False, 
-                     create_metadata=True, ignore_dark_threshold=0.1):
+                     create_metadata=True, ignore_dark_threshold=0.1,
+                     rename_files=False, user_prefix=''):
         """
         Sort images by dominant color into categorized folders
         
@@ -105,6 +106,8 @@ class ColorSorter:
             move_files: Whether to move (True) or copy (False) files
             create_metadata: Whether to create metadata files
             ignore_dark_threshold: Threshold for ignoring dark pixels (0.0-1.0)
+            rename_files: Whether to rename files with sequential numbering
+            user_prefix: Custom prefix for renamed files (e.g. 'myproject')
         """
         source_path = Path(source_dir)
         output_path = Path(output_dir)
@@ -175,19 +178,40 @@ class ColorSorter:
         # Sort files into color folders
         self.logger.start_phase("File Sorting")
         
+        # Initialize renaming counters for each color category
+        rename_counters = {}
+        if rename_files:
+            for color_category in color_stats.keys():
+                rename_counters[color_category] = 1
+        
         for i, image_file in enumerate(image_files):
             try:
                 color_category = getattr(image_file, '_color_category', 'Unknown')
                 target_dir = output_path / color_category
-                target_file = target_dir / image_file.name
                 
-                # Handle name conflicts
-                counter = 1
-                while target_file.exists():
-                    stem = image_file.stem
-                    suffix = image_file.suffix
-                    target_file = target_dir / f"{stem}_{counter}{suffix}"
-                    counter += 1
+                # Generate target filename
+                if rename_files:
+                    # Create sequential numbered filename
+                    counter = rename_counters[color_category]
+                    if user_prefix:
+                        # Use custom prefix with color category
+                        new_name = f"{user_prefix}_{color_category.lower()}_img{counter}{image_file.suffix}"
+                    else:
+                        # Use color category with sequential number
+                        new_name = f"{color_category.lower()}_img{counter}{image_file.suffix}"
+                    target_file = target_dir / new_name
+                    rename_counters[color_category] += 1
+                else:
+                    # Use original filename
+                    target_file = target_dir / image_file.name
+                    
+                    # Handle name conflicts for original filenames
+                    counter = 1
+                    while target_file.exists():
+                        stem = image_file.stem
+                        suffix = image_file.suffix
+                        target_file = target_dir / f"{stem}_{counter}{suffix}"
+                        counter += 1
                 
                 # Move or copy file
                 if move_files:

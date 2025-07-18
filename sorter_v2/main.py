@@ -449,6 +449,12 @@ class SorterV2:
         move_files = input("Move files? (y/n, default=n): ").strip().lower() == 'y'
         create_metadata = input("Create metadata files? (y/n, default=y): ").strip().lower() != 'n'
         
+        # Renaming options
+        rename_files = input("Rename files with sequential numbering? (y/n, default=n): ").strip().lower() == 'y'
+        user_prefix = ""
+        if rename_files:
+            user_prefix = input("Enter filename prefix (optional, e.g. 'myproject'): ").strip()
+        
         dark_threshold = input("Dark pixel threshold (0.0-1.0, default=0.1): ").strip()
         try:
             dark_threshold = float(dark_threshold) if dark_threshold else 0.1
@@ -463,6 +469,12 @@ class SorterV2:
         print(f"   Files: {len(image_files)} image files")
         print(f"   Operation: {'MOVE' if move_files else 'COPY'}")
         print(f"   Metadata files: {'Yes' if create_metadata else 'No'}")
+        print(f"   Rename files: {'Yes' if rename_files else 'No'}")
+        if rename_files:
+            if user_prefix:
+                print(f"   Prefix: '{user_prefix}' (e.g. {user_prefix}_red_img1.png)")
+            else:
+                print(f"   Naming: color_img# format (e.g. red_img1.png)")
         print(f"   Dark threshold: {dark_threshold}")
         
         if input("\nProceed? (y/n): ").strip().lower() != 'y':
@@ -478,7 +490,9 @@ class SorterV2:
             output_dir=output_dir,
             move_files=move_files,
             create_metadata=create_metadata,
-            ignore_dark_threshold=dark_threshold
+            ignore_dark_threshold=dark_threshold,
+            rename_files=rename_files,
+            user_prefix=user_prefix
         )
         
         if success:

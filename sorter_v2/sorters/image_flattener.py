@@ -25,7 +25,8 @@ class ImageFlattener:
         self.image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg'}
     
     def flatten_images(self, source_dir, target_dir="flattened_images", 
-                      move_files=False, remove_empty_dirs=True):
+                      move_files=False, remove_empty_dirs=True,
+                      rename_files=False, user_prefix=''):
         """
         Flatten all images from nested folders into a single target directory
         
@@ -34,6 +35,8 @@ class ImageFlattener:
             target_dir: Target directory for flattened images
             move_files: Whether to move (True) or copy (False) files
             remove_empty_dirs: Whether to remove empty directories after flattening
+            rename_files: Whether to rename files with sequential numbering
+            user_prefix: Custom prefix for renamed files (e.g. 'myproject')
         """
         source_path = Path(source_dir)
         target_path = Path(target_dir)
@@ -71,20 +74,31 @@ class ImageFlattener:
         moved_count = 0
         failed_count = 0
         duplicates_count = 0
+        rename_counter = 1  # Initialize counter for renaming
         
         for i, file_path in enumerate(image_files):
             try:
-                # Create unique filename if there's a collision
-                target_file = target_path / file_path.name
-                original_target = target_file
-                counter = 1
-                
-                while target_file.exists():
-                    stem = file_path.stem
-                    suffix = file_path.suffix
-                    target_file = target_path / f"{stem}_{counter}{suffix}"
-                    counter += 1
-                    duplicates_count += 1
+                # Generate target filename
+                if rename_files:
+                    # Create sequential numbered filename
+                    if user_prefix:
+                        new_name = f"{user_prefix}_img{rename_counter}{file_path.suffix}"
+                    else:
+                        new_name = f"flattened_img{rename_counter}{file_path.suffix}"
+                    target_file = target_path / new_name
+                    rename_counter += 1
+                else:
+                    # Use original filename with conflict resolution
+                    target_file = target_path / file_path.name
+                    original_target = target_file
+                    counter = 1
+                    
+                    while target_file.exists():
+                        stem = file_path.stem
+                        suffix = file_path.suffix
+                        target_file = target_path / f"{stem}_{counter}{suffix}"
+                        counter += 1
+                        duplicates_count += 1
                 
                 # Move or copy the file
                 if move_files:

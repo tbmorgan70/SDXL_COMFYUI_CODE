@@ -547,7 +547,9 @@ class SorterGUI(ctk.CTk):
                     source_dir=self.source_dir.get(),
                     output_dir=output_dir,
                     move_files=self.move_files_var.get(),
-                    create_metadata=self.create_metadata_var.get()
+                    create_metadata=self.create_metadata_var.get(),
+                    rename_files=self.rename_files_var.get(),
+                    user_prefix=self.user_prefix.get()
                 )
                 
                 progress_window.progress_queue.put(("complete", success))
