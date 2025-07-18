@@ -1,0 +1,138 @@
+PS C:\Users\tbmor\Desktop\CODE\SDXL_COMFYUI_CODE\SDXL_COMFYUI_CODE\sorter_v2> python gui_standard.py
+=== Sorter 2.0 Session Started ===
+Session ID: 20250717_202615
+Log Directory: C:\Users\tbmor\Desktop\CODE\SDXL_COMFYUI_CODE\SDXL_COMFYUI_CODE\sorter_v2\sort_logs
+
+--- Starting: Checkpoint Sorting ---
+Source: D:/ComfyUI_windows_portable/ComfyUI/output
+Output: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5
+Operation: COPY
+Found 192 PNG files to process
+
+--- Starting: Metadata Extraction ---
+Total items to process: 192
+Progress: 50/[workflow_test_batch1] Gen 12 $0052.png -
+Progress: 100/[workflow_test_batch1] Gen 22 $0051.png -
+Progress: 150/[workflow_test_batch1] Gen 30 $0149.png -
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Users\tbmor\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 1967, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\tbmor\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "C:\Users\tbmor\Desktop\CODE\SDXL_COMFYUI_CODE\SDXL_COMFYUI_CODE\sorter_v2\gui_standard.py", line 192, in check_progress
+    self.update_progress(completed, total, current_file)
+  File "C:\Users\tbmor\Desktop\CODE\SDXL_COMFYUI_CODE\SDXL_COMFYUI_CODE\sorter_v2\gui_standard.py", line 166, in update_progress
+    if total > 0:
+       ^^^^^^^^^
+TypeError: '>' not supported between instances of 'str' and 'int'
+--- Completed: Metadata Extraction ---
+Duration: 0.06 seconds
+Items processed: 192
+
+--- Starting: Checkpoint Analysis ---
+Grouped into 26 checkpoint categories:
+  perfectionRealisticILXL_33: 5 files
+  JANKUV4NSFWTrainedNoobaiEPS_v40: 8 files
+  crystalClearXL_ccxl: 16 files
+  dreamArtFusion_v11: 8 files
+  dreamshaperXL_alpha2Xl10: 4 files
+  f42SDXL_v20VAE: 4 files
+  iniverseMixSFWNSFW_guofengXLV15: 2 files
+  oneObsession_1424DNsfw: 2 files
+  STOIQOAfroditeFLUXXL_XL31: 1 files
+  biglustydonutmixNSFW_v12: 10 files
+  illustriousRealismBy_v10VAE: 10 files
+  lustifySDXLNSFW_oltFIXEDTEXTURES: 9 files
+  pornCraftByStableYogi_v40FP16: 7 files
+  realismByStableYogi_v40FP16: 14 files
+  realismIllustriousBy_v35FP16: 16 files
+  realisticFreedom_omega: 6 files
+  realvisxlV50_v50Bakedvae: 12 files
+  ultraRealisticByStable_v10: 8 files
+  realDream_sdxl6: 8 files
+  realismEngineSDXL_v30VAE: 8 files
+  sd_xl_base_1.0: 8 files
+  zavychromaxl_v100: 4 files
+  bigasp_v20: 4 files
+  stoiqoNewrealityFLUXSD35_XLPRO: 8 files
+  ramthrustsNSFWPINK_alchemyMix169: 1 files
+  cinenautsXLATRUE_cinenautsV30: 9 files
+--- Completed: Checkpoint Analysis ---
+Duration: 0.01 seconds
+Items processed: 0
+
+--- Starting: Folder Creation ---
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\perfectionRealisticILXL_33
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\JANKUV4NSFWTrainedNoobaiEPS_v40
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\crystalClearXL_ccxl
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\dreamArtFusion_v11
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\dreamshaperXL_alpha2Xl10
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\f42SDXL_v20VAE
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\iniverseMixSFWNSFW_guofengXLV15
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\oneObsession_1424DNsfw
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\STOIQOAfroditeFLUXXL_XL31
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\biglustydonutmixNSFW_v12
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\illustriousRealismBy_v10VAE
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\lustifySDXLNSFW_oltFIXEDTEXTURES
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\pornCraftByStableYogi_v40FP16
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realismByStableYogi_v40FP16
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realismIllustriousBy_v35FP16
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realisticFreedom_omega
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realvisxlV50_v50Bakedvae
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\ultraRealisticByStable_v10
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realDream_sdxl6
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\realismEngineSDXL_v30VAE
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\sd_xl_base_1.0
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\zavychromaxl_v100
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\bigasp_v20
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\stoiqoNewrealityFLUXSD35_XLPRO
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\ramthrustsNSFWPINK_alchemyMix169
+[FOLDER] Created: D:/ComfyUI_windows_portable/ComfyUI/output/sort_test_v5\cinenautsXLATRUE_cinenautsV30
+--- Completed: Folder Creation ---
+Duration: 1.50 seconds
+Items processed: 0
+
+--- Starting: File Sorting ---
+Total items to process: 192
+DEBUG: Starting file sorting with 26 checkpoint groups
+DEBUG: perfectionRealisticILXL_33: 5 files
+DEBUG: JANKUV4NSFWTrainedNoobaiEPS_v40: 8 files
+DEBUG: crystalClearXL_ccxl: 16 files
+DEBUG: dreamArtFusion_v11: 8 files
+DEBUG: dreamshaperXL_alpha2Xl10: 4 files
+DEBUG: f42SDXL_v20VAE: 4 files
+DEBUG: iniverseMixSFWNSFW_guofengXLV15: 2 files
+DEBUG: oneObsession_1424DNsfw: 2 files
+DEBUG: STOIQOAfroditeFLUXXL_XL31: 1 files
+DEBUG: biglustydonutmixNSFW_v12: 10 files
+DEBUG: illustriousRealismBy_v10VAE: 10 files
+DEBUG: lustifySDXLNSFW_oltFIXEDTEXTURES: 9 files
+DEBUG: pornCraftByStableYogi_v40FP16: 7 files
+DEBUG: realismByStableYogi_v40FP16: 14 files
+DEBUG: realismIllustriousBy_v35FP16: 16 files
+DEBUG: realisticFreedom_omega: 6 files
+DEBUG: realvisxlV50_v50Bakedvae: 12 files
+DEBUG: ultraRealisticByStable_v10: 8 files
+DEBUG: realDream_sdxl6: 8 files
+DEBUG: realismEngineSDXL_v30VAE: 8 files
+DEBUG: sd_xl_base_1.0: 8 files
+DEBUG: zavychromaxl_v100: 4 files
+DEBUG: bigasp_v20: 4 files
+DEBUG: stoiqoNewrealityFLUXSD35_XLPRO: 8 files
+DEBUG: ramthrustsNSFWPINK_alchemyMix169: 1 files
+DEBUG: cinenautsXLATRUE_cinenautsV30: 9 files
+DEBUG: Total files to process: 192
+--- Completed: File Sorting ---
+Duration: 13.28 seconds
+Items processed: 0
+
+=== CHECKPOINT SORTING SUMMARY ===
+Total images found: 192
+Successfully sorted: 192
+Unknown checkpoint: 0
+Failed extractions: 0
+Folders created: 26
+Duplicates handled: 0
+Success rate: 100.0%
