@@ -121,6 +121,14 @@ class ProgressWindow(ctk.CTkToplevel):
         self.operation_label.configure(text=operation)
     
     def update_progress(self, completed, total, current_file=""):
+        # Ensure completed and total are integers
+        try:
+            completed = int(completed)
+            total = int(total)
+        except (ValueError, TypeError):
+            # If conversion fails, skip the update
+            return
+            
         if total > 0:
             progress = completed / total
             self.progress_bar.set(progress)
@@ -201,13 +209,13 @@ class SorterGUI(ctk.CTk):
         # Initialize logger
         self.logger = SortLogger()
         
-        # Setup UI
-        self.setup_ui()
-        
-        # Variables
+        # Initialize variables BEFORE setup_ui
         self.source_dir = tk.StringVar()
         self.output_dir = tk.StringVar()
         self.current_operation = None
+        
+        # Setup UI
+        self.setup_ui()
     
     def setup_ui(self):
         # Main container
@@ -343,6 +351,8 @@ class SorterGUI(ctk.CTk):
         
         self.move_files_var = tk.BooleanVar(value=False)
         self.create_metadata_var = tk.BooleanVar(value=True)
+        self.rename_files_var = tk.BooleanVar(value=False)
+        self.user_prefix = tk.StringVar()
         
         ctk.CTkCheckBox(
             check_frame,
@@ -355,6 +365,23 @@ class SorterGUI(ctk.CTk):
             text="Create metadata files",
             variable=self.create_metadata_var
         ).pack(side="left")
+        
+        # Add renaming controls in a new row
+        rename_frame = ctk.CTkFrame(settings_frame, fg_color="transparent")
+        rename_frame.pack(fill="x", padx=20, pady=(10, 15))
+        
+        ctk.CTkCheckBox(
+            rename_frame,
+            text="Rename files with sequential numbering",
+            variable=self.rename_files_var
+        ).pack(side="left", padx=(0, 15))
+        
+        ctk.CTkLabel(rename_frame, text="Prefix:").pack(side="left", padx=(0, 5))
+        self.prefix_entry = ctk.CTkEntry(rename_frame, textvariable=self.user_prefix, width=150)
+        self.prefix_entry.pack(side="left", padx=(0, 10))
+        
+        ctk.CTkLabel(rename_frame, text="(e.g. 'nova_skyrift' → nova_skyrift_img1.png)", 
+                    text_color="gray").pack(side="left")
     
     def create_sort_button(self, parent, title, description, command, side):
         button_frame = ctk.CTkFrame(parent)
@@ -436,7 +463,9 @@ class SorterGUI(ctk.CTk):
                     source_dir=self.source_dir.get(),
                     output_dir=output_dir,
                     move_files=self.move_files_var.get(),
-                    create_metadata=self.create_metadata_var.get()
+                    create_metadata_files=self.create_metadata_var.get(),
+                    rename_files=self.rename_files_var.get(),
+                    user_prefix=self.user_prefix.get()
                 )
                 
                 progress_window.progress_queue.put(("complete", success))

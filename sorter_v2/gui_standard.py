@@ -370,6 +370,8 @@ class SorterGUI:
         self.output_dir = tk.StringVar()
         self.move_files_var = tk.BooleanVar(value=False)
         self.create_metadata_var = tk.BooleanVar(value=True)
+        self.rename_files_var = tk.BooleanVar(value=False)
+        self.user_prefix = tk.StringVar()
         
         # Setup UI
         self.setup_ui()
@@ -530,6 +532,24 @@ class SorterGUI:
             text="Create metadata files",
             variable=self.create_metadata_var
         ).pack(side=tk.LEFT)
+        
+        # Add renaming controls in a new row
+        rename_frame = ttk.Frame(settings_section)
+        rename_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        ttk.Checkbutton(
+            rename_frame,
+            text="Rename files with sequential numbering",
+            variable=self.rename_files_var
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        ttk.Label(rename_frame, text="Prefix:").pack(side=tk.LEFT, padx=(0, 5))
+        prefix_entry = ttk.Entry(rename_frame, textvariable=self.user_prefix, width=20)
+        prefix_entry.pack(side=tk.LEFT)
+        
+        # Add example text
+        ttk.Label(rename_frame, text="(e.g. 'nova_skyrift' → nova_skyrift_img1.png)", 
+                 foreground="gray").pack(side=tk.LEFT, padx=(5, 0))
     
     def create_sort_button_with_desc(self, parent, title, description, command, row, col, columnspan=1):
         # Button frame
@@ -615,7 +635,9 @@ class SorterGUI:
                     source_dir=self.source_dir.get(),
                     output_dir=output_dir,
                     move_files=self.move_files_var.get(),
-                    create_metadata_files=self.create_metadata_var.get()
+                    create_metadata_files=self.create_metadata_var.get(),
+                    rename_files=self.rename_files_var.get(),
+                    user_prefix=self.user_prefix.get()
                 )
                 
                 progress_window.progress_queue.put(("complete", success))

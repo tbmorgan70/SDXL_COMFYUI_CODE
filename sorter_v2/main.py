@@ -116,6 +116,15 @@ class SorterV2:
         # Create metadata files
         create_metadata = input("Create metadata files? (y/n, default=y): ").lower() != 'n'
         
+        # Renaming options
+        rename_files = input("Rename files with sequential numbering? (y/n, default=n): ").lower() == 'y'
+        user_prefix = ""
+        if rename_files:
+            user_prefix = input("Enter prefix for renamed files (e.g. 'nova_skyrift'): ").strip()
+            if not user_prefix:
+                print("❌ Prefix is required for renaming")
+                rename_files = False
+        
         # Confirm before starting
         print(f"\n📋 CONFIRMATION:")
         print(f"   Source: {source_dir}")
@@ -123,6 +132,9 @@ class SorterV2:
         print(f"   Files: {png_count} PNG files")
         print(f"   Operation: {operation}")
         print(f"   Metadata files: {'Yes' if create_metadata else 'No'}")
+        print(f"   Rename files: {'Yes' if rename_files else 'No'}")
+        if rename_files and user_prefix:
+            print(f"   Naming pattern: {user_prefix}_img1, {user_prefix}_img2, etc.")
         
         confirm = input("\nProceed? (y/n): ").lower()
         if confirm != 'y':
@@ -138,7 +150,9 @@ class SorterV2:
                 source_dir=source_dir,
                 output_dir=output_dir,
                 move_files=move_files,
-                create_metadata_files=create_metadata
+                create_metadata_files=create_metadata,
+                rename_files=rename_files,
+                user_prefix=user_prefix
             )
             
             # Show results

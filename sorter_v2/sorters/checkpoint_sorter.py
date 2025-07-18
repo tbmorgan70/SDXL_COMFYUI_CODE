@@ -54,7 +54,9 @@ class CheckpointSorter:
         output_dir: str, 
         move_files: bool = True,
         create_metadata_files: bool = True,
-        preserve_structure: bool = False
+        preserve_structure: bool = False,
+        rename_files: bool = False,
+        user_prefix: str = ""
     ) -> Dict[str, any]:
         """
         Sort images by base checkpoint into organized folders
@@ -65,6 +67,8 @@ class CheckpointSorter:
             move_files: True to move files, False to copy
             create_metadata_files: Create JSON metadata files alongside images
             preserve_structure: Keep original subfolder structure
+            rename_files: True to rename files with sequential numbering
+            user_prefix: Custom prefix for renamed files (e.g. "nova_skyrift")
             
         Returns:
             Dictionary with sorting results and statistics
@@ -108,7 +112,8 @@ class CheckpointSorter:
         try:
             self._sort_files_to_folders(
                 png_files, metadata_results, checkpoint_groups, 
-                output_dir, move_files, create_metadata_files
+                output_dir, move_files, create_metadata_files,
+                preserve_structure, rename_files, user_prefix
             )
         except Exception as e:
             self.logger._write_log(f"ERROR in file sorting: {str(e)}")
@@ -232,7 +237,10 @@ class CheckpointSorter:
         checkpoint_groups: Dict[str, List[Tuple[str, str]]],
         output_dir: str,
         move_files: bool,
-        create_metadata_files: bool
+        create_metadata_files: bool,
+        preserve_structure: bool = False,
+        rename_files: bool = False,
+        user_prefix: str = ""
     ):
         """Sort files into their checkpoint folders"""
         # Debug logging
@@ -267,6 +275,14 @@ class CheckpointSorter:
                 try:
                     # Determine destination path
                     filename = os.path.basename(file_path)
+                    
+                    # Apply renaming if requested
+                    if rename_files and user_prefix:
+                        # Get file extension
+                        _, ext = os.path.splitext(filename)
+                        # Create sequential filename: userprefix_img###.png
+                        new_filename = f"{user_prefix}_img{file_count}{ext}"
+                        filename = new_filename
                     
                     if rel_path:  # Preserve subfolder structure
                         dest_folder = os.path.join(checkpoint_folder, rel_path)
