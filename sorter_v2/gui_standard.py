@@ -11,6 +11,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from threading import Thread
 import queue
+
+# Limit size of progress queue to avoid uncontrolled growth
+MAX_QUEUE_SIZE = 1000
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -51,11 +54,19 @@ class ProgressWindow:
         
         # Progress tracking
         self.current_operation = ""
-        self.progress_queue = queue.Queue()
+        self.progress_queue = queue.Queue(maxsize=MAX_QUEUE_SIZE)
         self.cancelled = False
         
         # Start progress checker
         self.check_progress()
+
+    def enqueue(self, item):
+        """Safely add an update to the progress queue"""
+        try:
+            self.progress_queue.put_nowait(item)
+        except queue.Full:
+            # Drop log messages if queue is full to prevent blocking
+            pass
     
     def setup_styles(self):
         """Configure modern-looking styles"""
@@ -191,30 +202,38 @@ class ProgressWindow:
     
     def check_progress(self):
         """Check for progress updates from the queue"""
+        log_batch = []
         try:
             while True:
                 update_type, data = self.progress_queue.get_nowait()
-                
+
                 if update_type == "operation":
                     self.update_operation(data)
                 elif update_type == "progress":
                     completed, total, current_file = data
                     self.update_progress(completed, total, current_file)
                 elif update_type == "log":
-                    self.log_message(data)
+                    log_batch.append(data)
                 elif update_type == "complete":
                     self.on_complete(data)
                     return  # Stop checking when complete
                 elif update_type == "error":
                     self.on_error(data)
                     return  # Stop checking on error
-                    
+
+                if len(log_batch) >= 10:
+                    self.log_message("\n".join(log_batch))
+                    log_batch = []
+
         except queue.Empty:
             pass
-        
+
+        if log_batch:
+            self.log_message("\n".join(log_batch))
+
         # Schedule next check if not cancelled
         if not self.cancelled:
-            self.window.after(50, self.check_progress)  # Check more frequently
+            self.window.after(100, self.check_progress)
     
     def on_complete(self, success):
         if success:
@@ -626,15 +645,15 @@ class SorterGUI:
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Analyzing ComfyUI metadata and sorting by checkpoint..."))
-                progress_window.progress_queue.put(("log", f"Source: {self.source_dir.get()}"))
-                progress_window.progress_queue.put(("log", f"Output: {output_dir}"))
-                progress_window.progress_queue.put(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
+                progress_window.enqueue(("operation", "Analyzing ComfyUI metadata and sorting by checkpoint..."))
+                progress_window.enqueue(("log", f"Source: {self.source_dir.get()}"))
+                progress_window.enqueue(("log", f"Output: {output_dir}"))
+                progress_window.enqueue(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
                 
                 success = sorter.sort_by_checkpoint(
                     source_dir=self.source_dir.get(),
@@ -645,10 +664,10 @@ class SorterGUI:
                     user_prefix=self.user_prefix.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_sort, daemon=True).start()
     
@@ -675,17 +694,17 @@ class SorterGUI:
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", f"Searching for: {', '.join(search_terms)}"))
-                progress_window.progress_queue.put(("log", f"Search terms: {search_terms}"))
-                progress_window.progress_queue.put(("log", f"Search mode: {search_mode.upper()}"))
-                progress_window.progress_queue.put(("log", f"Source: {self.source_dir.get()}"))
-                progress_window.progress_queue.put(("log", f"Output: {output_dir}"))
-                progress_window.progress_queue.put(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
+                progress_window.enqueue(("operation", f"Searching for: {', '.join(search_terms)}"))
+                progress_window.enqueue(("log", f"Search terms: {search_terms}"))
+                progress_window.enqueue(("log", f"Search mode: {search_mode.upper()}"))
+                progress_window.enqueue(("log", f"Source: {self.source_dir.get()}"))
+                progress_window.enqueue(("log", f"Output: {output_dir}"))
+                progress_window.enqueue(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
                 
                 success = searcher.search_and_sort(
                     source_dir=self.source_dir.get(),
@@ -695,10 +714,10 @@ class SorterGUI:
                     move_files=self.move_files_var.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_search, daemon=True).start()
     
@@ -718,15 +737,15 @@ class SorterGUI:
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Analyzing dominant colors and sorting..."))
-                progress_window.progress_queue.put(("log", f"Source: {self.source_dir.get()}"))
-                progress_window.progress_queue.put(("log", f"Output: {output_dir}"))
-                progress_window.progress_queue.put(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
+                progress_window.enqueue(("operation", "Analyzing dominant colors and sorting..."))
+                progress_window.enqueue(("log", f"Source: {self.source_dir.get()}"))
+                progress_window.enqueue(("log", f"Output: {output_dir}"))
+                progress_window.enqueue(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
                 
                 success = sorter.sort_by_color(
                     source_dir=self.source_dir.get(),
@@ -737,10 +756,10 @@ class SorterGUI:
                     user_prefix=self.user_prefix.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_sort, daemon=True).start()
     
@@ -760,15 +779,15 @@ class SorterGUI:
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Flattening nested image folders..."))
-                progress_window.progress_queue.put(("log", f"Source: {self.source_dir.get()}"))
-                progress_window.progress_queue.put(("log", f"Target: {output_dir}"))
-                progress_window.progress_queue.put(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
+                progress_window.enqueue(("operation", "Flattening nested image folders..."))
+                progress_window.enqueue(("log", f"Source: {self.source_dir.get()}"))
+                progress_window.enqueue(("log", f"Target: {output_dir}"))
+                progress_window.enqueue(("log", f"Operation: {'MOVE' if self.move_files_var.get() else 'COPY'}"))
                 
                 success = flattener.flatten_images(
                     source_dir=self.source_dir.get(),
@@ -777,10 +796,10 @@ class SorterGUI:
                     remove_empty_dirs=True
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_flatten, daemon=True).start()
     
@@ -804,16 +823,16 @@ class SorterGUI:
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Cleaning up filenames and metadata files..."))
-                progress_window.progress_queue.put(("log", f"Source: {self.source_dir.get()}"))
-                progress_window.progress_queue.put(("log", f"Rename files: {dialog.rename_files}"))
-                progress_window.progress_queue.put(("log", f"Remove metadata: {dialog.remove_metadata}"))
-                progress_window.progress_queue.put(("log", f"Filename prefix: {dialog.filename_prefix}"))
+                progress_window.enqueue(("operation", "Cleaning up filenames and metadata files..."))
+                progress_window.enqueue(("log", f"Source: {self.source_dir.get()}"))
+                progress_window.enqueue(("log", f"Rename files: {dialog.rename_files}"))
+                progress_window.enqueue(("log", f"Remove metadata: {dialog.remove_metadata}"))
+                progress_window.enqueue(("log", f"Filename prefix: {dialog.filename_prefix}"))
                 
                 success = cleanup.cleanup_directory(
                     source_dir=self.source_dir.get(),
@@ -823,10 +842,10 @@ class SorterGUI:
                     dry_run=False
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_cleanup, daemon=True).start()
     

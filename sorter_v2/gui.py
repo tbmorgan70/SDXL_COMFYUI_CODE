@@ -12,6 +12,9 @@ from tkinter import ttk, filedialog, messagebox
 import customtkinter as ctk
 from threading import Thread
 import queue
+
+# Limit size of progress queue to avoid uncontrolled growth
+MAX_QUEUE_SIZE = 1000
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -53,10 +56,17 @@ class ProgressWindow(ctk.CTkToplevel):
         
         # Progress tracking
         self.current_operation = ""
-        self.progress_queue = queue.Queue()
-        
+        self.progress_queue = queue.Queue(maxsize=MAX_QUEUE_SIZE)
+
         # Start progress checker
         self.check_progress()
+
+    def enqueue(self, item):
+        """Safely add an update to the progress queue"""
+        try:
+            self.progress_queue.put_nowait(item)
+        except queue.Full:
+            pass
     
     def setup_ui(self):
         # Main frame
@@ -147,25 +157,33 @@ class ProgressWindow(ctk.CTkToplevel):
     
     def check_progress(self):
         """Check for progress updates from the queue"""
+        log_batch = []
         try:
             while True:
                 update_type, data = self.progress_queue.get_nowait()
-                
+
                 if update_type == "operation":
                     self.update_operation(data)
                 elif update_type == "progress":
                     completed, total, current_file = data
                     self.update_progress(completed, total, current_file)
                 elif update_type == "log":
-                    self.log_message(data)
+                    log_batch.append(data)
                 elif update_type == "complete":
                     self.on_complete(data)
                 elif update_type == "error":
                     self.on_error(data)
-                    
+
+                if len(log_batch) >= 10:
+                    self.log_message("\n".join(log_batch))
+                    log_batch = []
+
         except queue.Empty:
             pass
-        
+
+        if log_batch:
+            self.log_message("\n".join(log_batch))
+
         # Schedule next check
         if not self.cancelled:
             self.after(100, self.check_progress)
@@ -459,12 +477,12 @@ class SorterGUI(ctk.CTk):
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Sorting by checkpoint..."))
+                progress_window.enqueue(("operation", "Sorting by checkpoint..."))
                 
                 success = sorter.sort_by_checkpoint(
                     source_dir=self.source_dir.get(),
@@ -475,10 +493,10 @@ class SorterGUI(ctk.CTk):
                     user_prefix=self.user_prefix.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_sort, daemon=True).start()
     
@@ -505,12 +523,12 @@ class SorterGUI(ctk.CTk):
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", f"Searching for: {', '.join(search_terms)}"))
+                progress_window.enqueue(("operation", f"Searching for: {', '.join(search_terms)}"))
                 
                 success = searcher.search_and_sort(
                     source_dir=self.source_dir.get(),
@@ -520,10 +538,10 @@ class SorterGUI(ctk.CTk):
                     move_files=self.move_files_var.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_search, daemon=True).start()
     
@@ -543,12 +561,12 @@ class SorterGUI(ctk.CTk):
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Analyzing colors and sorting..."))
+                progress_window.enqueue(("operation", "Analyzing colors and sorting..."))
                 
                 success = sorter.sort_by_color(
                     source_dir=self.source_dir.get(),
@@ -559,10 +577,10 @@ class SorterGUI(ctk.CTk):
                     user_prefix=self.user_prefix.get()
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_sort, daemon=True).start()
     
@@ -582,12 +600,12 @@ class SorterGUI(ctk.CTk):
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Flattening image folders..."))
+                progress_window.enqueue(("operation", "Flattening image folders..."))
                 
                 success = flattener.flatten_images(
                     source_dir=self.source_dir.get(),
@@ -596,10 +614,10 @@ class SorterGUI(ctk.CTk):
                     remove_empty_dirs=True
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_flatten, daemon=True).start()
     
@@ -623,12 +641,12 @@ class SorterGUI(ctk.CTk):
                 
                 # Set up progress callback
                 def progress_callback(completed, total, current_file):
-                    progress_window.progress_queue.put(("progress", (completed, total, current_file)))
+                    progress_window.enqueue(("progress", (completed, total, current_file)))
                 
                 self.logger.set_progress_callback(progress_callback)
                 
                 # Update operation
-                progress_window.progress_queue.put(("operation", "Cleaning up filenames and metadata..."))
+                progress_window.enqueue(("operation", "Cleaning up filenames and metadata..."))
                 
                 success = cleanup.cleanup_directory(
                     source_dir=self.source_dir.get(),
@@ -638,10 +656,10 @@ class SorterGUI(ctk.CTk):
                     dry_run=False
                 )
                 
-                progress_window.progress_queue.put(("complete", success))
+                progress_window.enqueue(("complete", success))
                 
             except Exception as e:
-                progress_window.progress_queue.put(("error", str(e)))
+                progress_window.enqueue(("error", str(e)))
         
         Thread(target=run_cleanup, daemon=True).start()
 
