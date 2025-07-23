@@ -592,11 +592,16 @@ class SorterGUI:
         if not self.source_dir.get():
             messagebox.showerror("Error", "Please select a source directory")
             return False
-        
+
         if not os.path.exists(self.source_dir.get()):
             messagebox.showerror("Error", "Source directory does not exist")
             return False
-        
+
+        if self.rename_files_var.get() and not self.user_prefix.get().strip():
+            messagebox.showerror("Error",
+                                 "Filename prefix is required when renaming files. Using default prefix 'image'.")
+            self.user_prefix.set("image")
+
         return True
     
     def get_output_directory(self, default_name):
