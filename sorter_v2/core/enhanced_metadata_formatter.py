@@ -19,7 +19,7 @@ class EnhancedMetadataFormatter:
         
     def format_metadata_to_text(self, metadata: Dict[str, Any], image_path: str) -> str:
         """
-        Convert metadata to comprehensive formatted text
+        Convert metadata to comprehensive formatted text (matching original working format)
         
         Args:
             metadata: Full ComfyUI metadata dictionary
@@ -30,11 +30,7 @@ class EnhancedMetadataFormatter:
         """
         lines = []
         
-        # Header
-        lines.append(self._format_header(image_path))
-        lines.append("")
-        
-        # Core Models Section
+        # Models Section
         lines.extend(self._format_models_section(metadata))
         lines.append("")
         
@@ -42,23 +38,19 @@ class EnhancedMetadataFormatter:
         lines.extend(self._format_loras_section(metadata))
         lines.append("")
         
-        # VAE Section
-        lines.extend(self._format_vae_section(metadata))
+        # Positive Prompt Section
+        lines.extend(self._format_positive_prompt_section(metadata))
         lines.append("")
         
-        # Prompts Section
-        lines.extend(self._format_prompts_section(metadata))
+        # Negative Prompt Section
+        lines.extend(self._format_negative_prompt_section(metadata))
+        lines.append("")
+        lines.append("")
         lines.append("")
         
         # Sampling Parameters
         lines.extend(self._format_sampling_section(metadata))
         lines.append("")
-        
-        # Refiner Parameters (if present)
-        refiner_section = self._format_refiner_section(metadata)
-        if refiner_section:
-            lines.extend(refiner_section)
-            lines.append("")
         
         # Image Parameters
         lines.extend(self._format_image_parameters(metadata))
@@ -68,22 +60,70 @@ class EnhancedMetadataFormatter:
         upscale_section = self._format_upscaling_section(metadata)
         if upscale_section:
             lines.extend(upscale_section)
-            lines.append("")
-        
-        # Post-Processing Section
-        postprocess_section = self._format_postprocessing_section(metadata)
-        if postprocess_section:
-            lines.extend(postprocess_section)
-            lines.append("")
-        
-        # Advanced Settings
-        lines.extend(self._format_advanced_section(metadata))
-        lines.append("")
-        
-        # Technical Details
-        lines.extend(self._format_technical_section(metadata))
         
         return "\n".join(lines)
+    
+    def get_base_model(self, metadata: Dict[str, Any]) -> Optional[str]:
+        """Extract base model name for grouping"""
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            
+            if 'ckpt_name' in inputs:
+                return inputs['ckpt_name']
+        
+        return None
+    
+    def get_lora_stack_signature(self, metadata: Dict[str, Any]) -> str:
+        """Create a signature string representing the LoRA stack for grouping (improved version)"""
+        loras = []
+        
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            
+            if class_type == 'LoraLoader' and 'lora_name' in inputs:
+                lora_name = inputs['lora_name']
+                # Use just the base name for cleaner grouping
+                loras.append(lora_name)
+        
+        # Sort to ensure consistent signatures regardless of order in metadata
+        loras = sorted(set(loras))
+        return ",".join(loras) if loras else ""
+    
+    def get_grouping_signature(self, metadata: Dict[str, Any]) -> str:
+        """Create a complete grouping signature matching the older working version"""
+        base_model = self.get_base_model(metadata)
+        loras = []
+        
+        # Extract all LoRAs
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            
+            if class_type == 'LoraLoader' and 'lora_name' in inputs:
+                loras.append(inputs['lora_name'])
+        
+        # Remove duplicates and sort
+        loras = sorted(set(loras))
+        
+        # Create signature like: "base_model | lora1,lora2,lora3" 
+        base_part = base_model or 'None'
+        lora_part = ','.join(loras) if loras else ''
+        
+        if lora_part:
+            return f"{base_part} | {lora_part}"
+        else:
+            return base_part
     
     def _format_header(self, image_path: str) -> str:
         """Format file header with generation info"""
@@ -96,12 +136,11 @@ Generated: {timestamp}
 {self.separator}"""
     
     def _format_models_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format models and checkpoints section"""
-        lines = ["=== MODELS & CHECKPOINTS ==="]
+        """Format models section to match original working format"""
+        lines = ["=== MODELS ==="]
         
-        base_models = []
-        refiner_models = []
-        other_models = []
+        base_model = None
+        vae = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -109,29 +148,20 @@ Generated: {timestamp}
                 
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
-            title = node_data.get('_meta', {}).get('title', '')
             
+            # Find base model
             if 'ckpt_name' in inputs:
-                model_name = inputs['ckpt_name']
-                if 'refiner' in title.lower() or 'refiner' in class_type.lower():
-                    refiner_models.append(f"Refiner Model: {model_name}")
-                else:
-                    base_models.append(f"Base Model: {model_name}")
+                base_model = inputs['ckpt_name']
             
-            # Detect other model types
-            for model_field in ['model_name', 'checkpoint']:
-                if model_field in inputs:
-                    model_value = inputs[model_field]
-                    if model_value not in [m.split(': ', 1)[1] for m in base_models + refiner_models]:
-                        other_models.append(f"Additional Model: {model_value}")
+            # Find VAE
+            if class_type == 'VAELoader' and 'vae_name' in inputs:
+                vae = inputs['vae_name']
         
-        # Add models to output
-        lines.extend(base_models)
-        lines.extend(refiner_models)
-        lines.extend(other_models)
+        if base_model:
+            lines.append(f"Base Model: {base_model}")
         
-        if not (base_models or refiner_models or other_models):
-            lines.append("No models detected")
+        if vae:
+            lines.append(f"VAE: {vae}")
         
         return lines
     
@@ -191,12 +221,11 @@ Generated: {timestamp}
         
         return lines
     
-    def _format_prompts_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format prompts section"""
-        lines = ["=== PROMPTS ==="]
+    def _format_positive_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
+        """Format positive prompt section"""
+        lines = ["=== POSITIVE PROMPT ==="]
         
-        positive_prompts = []
-        negative_prompts = []
+        positive_prompt = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -217,43 +246,59 @@ Generated: {timestamp}
                 if not prompt_text:
                     continue
                     
-                # Determine if positive or negative
+                # Only positive prompts (not negative)
+                if 'negative' not in title and 'neg' not in title:
+                    positive_prompt = prompt_text
+                    break
+        
+        if positive_prompt:
+            lines.append(positive_prompt)
+        
+        return lines
+    
+    def _format_negative_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
+        """Format negative prompt section"""
+        lines = ["=== NEGATIVE PROMPT ==="]
+        
+        negative_prompt = None
+        
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            title = node_data.get('_meta', {}).get('title', '').lower()
+            
+            if class_type in ['CLIPTextEncode', 'CLIPTextEncodeSDXL', 'CLIPTextEncodeSDXLRefiner'] and 'text' in inputs:
+                # Handle both string and list formats for prompt text
+                text_data = inputs['text']
+                if isinstance(text_data, list):
+                    prompt_text = ' '.join(str(item).strip() for item in text_data if item).strip()
+                else:
+                    prompt_text = str(text_data).strip()
+                
+                if not prompt_text:
+                    continue
+                    
+                # Only negative prompts
                 if 'negative' in title or 'neg' in title:
-                    negative_prompts.append(prompt_text)
-                else:
-                    positive_prompts.append(prompt_text)
+                    negative_prompt = prompt_text
+                    break
         
-        # Add positive prompts
-        if positive_prompts:
-            lines.append("POSITIVE:")
-            for i, prompt in enumerate(positive_prompts, 1):
-                if len(positive_prompts) > 1:
-                    lines.append(f"  {i}. {prompt}")
-                else:
-                    lines.append(f"  {prompt}")
-        else:
-            lines.append("POSITIVE: None")
-        
-        lines.append("")
-        
-        # Add negative prompts
-        if negative_prompts:
-            lines.append("NEGATIVE:")
-            for i, prompt in enumerate(negative_prompts, 1):
-                if len(negative_prompts) > 1:
-                    lines.append(f"  {i}. {prompt}")
-                else:
-                    lines.append(f"  {prompt}")
-        else:
-            lines.append("NEGATIVE: None")
+        if negative_prompt:
+            lines.append(negative_prompt)
         
         return lines
     
     def _format_sampling_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format sampling parameters section"""
+        """Format sampling parameters section to match original format"""
         lines = ["=== SAMPLING PARAMETERS ==="]
         
-        sampling_params = {}
+        steps = None
+        cfg = None
+        sampler_name = None
+        scheduler = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -266,24 +311,23 @@ Generated: {timestamp}
             if 'sampler' in class_type.lower() and 'refiner' not in title:
                 # Primary sampler (not refiner)
                 if 'steps' in inputs:
-                    sampling_params['Steps'] = inputs['steps']
+                    steps = inputs['steps']
                 if 'cfg' in inputs:
-                    sampling_params['CFG Scale'] = inputs['cfg']
+                    cfg = inputs['cfg']
                 if 'sampler_name' in inputs:
-                    sampling_params['Sampler'] = inputs['sampler_name']
+                    sampler_name = inputs['sampler_name']
                 if 'scheduler' in inputs:
-                    sampling_params['Scheduler'] = inputs['scheduler']
-                if 'denoise' in inputs:
-                    sampling_params['Denoise'] = inputs['denoise']
-                if 'noise_seed' in inputs:
-                    sampling_params['Seed'] = inputs['noise_seed']
+                    scheduler = inputs['scheduler']
         
-        # Add parameters to output
-        for param, value in sampling_params.items():
-            lines.append(f"{param}: {value}")
-        
-        if not sampling_params:
-            lines.append("No sampling parameters detected")
+        # Add parameters in specific order
+        if steps is not None:
+            lines.append(f"Steps: {steps}")
+        if cfg is not None:
+            lines.append(f"Cfg: {cfg}")
+        if sampler_name:
+            lines.append(f"Sampler Name: {sampler_name}")
+        if scheduler:
+            lines.append(f"Scheduler: {scheduler}")
         
         return lines
     
@@ -328,12 +372,11 @@ Generated: {timestamp}
         return lines
     
     def _format_image_parameters(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format image generation parameters"""
+        """Format image generation parameters to match original format"""
         lines = ["=== IMAGE PARAMETERS ==="]
         
         width = None
         height = None
-        batch_size = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -348,28 +391,21 @@ Generated: {timestamp}
                     width = inputs['width']
                 if 'height' in inputs:
                     height = inputs['height']
-                if 'batch_size' in inputs:
-                    batch_size = inputs['batch_size']
         
         if width and height:
-            lines.append(f"Dimensions: {width} x {height}")
+            lines.append(f"Width: {width}")
+            lines.append(f"Height: {height}")
             aspect_ratio = round(width / height, 2)
-            lines.append(f"Aspect Ratio: {aspect_ratio}")
-        
-        if batch_size and batch_size > 1:
-            lines.append(f"Batch Size: {batch_size}")
-        
-        if not (width or height):
-            lines.append("No image parameters detected")
+            lines.append(f"Resolution: {width}x{height} ({aspect_ratio})")
         
         return lines
     
     def _format_upscaling_section(self, metadata: Dict[str, Any]) -> Optional[List[str]]:
-        """Format upscaling parameters if present"""
+        """Format upscaling parameters to match original format"""
         lines = ["=== UPSCALING ==="]
         
-        upscale_info = {}
-        has_upscaling = False
+        method = None
+        upscale_model = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -378,39 +414,26 @@ Generated: {timestamp}
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
             
-            if 'Upscale' in class_type:
-                has_upscaling = True
-                
-                if class_type == 'ImageUpscaleWithModel':
-                    upscale_info['Method'] = 'Model-based Upscaling'
-                elif class_type == 'ImageScaleBy':
-                    upscale_info['Method'] = 'Scale by Factor'
-                    if 'scale_by' in inputs:
-                        upscale_info['Scale Factor'] = inputs['scale_by']
-                elif class_type == 'LatentUpscaleBy':
-                    upscale_info['Method'] = 'Latent Upscaling'
-                    if 'scale_by' in inputs:
-                        upscale_info['Scale Factor'] = inputs['scale_by']
-                
-                if 'upscale_method' in inputs:
-                    upscale_info['Upscale Method'] = inputs['upscale_method']
-            
+            if class_type == 'ImageUpscaleWithModel':
+                method = 'ImageUpscaleWithModel'
+                # Look for upscale model in inputs or connected nodes
+                if 'upscale_model' in inputs:
+                    upscale_model = inputs['upscale_model']
+                    
             # Look for upscale model loaders
             if class_type == 'UpscaleModelLoader':
                 if 'model_name' in inputs:
-                    upscale_info['Upscale Model'] = inputs['model_name']
+                    upscale_model = inputs['model_name']
         
-        if not has_upscaling:
-            return None
+        # Check if we have upscaling info
+        if method or upscale_model:
+            if method:
+                lines.append(f"Method: {method}")
+            if upscale_model:
+                lines.append(f"Upscale Model: {upscale_model}")
+            return lines
         
-        # Add parameters to output
-        for param, value in upscale_info.items():
-            lines.append(f"{param}: {value}")
-        
-        if not upscale_info:
-            lines.append("Upscaling enabled but no parameters detected")
-        
-        return lines
+        return None
     
     def _format_postprocessing_section(self, metadata: Dict[str, Any]) -> Optional[List[str]]:
         """Format post-processing effects if present"""

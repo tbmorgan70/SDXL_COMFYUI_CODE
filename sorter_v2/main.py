@@ -125,6 +125,17 @@ class SorterV2:
                 print("❌ Prefix is required for renaming")
                 rename_files = False
         
+        # Advanced grouping options
+        print("\n🎯 GROUPING OPTIONS:")
+        print("1. By checkpoint only (default)")
+        print("2. By checkpoint + LoRA stack combination")
+        
+        grouping_choice = input("Choose grouping method (1-2, default=1): ").strip()
+        group_by_lora_stack = grouping_choice == "2"
+        
+        if group_by_lora_stack:
+            print("📝 Note: Images will be grouped by both checkpoint AND LoRA combinations")
+        
         # Confirm before starting
         print(f"\n📋 CONFIRMATION:")
         print(f"   Source: {source_dir}")
@@ -132,6 +143,7 @@ class SorterV2:
         print(f"   Files: {png_count} PNG files")
         print(f"   Operation: {operation}")
         print(f"   Metadata files: {'Yes' if create_metadata else 'No'}")
+        print(f"   Grouping: {'Checkpoint + LoRA Stack' if group_by_lora_stack else 'Checkpoint Only'}")
         print(f"   Rename files: {'Yes' if rename_files else 'No'}")
         if rename_files and user_prefix:
             print(f"   Naming pattern: {user_prefix}_img1, {user_prefix}_img2, etc.")
@@ -152,7 +164,8 @@ class SorterV2:
                 move_files=move_files,
                 create_metadata_files=create_metadata,
                 rename_files=rename_files,
-                user_prefix=user_prefix
+                user_prefix=user_prefix,
+                group_by_lora_stack=group_by_lora_stack
             )
             
             # Show results

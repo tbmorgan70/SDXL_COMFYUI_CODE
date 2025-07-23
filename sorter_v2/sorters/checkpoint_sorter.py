@@ -17,7 +17,7 @@ import os
 import shutil
 import json
 import sys
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from pathlib import Path
 import re
 
@@ -25,6 +25,7 @@ import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
+from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from core.diagnostics import SortLogger
 
 class CheckpointSorter:
@@ -33,6 +34,7 @@ class CheckpointSorter:
     def __init__(self, logger: Optional[SortLogger] = None):
         self.metadata_extractor = MetadataExtractor()
         self.metadata_analyzer = MetadataAnalyzer()
+        self.metadata_formatter = EnhancedMetadataFormatter()
         self.logger = logger or SortLogger()
         
         # Statistics
@@ -56,8 +58,9 @@ class CheckpointSorter:
         create_metadata_files: bool = True,
         preserve_structure: bool = False,
         rename_files: bool = False,
-        user_prefix: str = ""
-    ) -> Dict[str, any]:
+        user_prefix: str = "",
+        group_by_lora_stack: bool = False
+    ) -> Dict[str, Any]:
         """
         Sort images by base checkpoint into organized folders
         
@@ -65,10 +68,11 @@ class CheckpointSorter:
             source_dir: Directory containing images to sort
             output_dir: Base output directory for sorted images  
             move_files: True to move files, False to copy
-            create_metadata_files: Create JSON metadata files alongside images
+            create_metadata_files: Create text metadata files alongside images
             preserve_structure: Keep original subfolder structure
             rename_files: True to rename files with sequential numbering
             user_prefix: Custom prefix for renamed files (e.g. "nova_skyrift")
+            group_by_lora_stack: Also group by LoRA combination within checkpoint folders
             
         Returns:
             Dictionary with sorting results and statistics
@@ -97,14 +101,17 @@ class CheckpointSorter:
         metadata_results = self._extract_all_metadata(png_files)
         self.logger.complete_operation()
         
-        # Phase 2: Analyze and group by checkpoint
+        # Phase 2: Analyze and group by checkpoint (and optionally LoRA stack)
         self.logger.start_operation("Checkpoint Analysis")
-        checkpoint_groups = self._group_by_checkpoint(png_files, metadata_results)
+        if group_by_lora_stack:
+            checkpoint_groups = self._group_by_checkpoint_and_lora(png_files, metadata_results)
+        else:
+            checkpoint_groups = self._group_by_checkpoint(png_files, metadata_results)
         self.logger.complete_operation()
         
         # Phase 3: Create folder structure
         self.logger.start_operation("Folder Creation")
-        self._create_checkpoint_folders(output_dir, checkpoint_groups.keys())
+        self._create_checkpoint_folders(output_dir, list(checkpoint_groups.keys()))
         self.logger.complete_operation()
         
         # Phase 4: Sort files into folders
@@ -200,6 +207,110 @@ class CheckpointSorter:
             self.logger._write_log(f"  {checkpoint}: {len(files)} files")
         
         return checkpoint_groups
+    
+    def _group_by_checkpoint_and_lora(
+        self, 
+        png_files: List[Tuple[str, str]], 
+        metadata_results: Dict[str, Optional[Dict]]
+    ) -> Dict[str, List[Tuple[str, str]]]:
+        """Group files by their primary checkpoint AND LoRA stack combination (using improved algorithm)"""
+        
+        # First, create records with grouping signatures
+        records = []
+        for file_path, rel_path in png_files:
+            metadata = metadata_results.get(file_path)
+            if metadata:
+                group_signature = self.metadata_formatter.get_grouping_signature(metadata)
+            else:
+                group_signature = 'None'
+            
+            records.append({
+                'file_path': file_path,
+                'rel_path': rel_path,
+                'group': group_signature
+            })
+        
+        # Version key function (from working older version)
+        def version_key(group_name):
+            import re
+            match = re.search(r"(\d+\.\d+)", group_name)
+            return float(match.group(1)) if match else float('inf')
+        
+        # Get unique groups and sort them by version
+        unique_groups = sorted(set(record['group'] for record in records), 
+                             key=lambda g: (version_key(g), g))
+        
+        # Create generation mapping
+        gen_map = {}
+        counter = 1
+        for group in unique_groups:
+            if group == 'None':
+                gen_map[group] = 0
+            else:
+                gen_map[group] = counter
+                counter += 1
+        
+        # Group files by their signatures, but organize by checkpoint for folder structure
+        checkpoint_groups = {}
+        
+        for record in records:
+            metadata = metadata_results.get(record['file_path'])
+            
+            if metadata:
+                # Extract just the base checkpoint for folder name
+                primary_checkpoint = self.metadata_analyzer.extract_primary_checkpoint(metadata)
+                
+                if primary_checkpoint:
+                    folder_name = self._clean_checkpoint_name(primary_checkpoint)
+                    
+                    if folder_name not in checkpoint_groups:
+                        checkpoint_groups[folder_name] = []
+                    
+                    checkpoint_groups[folder_name].append((record['file_path'], record['rel_path']))
+                else:
+                    # No checkpoint found
+                    if 'Unknown_Checkpoint' not in checkpoint_groups:
+                        checkpoint_groups['Unknown_Checkpoint'] = []
+                    
+                    checkpoint_groups['Unknown_Checkpoint'].append((record['file_path'], record['rel_path']))
+                    self.stats['unknown_checkpoint'] += 1
+            else:
+                # Metadata extraction failed
+                if 'No_Metadata' not in checkpoint_groups:
+                    checkpoint_groups['No_Metadata'] = []
+                
+                checkpoint_groups['No_Metadata'].append((record['file_path'], record['rel_path']))
+                self.stats['failed_extractions'] += 1
+        
+        self.logger._write_log(f"Grouped into {len(checkpoint_groups)} checkpoint folders:")
+        for checkpoint, files in checkpoint_groups.items():
+            self.logger._write_log(f"  {checkpoint}: {len(files)} files")
+        
+        return checkpoint_groups
+    
+    def _simplify_lora_signature(self, lora_signature: str) -> str:
+        """Simplify LoRA signature for folder naming"""
+        # Split by | to get individual LoRAs
+        loras = lora_signature.split('|')
+        
+        # Extract just the LoRA names (without strengths)
+        lora_names = []
+        for lora in loras:
+            if '@' in lora:
+                name = lora.split('@')[0]
+                # Remove .safetensors extension and clean up
+                name = name.replace('.safetensors', '')
+                # Take only first part if very long
+                if len(name) > 15:
+                    name = name[:15]
+                lora_names.append(name)
+        
+        # Join with underscores, limit total length
+        result = '_'.join(lora_names)
+        if len(result) > 40:
+            result = result[:40]
+        
+        return result if result else "CustomLoRAs"
     
     def _clean_checkpoint_name(self, checkpoint_path: str) -> str:
         """Clean checkpoint name for use as folder name"""
@@ -330,28 +441,21 @@ class CheckpointSorter:
         return dest_path
     
     def _create_metadata_file(self, image_path: str, metadata: Dict):
-        """Create a JSON metadata file alongside the image"""
+        """Create a clean text metadata file alongside the image (matching original format)"""
         base_path = os.path.splitext(image_path)[0]
-        metadata_path = f"{base_path}_metadata.json"
-        
-        # Create simplified metadata for readability
-        simplified_metadata = {
-            'image_file': os.path.basename(image_path),
-            'checkpoints': self.metadata_analyzer.extract_checkpoints(metadata),
-            'primary_checkpoint': self.metadata_analyzer.extract_primary_checkpoint(metadata),
-            'loras': self.metadata_analyzer.extract_loras(metadata),
-            'sampling_params': self.metadata_analyzer.extract_sampling_params(metadata),
-            'prompts': self.metadata_analyzer.extract_prompts(metadata),
-            'full_metadata': metadata
-        }
+        metadata_path = f"{base_path}.txt"
         
         try:
+            # Use the enhanced formatter to create clean text
+            formatted_text = self.metadata_formatter.format_metadata_to_text(metadata, image_path)
+            
             with open(metadata_path, 'w', encoding='utf-8') as f:
-                json.dump(simplified_metadata, f, indent=2, ensure_ascii=False)
+                f.write(formatted_text)
+                
         except Exception as e:
             self.logger.log_error(f"Failed to create metadata file: {str(e)}", metadata_path, "Metadata Write")
     
-    def _get_results(self) -> Dict[str, any]:
+    def _get_results(self) -> Dict[str, Any]:
         """Get comprehensive sorting results"""
         extractor_stats = self.metadata_extractor.get_statistics()
         
@@ -362,7 +466,7 @@ class CheckpointSorter:
             'session_summary': self.logger.get_summary()
         }
     
-    def _log_summary(self, results: Dict[str, any]):
+    def _log_summary(self, results: Dict[str, Any]):
         """Log comprehensive summary"""
         stats = results['sorter_stats']
         
