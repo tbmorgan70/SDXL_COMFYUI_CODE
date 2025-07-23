@@ -197,27 +197,43 @@ class MetadataAnalyzer:
         if not metadata:
             return None
         
-        # Look for base checkpoints (exclude refiners)
-        base_candidates = []
-        
-        for entry in metadata.values():
+        # Track potential base and refiner checkpoints
+        base_ckpt = None
+        refiner_ckpt = None
+
+        for title, entry in metadata.items():
             class_type = entry.get('class_type', '')
             inputs = entry.get('inputs', {})
-            
+            title = str(title).lower()
+
+            # Explicit base checkpoint field takes highest priority
+            if 'base_ckpt' in inputs and inputs['base_ckpt']:
+                base_ckpt = inputs['base_ckpt']
+
+            # Standard checkpoint name
             if 'ckpt_name' in inputs:
-                # Skip refiner-related nodes
+                ckpt = inputs['ckpt_name']
                 is_refiner = (
-                    'refiner' in class_type.lower() or
-                    'refiner' in str(inputs).lower() or
-                    'start_at_step' in inputs or
-                    'end_at_step' in inputs
+                    'refiner' in class_type.lower()
+                    or 'refiner' in title
+                    or 'start_at_step' in inputs
+                    or 'end_at_step' in inputs
+                    or any(key in inputs for key in ['refiner_ckpt', 'refiner_model'])
                 )
-                
-                if not is_refiner:
-                    base_candidates.append(inputs['ckpt_name'])
-        
-        # Return the first base checkpoint found
-        return base_candidates[0] if base_candidates else None
+                if is_refiner:
+                    if not refiner_ckpt:
+                        refiner_ckpt = ckpt
+                else:
+                    if not base_ckpt:
+                        base_ckpt = ckpt
+
+            # Dedicated refiner fields (used if nothing else found)
+            for field in ['refiner_ckpt', 'refiner_model']:
+                if field in inputs and not refiner_ckpt:
+                    refiner_ckpt = inputs[field]
+
+        # Prefer base checkpoint when available, otherwise fall back to refiner
+        return base_ckpt or refiner_ckpt
     
     @staticmethod
     def extract_sampling_params(metadata: Dict[str, Any]) -> Dict[str, Any]:
