@@ -64,18 +64,35 @@ class EnhancedMetadataFormatter:
         return "\n".join(lines)
     
     def get_base_model(self, metadata: Dict[str, Any]) -> Optional[str]:
-        """Extract base model name for grouping"""
+        """Extract base model name for grouping (ignoring refiner models)"""
+        base_model = None
+        refiner_model = None
+        
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
                 
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
+            title = node_data.get('_meta', {}).get('title', '').lower()
             
             if 'ckpt_name' in inputs:
-                return inputs['ckpt_name']
+                # Check if this is a refiner node
+                is_refiner = (
+                    'refiner' in class_type.lower() or 
+                    'refiner' in title or
+                    'start_at_step' in inputs or  # Common refiner parameter
+                    'end_at_step' in inputs
+                )
+                
+                if is_refiner:
+                    refiner_model = inputs['ckpt_name']
+                else:
+                    # This is likely the base model
+                    base_model = inputs['ckpt_name']
         
-        return None
+        # Return base model, or refiner if no base found, or None
+        return base_model or refiner_model
     
     def get_lora_stack_signature(self, metadata: Dict[str, Any]) -> str:
         """Create a signature string representing the LoRA stack for grouping (improved version)"""
@@ -158,10 +175,14 @@ Generated: {timestamp}
                 vae = inputs['vae_name']
         
         if base_model:
-            lines.append(f"Base Model: {base_model}")
+            # Extract just the filename from the path
+            base_model_name = base_model.split('\\')[-1] if '\\' in base_model else base_model.split('/')[-1]
+            lines.append(f"Base Model: {base_model_name}")
         
         if vae:
-            lines.append(f"VAE: {vae}")
+            # Extract just the filename from the path
+            vae_name = vae.split('\\')[-1] if '\\' in vae else vae.split('/')[-1]
+            lines.append(f"VAE: {vae_name}")
         
         return lines
     
@@ -181,10 +202,12 @@ Generated: {timestamp}
             
             if class_type == 'LoraLoader' and 'lora_name' in inputs:
                 lora_name = inputs['lora_name']
+                # Extract just the filename from the path
+                lora_filename = lora_name.split('\\')[-1] if '\\' in lora_name else lora_name.split('/')[-1]
                 model_strength = inputs.get('strength_model', 1.0)
                 clip_strength = inputs.get('strength_clip', 1.0)
                 
-                lora_info = f"LoRA {lora_count}: {lora_name}"
+                lora_info = f"LoRA {lora_count}: {lora_filename}"
                 if model_strength != 1.0 or clip_strength != 1.0:
                     lora_info += f" (Model: {model_strength}, CLIP: {clip_strength})"
                 
@@ -292,13 +315,18 @@ Generated: {timestamp}
         return lines
     
     def _format_sampling_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format sampling parameters section to match original format"""
+        """Format sampling parameters section to match original format (prioritize base KSampler over refiner)"""
         lines = ["=== SAMPLING PARAMETERS ==="]
         
-        steps = None
-        cfg = None
-        sampler_name = None
-        scheduler = None
+        base_steps = None
+        base_cfg = None
+        base_sampler_name = None
+        base_scheduler = None
+        
+        refiner_steps = None
+        refiner_cfg = None
+        refiner_sampler_name = None
+        refiner_scheduler = None
         
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
@@ -308,16 +336,43 @@ Generated: {timestamp}
             inputs = node_data.get('inputs', {})
             title = node_data.get('_meta', {}).get('title', '').lower()
             
-            if 'sampler' in class_type.lower() and 'refiner' not in title:
-                # Primary sampler (not refiner)
-                if 'steps' in inputs:
-                    steps = inputs['steps']
-                if 'cfg' in inputs:
-                    cfg = inputs['cfg']
-                if 'sampler_name' in inputs:
-                    sampler_name = inputs['sampler_name']
-                if 'scheduler' in inputs:
-                    scheduler = inputs['scheduler']
+            # Look for KSampler nodes (focus on actual sampler data)
+            if 'sampler' in class_type.lower():
+                # Simplified refiner detection based on debug findings:
+                # If start_at_step > 0, it's a refiner sampler
+                is_refiner = False
+                
+                if 'refiner' in title:
+                    is_refiner = True
+                elif 'start_at_step' in inputs and inputs.get('start_at_step', 0) > 0:
+                    is_refiner = True
+                
+                if is_refiner:
+                    # This is a refiner sampler
+                    if 'steps' in inputs:
+                        refiner_steps = inputs['steps']
+                    if 'cfg' in inputs:
+                        refiner_cfg = inputs['cfg']
+                    if 'sampler_name' in inputs:
+                        refiner_sampler_name = inputs['sampler_name']
+                    if 'scheduler' in inputs:
+                        refiner_scheduler = inputs['scheduler']
+                else:
+                    # This is a base sampler - prioritize this for steps
+                    if 'steps' in inputs:
+                        base_steps = inputs['steps']
+                    if 'cfg' in inputs:
+                        base_cfg = inputs['cfg']
+                    if 'sampler_name' in inputs:
+                        base_sampler_name = inputs['sampler_name']
+                    if 'scheduler' in inputs:
+                        base_scheduler = inputs['scheduler']
+        
+        # Use base sampler parameters, fall back to refiner if no base found
+        steps = base_steps if base_steps is not None else refiner_steps
+        cfg = base_cfg if base_cfg is not None else refiner_cfg
+        sampler_name = base_sampler_name if base_sampler_name else refiner_sampler_name
+        scheduler = base_scheduler if base_scheduler else refiner_scheduler
         
         # Add parameters in specific order
         if steps is not None:
@@ -385,12 +440,34 @@ Generated: {timestamp}
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
             
-            # Look for latent size parameters
-            if 'EmptyLatent' in class_type or 'LatentSize' in class_type:
+            # Look for SDXL Empty Latent Size Picker (most common)
+            if 'SDXLEmptyLatentSizePicker' in class_type:
+                resolution = inputs.get('resolution', '')
+                if 'x' in resolution:
+                    # Parse resolution like "896x1152 (0.78)"
+                    try:
+                        size_part = resolution.split(' ')[0]  # Get "896x1152"
+                        width, height = map(int, size_part.split('x'))
+                        break
+                    except (ValueError, IndexError):
+                        pass
+            
+            # Fallback: Look for standard latent size parameters
+            elif 'EmptyLatent' in class_type or 'LatentSize' in class_type:
                 if 'width' in inputs:
                     width = inputs['width']
                 if 'height' in inputs:
                     height = inputs['height']
+            
+            # Also check SDXL refiner encode nodes which contain final dimensions
+            elif class_type == 'CLIPTextEncodeSDXLRefiner':
+                if 'width' in inputs and 'height' in inputs:
+                    refiner_width = inputs['width']
+                    refiner_height = inputs['height']
+                    # Only use if we haven't found dimensions yet
+                    if not width and not height:
+                        width = refiner_width
+                        height = refiner_height
         
         if width and height:
             lines.append(f"Width: {width}")
@@ -406,7 +483,10 @@ Generated: {timestamp}
         
         method = None
         upscale_model = None
+        upscale_by = None
         
+        # First pass: collect upscale model loaders
+        upscale_models = {}
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
@@ -414,16 +494,44 @@ Generated: {timestamp}
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
             
-            if class_type == 'ImageUpscaleWithModel':
-                method = 'ImageUpscaleWithModel'
-                # Look for upscale model in inputs or connected nodes
-                if 'upscale_model' in inputs:
-                    upscale_model = inputs['upscale_model']
-                    
-            # Look for upscale model loaders
             if class_type == 'UpscaleModelLoader':
                 if 'model_name' in inputs:
-                    upscale_model = inputs['model_name']
+                    upscale_models[node_id] = inputs['model_name']
+        
+        # Second pass: find upscaling methods and link to models
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            
+            # Method 1: ImageUpscaleWithModel (simple upscale)
+            if class_type == 'ImageUpscaleWithModel':
+                method = 'ImageUpscaleWithModel'
+                # Look for connected upscale model
+                if 'upscale_model' in inputs:
+                    model_ref = inputs['upscale_model']
+                    if isinstance(model_ref, list) and len(model_ref) >= 1:
+                        model_node_id = model_ref[0]
+                        if model_node_id in upscale_models:
+                            upscale_model = upscale_models[model_node_id]
+                break
+            
+            # Method 2: UltimateSDUpscale (SD-based upscaling)
+            elif class_type == 'UltimateSDUpscale':
+                method = 'UltimateSDUpscale'
+                # Get upscale factor
+                if 'upscale_by' in inputs:
+                    upscale_by = inputs['upscale_by']
+                # Look for connected upscale model
+                if 'upscale_model' in inputs:
+                    model_ref = inputs['upscale_model']
+                    if isinstance(model_ref, list) and len(model_ref) >= 1:
+                        model_node_id = model_ref[0]
+                        if model_node_id in upscale_models:
+                            upscale_model = upscale_models[model_node_id]
+                break
         
         # Check if we have upscaling info
         if method or upscale_model:
@@ -431,6 +539,8 @@ Generated: {timestamp}
                 lines.append(f"Method: {method}")
             if upscale_model:
                 lines.append(f"Upscale Model: {upscale_model}")
+            if upscale_by and upscale_by != 1.0:
+                lines.append(f"Upscale Factor: {upscale_by}x")
             return lines
         
         return None

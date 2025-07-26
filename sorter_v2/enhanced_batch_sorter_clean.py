@@ -78,7 +78,7 @@ class EnhancedBatchSorter:
             raise
     
     def _rename_files_with_grouping(self, directory: str, user_string: str) -> List[Dict]:
-        """Rename PNG files with generation numbers per checkpoint + LoRA combination"""
+        """Rename PNG files with GLOBAL generation numbers for unique base model + LoRA combinations"""
         
         png_files = [f for f in os.listdir(directory) if f.lower().endswith('.png')]
         self.stats['total_images'] = len(png_files)
@@ -113,10 +113,17 @@ class EnhancedBatchSorter:
                 'checkpoint': checkpoint_name,
                 'lora_signature': lora_signature,
                 'group': group_signature,
-                'metadata': metadata
+                'metadata': metadata,
+                'base_model': base_model
             })
         
-        # Group by checkpoint first
+        # Create GLOBAL generation mapping for unique base model + LoRA combinations
+        unique_combinations = sorted(set(record['group'] for record in records))
+        global_gen_map = {}
+        for i, combo in enumerate(unique_combinations, 1):
+            global_gen_map[combo] = i
+        
+        # Group by checkpoint for folder organization
         checkpoint_groups = {}
         for record in records:
             checkpoint = record['checkpoint']
@@ -129,24 +136,14 @@ class EnhancedBatchSorter:
         
         # Process each checkpoint group
         for checkpoint, checkpoint_records in checkpoint_groups.items():
-            # Get unique LoRA combinations for this checkpoint
-            unique_lora_combos = sorted(set(record['lora_signature'] for record in checkpoint_records))
-            
-            # Create generation mapping per checkpoint
-            gen_map = {}
-            counter = 1
-            for lora_combo in unique_lora_combos:
-                gen_map[lora_combo] = counter
-                counter += 1
-            
-            # Sort records within this checkpoint by LoRA combo, then by original name
+            # Sort records within this checkpoint by generation number, then by original name
             sorted_checkpoint_records = sorted(checkpoint_records, 
-                                             key=lambda x: (x['lora_signature'], x['orig_name']))
+                                             key=lambda x: (global_gen_map[x['group']], x['orig_name']))
             
-            # Rename files within this checkpoint
+            # Rename files within this checkpoint using GLOBAL generation numbers
             for record in sorted_checkpoint_records:
-                gen = gen_map[record['lora_signature']]
-                new_name = f"[{user_string}] Gen {gen:02d} ${global_idx:04d}.png"
+                global_gen = global_gen_map[record['group']]
+                new_name = f"[{user_string}] Gen {global_gen:02d} ${global_idx:04d}.png"
                 
                 # Handle filename conflicts
                 base, ext = os.path.splitext(new_name)
@@ -160,17 +157,18 @@ class EnhancedBatchSorter:
                 new_path = os.path.join(directory, unique_name)
                 os.rename(record['file_path'], new_path)
                 
-                self.logger._write_log(f"[RENAME] {record['orig_name']} -> {unique_name} (Checkpoint: {checkpoint}, Gen: {gen})")
+                self.logger._write_log(f"[RENAME] {record['orig_name']} -> {unique_name} (Checkpoint: {checkpoint}, Gen: {global_gen:02d})")
                 
                 renamed_records.append({
                     'orig_name': record['orig_name'],
                     'new_name': unique_name,
                     'file_path': new_path,
-                    'gen': gen,
+                    'gen': global_gen,
                     'checkpoint': checkpoint,
                     'lora_signature': record['lora_signature'],
                     'group': record['group'],
-                    'metadata': record['metadata']
+                    'metadata': record['metadata'],
+                    'base_model': record['base_model']
                 })
                 
                 global_idx += 1
