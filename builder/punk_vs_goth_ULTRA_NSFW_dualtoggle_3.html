@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<!-- ULTRA Dual Toggle Prompt Builder -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ULTRA Punk Rock Princess</title>
+  <style>
+    /* Punk Static Effects */
+    #disco-static {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0,255,65,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      animation: punkFlicker 0.08s steps(4) infinite;
+      z-index: 1000;
+    }
+
+    @keyframes punkFlicker {
+      0% { opacity: 0.1; transform: scale(1) rotate(0deg); }
+      25% { opacity: 0.25; transform: scale(1.02) rotate(0.5deg); }
+      50% { opacity: 0.05; transform: scale(0.98) rotate(-0.3deg); }
+      75% { opacity: 0.18; transform: scale(1.01) rotate(0.2deg); }
+      100% { opacity: 0.15; transform: scale(1) rotate(0deg); }
+    }
+
+    #disco-scanlines {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255,0,64,0.05) 25%,
+          transparent 50%,
+          rgba(0,255,65,0.04) 75%,
+          transparent 100%
+        ),
+        linear-gradient(
+          rgba(255,255,255,0.02) 50%, 
+          transparent 50%
+        ) 0 0 / 100% 1px;
+      animation: punkScanlines 2s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes punkScanlines {
+      0% { transform: translateX(0) skew(0deg); }
+      100% { transform: translateX(30px) skew(0.5deg); }
+    }
+
+    /* Disco Ball Sparkles */
+    #disco-sparkles {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.8) 1px, transparent 2px),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 1px, transparent 2px),
+        radial-gradient(circle at 70% 10%, rgba(255,255,255,0.7) 1px, transparent 2px),
+        radial-gradient(circle at 30% 90%, rgba(255,255,255,0.5) 1px, transparent 2px);
+      background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px;
+      animation: sparkleRotate 8s linear infinite;
+      z-index: 998;
+    }
+
+    @keyframes sparkleRotate {
+      0% { transform: rotate(0deg); opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { transform: rotate(360deg); opacity: 0.3; }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      padding-bottom: 130px;
+      background: 
+        linear-gradient(45deg, #000000 0%, #1a0000 25%, #000000 50%, #001a00 75%, #000000 100%),
+        radial-gradient(circle at 30% 70%, #ff0040 0%, transparent 40%),
+        radial-gradient(circle at 70% 30%, #00ff41 0%, transparent 30%);
+      background-size: 100% 100%, 300px 300px, 200px 200px;
+      color: #ffffff;
+      text-align: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff0040, #ffffff, #00ff41, #ff0040);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: punkTitle 2s ease-in-out infinite, titleGlitch 0.15s infinite;
+      position: relative;
+      text-shadow: 0 0 20px rgba(255,0,64,0.8);
+      font-weight: 900;
+    }
+
+    @keyframes punkTitle {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes titleGlitch {
+      0%, 85%, 100% { transform: translate(0); }
+      90% { transform: translate(-3px, 2px) skew(-1deg); }
+      95% { transform: translate(2px, -1px) skew(0.5deg); }
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      overflow: hidden;
+    }
+
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -2px 0 #ff0040;
+      animation: glitchTop 1.5s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: 2px 0 #00ff41;
+      animation: glitchBottom 1.8s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    @keyframes glitchTop {
+      0%, 100% { clip: rect(2px, 9999px, 8px, 0); }
+      10% { clip: rect(8px, 9999px, 16px, 0); }
+      20% { clip: rect(4px, 9999px, 12px, 0); }
+      30% { clip: rect(12px, 9999px, 20px, 0); }
+      40% { clip: rect(6px, 9999px, 14px, 0); }
+    }
+
+    @keyframes glitchBottom {
+      0%, 100% { clip: rect(15px, 9999px, 23px, 0); }
+      10% { clip: rect(20px, 9999px, 28px, 0); }
+      20% { clip: rect(18px, 9999px, 26px, 0); }
+      30% { clip: rect(22px, 9999px, 30px, 0); }
+      40% { clip: rect(16px, 9999px, 24px, 0); }
+    }
+
+    #sections {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 200px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .section {
+      flex: 0 0 calc(20% - 10px);
+      margin: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(20,0,0,0.9) 50%, rgba(0,20,0,0.8) 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 3px;
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      position: relative;
+      animation: punkSectionPulse 3s ease-in-out infinite;
+      transform: skew(-1deg);
+    }
+
+    @keyframes punkSectionPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 8px rgba(255,0,64,0.4),
+          inset 0 0 20px rgba(0,0,0,0.5);
+        border-left-color: #ff0040;
+        transform: skew(-1deg);
+      }
+      50% { 
+        box-shadow: 
+          0 0 20px rgba(0,255,65,0.5),
+          inset 0 0 30px rgba(0,0,0,0.7);
+        border-left-color: #00ff41;
+        transform: skew(-0.5deg);
+      }
+    }
+
+    .section:nth-child(even) {
+      animation-delay: 2s;
+    }
+
+    .section h3 { 
+      margin-top: 0; 
+      font-size: 14px;
+      position: relative;
+    }
+    .cat-toggle {
+      display: block;
+      text-align: left;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .section input {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 4px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: linear-gradient(90deg, #1a1a1a 0%, #222 100%);
+      margin: 4px 0;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 2px;
+      border-left: 2px solid #333;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    li:hover { 
+      background: linear-gradient(90deg, #333 0%, #444 100%);
+      transform: translateX(3px) skew(-0.5deg);
+      border-left-color: #ff0040;
+      box-shadow: 
+        0 0 12px rgba(255,0,64,0.6),
+        inset 0 0 10px rgba(255,0,64,0.1);
+      transition: all 0.15s ease;
+    }
+    
+    li.selected {
+      background: linear-gradient(90deg, rgba(255,0,64,0.2) 0%, rgba(0,255,65,0.2) 100%);
+      border-left: 3px solid #00ff41;
+      box-shadow: 
+        0 0 15px rgba(0,255,65,0.8),
+        inset 0 0 15px rgba(0,255,65,0.2);
+      animation: selectedPunkPulse 2s ease-in-out infinite;
+      transform: translateX(2px) skew(-0.3deg);
+    }
+
+    @keyframes selectedPunkPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 15px rgba(255,0,64,0.8),
+          inset 0 0 15px rgba(255,0,64,0.2);
+      }
+      50% { 
+        box-shadow: 
+          0 0 25px rgba(255,0,64,0.9),
+          inset 0 0 20px rgba(255,0,64,0.3);
+      }
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: 
+        linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(20,0,0,0.95) 100%),
+        radial-gradient(circle at 50% 0%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 3px solid #333;
+      border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+      animation: punkFooterGlow 2.5s ease-in-out infinite;
+      z-index: 1001;
+    }
+
+    @keyframes punkFooterGlow {
+      0%, 100% { 
+        border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+      }
+      50% { 
+        border-image: linear-gradient(90deg, #00ff41, #ff0040, #00ff41) 1;
+        box-shadow: 0 -5px 30px rgba(255,0,64,0.3);
+      }
+    }
+
+    #promptBox {
+      width: 90%;
+      height: 80px;
+      margin: 0;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,0,0,0.9) 100%),
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.1) 0%, transparent 60%);
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      position: relative;
+      animation: punkPromptGlitch 0.3s infinite;
+      padding: 8px;
+      box-shadow: 
+        0 0 15px rgba(255,0,64,0.3),
+        inset 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    @keyframes punkPromptGlitch {
+      0%, 92%, 100% { transform: translate(0) skew(0deg); }
+      94% { transform: translate(-1px, 1px) skew(-0.2deg); }
+      96% { transform: translate(1px, -1px) skew(0.1deg); }
+    }
+
+    .toggles { 
+      margin-bottom: 20px; 
+      position: relative;
+      z-index: 10;
+    }
+    .toggles label { 
+      margin-right: 20px; 
+      font-weight: bold;
+      padding: 8px 12px;
+      background: rgba(255,110,199,0.1);
+      border-radius: 15px;
+      border: 1px solid rgba(255,110,199,0.3);
+      transition: all 0.3s ease;
+    }
+    .toggles label:hover {
+      background: rgba(255,110,199,0.2);
+      box-shadow: 0 0 10px rgba(255,110,199,0.4);
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      background: 
+        linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.2) 0%, transparent 70%);
+      color: #ffffff;
+      border: 2px solid #333;
+      border-left: 3px solid #ff0040;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.15s ease;
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.3),
+        inset 0 0 15px rgba(0,0,0,0.5);
+      transform: skew(-2deg);
+    }
+    button:hover { 
+      background: 
+        linear-gradient(135deg, #333 0%, #555 50%, #333 100%),
+        radial-gradient(circle at 30% 30%, rgba(0,255,65,0.3) 0%, transparent 70%);
+      border-left-color: #00ff41;
+      box-shadow: 
+        0 0 20px rgba(0,255,65,0.6),
+        inset 0 0 20px rgba(0,255,65,0.1);
+      transform: translateY(-2px) skew(-1deg);
+      text-shadow: 0 0 8px rgba(0,255,65,0.8);
+    }
+
+    button:active {
+      transform: translateY(0) skew(-2deg);
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.8),
+        inset 0 0 25px rgba(0,0,0,0.8);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,0,64,0.3), transparent);
+      transition: left 0.3s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="disco-static"></div>
+<div id="disco-scanlines"></div>
+  <div id="disco-sparkles"></div>
+
+<h1 class="glitch-text" data-text="ULTRA Dual Toggle Prompt Builder">ULTRA <span id="style-title">Punk Rock</span> Princess</h1>      
+<div class="toggles">
+  <label><input type="checkbox" id="togglePunkGoth"> 🖤 GOTHIC MODE</label>
+  <label><input type="checkbox" id="toggleSfwNsfw"> 🔞 NSFW MODE</label>
+</div>
+<div id="sections">
+
+<!-- body type options -->
+<div class="section" id="bodytype">
+  <h3 id="label-bodytype">Body Type</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked> include</label>
+  <input type="text" value="Body Type" oninput="updateLabel('bodytype', this.value)">
+<ul>
+    <li onclick="pick('bodytype', this)">petite frame and delicate features, small breasts</li>
+    <li onclick="pick('bodytype', this)">wide hips, perfect ass, small breasts</li>
+    <li onclick="pick('bodytype', this)">busty with large breasts and curvy hips. </li>
+    <li onclick="pick('bodytype', this)">athletic with perky breasts, toned ass</li>
+    <li onclick="pick('bodytype', this)">curvy with full breasts and wide hips</li>
+    <li onclick="pick('bodytype', this)">freckled, slim and petite with firm medium breasts</li>
+    <li onclick="pick('bodytype', this)">a softer fuller figure, large breasts, round belly</li>
+    <li onclick="pick('bodytype', this)">tall and slender with long legs, small breasts</li>
+    <li onclick="pick('bodytype', this)">slim with a flat stomach, small breasts</li>
+    <li onclick="pick('bodytype', this)">voluptuous with a curvy figure, large breasts, and wide hips</li>
+    <li onclick="pick('bodytype', this)">average build with a healthy figure, medium breasts</li>
+    <li onclick="pick('bodytype', this)">muscular with toned arms and legs, strong physique, defined abs, fake breasts</li>
+    <li onclick="pick('bodytype', this)">petite with a small frame, delicate features, and perky breasts</li>
+    <li onclick="pick('bodytype', this)">curvy with a soft waist, full hips, and large breasts</li>
+    <li onclick="pick('bodytype', this)">athletic with a toned body, defined muscles, and small breasts</li>
+    <li onclick="pick('bodytype', this)">slender with a graceful figure, long limbs, and small breasts</li>
+  </ul>
+</div>
+
+<!-- Hair & Makeup -->
+<div class="section" id="hairmakeup">
+  <h3 id="label-hairmakeup">Hair & Makeup</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-hairmakeup" checked> include</label>
+  <input type="text" value="Hair & Makeup" oninput="updateLabel('hairmakeup', this.value)">
+<ul>
+    <!-- PUNK HAIR & MAKEUP -->
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">electric blue mohawk with spiked hair</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">rainbow colored undercut with shaved sides</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">multiple facial piercings and safety pins</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">heavy black eyeliner and smoky dark eye makeup</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">hot pink liberty spikes with towering hair</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">neon green eyeshadow with bold colors</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">shaved head with geometric patterns</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">blood red lipstick with dark makeup</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">messy dreadlocks with wild texture</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">glitter face paint with sparkles</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">leather hair ties and punk styling</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">chain mail hair net with metal decoration</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">neon body paint with electric colors</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">studded hair clips with metal hardware</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-punk="true">tattoo-style makeup with permanent marker look</li>
+
+    <!-- GOTH HAIR & MAKEUP -->
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">long raven black hair with flowing waves</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">porcelain white skin with pale complexion</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">deep crimson lips with dark red lipstick</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">smoky charcoal eyes with dark eyeshadow</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">elegant Victorian updo with elaborate styling</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">midnight blue highlights in dark hair</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">black lace hair veil with delicate patterns</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">burgundy wine colored hair with rich tones</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">pearl powder luminescent skin with glow</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">raven feather hair ornaments</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">silver frost eyeshadow with metallic shimmer</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">romantic ringlet curls cascading down</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">vampire bite marks on neck</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">corset-inspired hair styling with Victorian constraint</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">candlelit golden glow on skin</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">rose thorn scratches with beautiful wounds</li>
+    <li onclick="pick('hairmakeup', this)" data-toggle-goth="true" style="display:none;">moonlight silver highlights in hair</li>
+  </ul>
+</div>
+
+<!-- Camera Angle -->
+<div class="section" id="cameraangle">
+  <h3 id="label-cameraangle">Camera Angle</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-cameraangle" checked> include</label>
+  <input type="text" value="Camera Angle" oninput="updateLabel('cameraangle', this.value)">
+<ul>
+    <!-- PUNK CAMERA ANGLES -->
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">low angle shot looking up, powerful dominance</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">dutch angle with tilted horizon, chaotic perspective</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">extreme close-up of face, intense details</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">fisheye lens with curved distortion</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">handheld shaky camera with motion blur</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">overhead bird's eye view looking down</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">wide shot with urban background</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">tracking shot following movement</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">dramatic lens flare with bright lights</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-punk="true">street level perspective from ground up</li>
+
+    <!-- GOTH CAMERA ANGLES -->
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">high angle looking down, vulnerable perspective</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">portrait orientation with elegant framing</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">soft focus with dreamy blurred edges</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">medium shot with balanced composition</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">window frame composition with architectural border</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">candlelit low light atmosphere</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">mirror reflection with doubled perspective</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">cathedral scale with grand architecture</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">profile silhouette with side lighting</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">stained glass filtered lighting</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">cemetery perspective with tombstone framing</li>
+    <li onclick="pick('cameraangle', this)" data-toggle-goth="true" style="display:none;">moonlight streaming through windows</li>
+  </ul>
+</div>
+
+<!-- pose -->
+<div class="section" id="pose">
+  <h3 id="label-pose">Pose</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-pose" checked> include</label>
+  <input type="text" value="Pose" oninput="updateLabel('pose', this.value)">
+<ul>
+    <!-- PUNK POSES -->
+    <li onclick="pick('pose', this)" data-toggle-punk="true">power stance with legs spread wide, aggressive posture</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">middle finger salute with defiant gesture</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">stage diving leap with arms outstretched</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">mosh pit frenzy with chaotic movement</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">fist raised high in protest</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">smoking cigarette with rebellious attitude</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">air guitar stance with rock star energy</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">skateboard trick with athletic balance</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">leaning against wall casually</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">motorcycle riding position</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">motorcycle straddling with powerful dominance</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">leather jacket removal with rebellious undressing</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">stage performing with seductive energy</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">tattoo displaying with body art pride</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">cigarette smoking with dangerous allure</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">power stance with legs spread wide, aggressive posture</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">middle finger salute with defiant gesture</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">fist raised high in protest</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">smoking cigarette with rebellious attitude</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">leaning against wall casually</li>
+    <li onclick="pick('pose', this)" data-toggle-punk="true">motorcycle riding position</li>
+
+    <!-- GOTH POSES -->
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">cathedral prayer with hands clasped in devotion</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">fainting couch recline with dramatic elegance</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">rose garden contemplation, admiring flowers</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">mirror gazing with self-reflection</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">poetry reading with book in hand</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">ballroom dancing with graceful movement</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">candlelit séance with mystical atmosphere</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">window gazing with longing expression</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">cemetery mourning at tombstone</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">opera singing with theatrical drama</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">tea ceremony with refined etiquette</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">violin playing with melancholy expression</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">vampire bite offering with neck exposed</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">undressing in a complicated victorian corset</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">candlelit bath with romantic luxury</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">opera box seduction with theatrical setting</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">moonlight window longing with desire</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">cathedral prayer with hands clasped in devotion</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">fainting couch recline with dramatic elegance</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">mirror gazing with self-reflection</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">candlelit séance with mystical atmosphere</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">tea ceremony with refined etiquette</li>
+    <li onclick="pick('pose', this)" data-toggle-goth="true" style="display:none;">violin playing with melancholy expression</li>
+
+  </ul>
+</div>
+
+<!-- clothing -->
+<div class="section" id="clothing">
+  <h3 id="label-clothing">Clothing</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-clothing" checked> include</label>
+  <input type="text" value="Clothing" oninput="updateLabel('clothing', this.value)">
+<ul>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">open leather jacket with studs and spikes, matching bra visable</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">ripped jeans with patches and chains, tight tank top</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">band t-shirt with oversized fit, tight jeans</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">fishnet stockings and combat boots, mini skirt, see-through blouse unbuttoned in front</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">plaid skirt with suspenders and knee-high socks, thin tight ivory t-shirt with no bra</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">female cut graphic hoodie with bold prints, baggy cargo pants riding on waist with visible panties</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">denim vest with pins and patches, black tank top, tight torn jean shorts</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">mesh top with layered tank tops, micro mini skirt</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">vintage band tee with distressed details, high-waisted shorts with chains and studs</li>
+    <li onclick="pick('clothing', this)" data-toggle-punk="true">graphic leggings with cut-out details, exposed midriff, tight mesh top</li>
+
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">flowing black velvet dress with lace details, loose black blouse with exposed ceavage</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">corseted bodice with romantic ruffles, short mini skirt with form fitting black leggins</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">dark Victorian-inspired coat with ornate buttons, pleated velvet pants</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">skin tight black leather pants with silver buckles, tight leather corset barely covering bodice</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">burgundy velvet skirt with black lace trim, dark blouse with burgundy trim and details</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">sheer black blouse with dramatic sleeves, tight leggings</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">long black cape with hood and silver clasps, lace corset, black tulle skirt</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">dark romantic gown with tiered skirts, see through blouse with visible undergarments</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">fitted black jacket with military-style details, black military-style tank top</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">layered black tulle skirt with chains, black lace bodysuit</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">crimson corset with black ribbon lacing, black lace gloves, black tulle skirt</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" style="display:none;">flowing black chiffon dress with bell sleeves, low cut in front, exposed cleavage</li>
+    
+  
+
+    
+    <!-- Goth NSFW Clothing -->
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">dark lace lingerie set with Victorian details, sheer black stockings</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">gothic romantic corset barely covering breasts, flowing black skirt with thigh-high slit</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">sheer black gown revealing dark undergarments, ornate choker and long gloves</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">burgundy velvet cape over minimal black lace bodysuit, thigh-high boots</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">dark romantic babydoll dress with deep neckline, black lace stockings</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">seductive gothic leather corset with silver buckles, tiny black skirt, lace gloves</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">sensual red lace bra and panties set</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">zombie halloween costume with tattered clothing and fake blood, lots of cleavage, short shorts that hightlight the ass</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">revealing sheer bodysuit with extreme sexual areas cut-out</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">intimate white lace lingerie with  black garter belt and white stockings</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">provocative leather corset with visible cleavage, tight leather pants highlighting ass</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">seductive sheer robe with lace trim, naked underneath</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">dark velvet bodysuit with plunging neckline, thigh-high stockings</li>
+    <li onclick="pick('clothing', this)" data-toggle-goth="true" data-toggle-nsfw="true" style="display:none;">dark black latex body suit with cat ears and a tail</li>
+</ul>
+</div>
+
+<!-- accessories -->
+<div class="section" id="accessories">
+  <h3 id="label-accessories">Accessories</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-accessories" checked> include</label>
+  <input type="text" value="Accessories" oninput="updateLabel('accessories', this.value)">
+<ul>
+    <!-- PUNK ACCESSORIES -->
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">spiked leather collar with chrome studs and chains</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">safety pin earrings with bent metal</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">motorcycle chain belt with skull buckle</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">fingerless leather gloves with metal studs</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">anarchist button collection on denim vest</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">neon cable tie bracelets in electric colors</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">broken mirror shards as jewelry</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">guitar pick necklace with leather cord</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">razor blade pendant on chain</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">duct tape accessories in silver strips</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">barbed wire bracelet with metal thorns</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">vintage concert tickets as jewelry</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">bike chain necklace with oil stains</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">broken bottle fragments as decoration</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">spray paint caps as jewelry</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">circuit board jewelry with electronic components</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">skull ring collection with bone motifs</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">torn fishnet sleeves with holes</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">mohawk hair spikes with gel sculpture</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">studded wristbands with metal protection</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">leather harness straps with metal rings</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">handcuff jewelry prop with chrome shine</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">chain mail bikini with metal links</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">piercing jewelry collection with multiple metals</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">motorcycle key chain with ignition access</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">tattoo needle jewelry with ink stain</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">studded collar choker with submission implication</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">silk ribbon ties with sensual texture</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">pearl body chain with lustrous draping</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">gold ankle bracelet with delicate chiming</li>
+    <li onclick="pick('accessories', this)" data-toggle-punk="true">champagne flute prop with crystal clarity</li>
+
+    <!-- GOTH ACCESSORIES -->
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">antique cameo brooch with Victorian portrait</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">black pearl necklace with silver clasp</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">mourning locket pendant with portrait</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">garnet drop earrings with blood-red stones</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">silver cross choker with religious symbolism</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">velvet ribbon hair bow with midnight texture</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">crystal ball pendant with mystical clarity</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">lace fingerless gloves with intricate patterns</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">raven feather hair ornament with iridescent black</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">moonstone ring set with ethereal glow</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">antique key necklace with brass patina</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">burgundy wine glass pendant with crystal clarity</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">thorned rose hairpin with natural beauty</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">vintage poetry book charm with leather binding</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">candle wax jewelry with dripped texture</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">mirror compact pendant with ornate frame</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">bloodstone signet ring with dark red veining</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">opera glasses charm with mother-of-pearl</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">dried flower corsage with preserved beauty</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">aristocratic fan accessory with lace detail</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">silk ribbon ties with sensual texture</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">pearl body chain with lustrous draping</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">gold ankle bracelet with delicate chiming</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">champagne flute prop with crystal clarity</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">vampire bite jewelry with fang marks</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">corset lacing ribbon with Victorian constraint</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">confession booth rosary with religious transgression</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">candlelit chamber key with romantic access</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">wedding veil fragment with broken promises</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">aristocratic gloves removal with elegant undressing</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">cemetery gate key with afterlife access</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">opera mask prop with theatrical anonymity</li>
+    <li onclick="pick('accessories', this)" data-toggle-goth="true" style="display:none;">library bookmark ribbon with intellectual seduction</li>
+  </ul>
+</div>
+
+<!-- settings -->
+<div class="section" id="settings">
+  <h3 id="label-settings">Settings</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-settings" checked> include</label>
+  <input type="text" value="Settings" oninput="updateLabel('settings', this.value)">
+<ul>
+    <!-- PUNK SETTINGS -->
+    <li onclick="pick('settings', this)" data-toggle-punk="true">abandoned warehouse squat with graffiti walls</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">underground punk club with sweat-stained walls</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">rooftop city skyline with neon lights</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">subway tunnel hideout with train tracks</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">record shop chaos with vinyl scattered</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">skateboard park concrete with half-pipes</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">alley dumpster dive with brick walls</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">industrial factory ruins with rusted machinery</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">dive bar chaos with neon beer signs</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">protest march street with police barriers</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">tattoo parlor studio with needle machines</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">garage band rehearsal space with amplifiers</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">motorcycle repair shop with chrome parts</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">cyberpunk data center with glowing servers</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">thrift store treasure hunt with vintage clothing</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">concert venue backstage with equipment cases</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">urban exploration construction site with cranes</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">punk house party with destroyed furniture</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">fire escape balcony with city lights</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">anarchist bookstore collective with radical literature</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">underground strip club with neon lights and leather booths</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">motorcycle garage workshop with chrome and oil</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">punk rock tour bus with bunks and amplifiers</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">tattoo parlor after hours with needles and intimate rebellion</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">rooftop punk hideout with city lights and anarchist freedom</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">dive bar back room with sticky floors and rebellious chaos</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">warehouse rave after party with strobing lights and underground hedonism</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">punk house bedroom with band posters and anarchist authenticity</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">luxury penthouse bedroom with silk sheets and city skyline views</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">champagne bubble bath with rose petals and golden fixtures</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">private yacht cabin with ocean views and mahogany furnishing</li>
+    <li onclick="pick('settings', this)" data-toggle-punk="true">French château boudoir with antique furniture and silk wallpaper</li>
+
+    <!-- GOTH SETTINGS -->
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">Victorian mansion library with leather-bound books</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">cathedral nave solitude with stained glass</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">moonlit cemetery garden with ancient tombstones</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">opera house box with velvet curtains</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">castle tower chamber with tapestries</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">rose garden maze with thorny pathways</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">antique shop museum with vintage furniture</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">moonbeam forest clearing with ancient oaks</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">violin recital hall with acoustic perfection</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">ballroom dance floor with mirror walls</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">poetry café salon with dim lighting</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">gargoyle cathedral rooftop with stone guardians</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">vintage photography darkroom with red lights</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">midnight train platform with fog</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">crystal ball séance parlor with velvet drapes</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">grand piano conservatory with sheet music</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">weathered stone bridge over misty river</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">velvet theater backstage with costume racks</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">candlelit wine cellar with aged bottles</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">twilight beach cliff with crashing waves</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">luxury penthouse bedroom with silk sheets and city skyline views</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">champagne bubble bath with rose petals and golden fixtures</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">private yacht cabin with ocean views and mahogany furnishing</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">French château boudoir with antique furniture and silk wallpaper</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">vampire castle bedroom with velvet drapes and candlelit aristocracy</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">Victorian mansion boudoir with silk wallpaper and antique elegance</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">cathedral confession booth with sacred transgression and religious rebellion</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">moonlit cemetery mausoleum with marble angels and supernatural romance</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">opera house private box with velvet seats and theatrical drama</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">gothic library secret room with leather books and scholarly knowledge</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">ballroom dance floor after midnight with mirror walls and elegant transgression</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">candlelit wine cellar with aged bottles and romantic sophistication</li>
+    <li onclick="pick('settings', this)" data-toggle-goth="true" style="display:none;">rose garden greenhouse with thorny beauty and botanical paradise</li>
+  </ul>
+</div>
+
+<!-- style reference -->
+<div class="section" id="style">
+  <h3 id="label-style">Style Reference</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-style" checked> include</label>
+  <input type="text" value="Style" oninput="updateLabel('style', this.value)">
+<ul>
+    <!-- PUNK STYLE REFERENCES -->
+    <li onclick="pick('style', this)" data-toggle-punk="true">dadaist anti-art rebellion with Marcel Duchamp conceptual anarchy</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">constructivist revolutionary geometry with Soviet propaganda energy</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">street art vandalism aesthetic with Banksy political subversion</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">cyberpunk anime fusion with Ghost in the Shell intensity</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">riot grrl zine aesthetic with DIY collage brutalism</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">German expressionist distortion with Die Brücke emotional violence</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">skateboard culture graphics with Powell Peralta skull rebellion</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">industrial music video aesthetic with Nine Inch Nails visual assault</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">comic book pop art with Roy Lichtenstein punk explosion</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Soviet agitprop poster with revolutionary messaging</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Tank Girl comic aesthetic with Jamie Hewlett punk madness</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Japanese noise music visual with Merzbow sonic brutalism</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">xerox copy degradation with punk zine authenticity</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">situationist détournement with Guy Debord cultural sabotage</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Basquiat neo-expressionist fury with crown symbol rebellion</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Atari punk console aesthetic with 8-bit rebellion graphics</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Crass anarcho-punk iconography with political stencil activism</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">lowbrow art movement with Robert Williams punk surrealism</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">mail art network with Ray Johnson punk correspondence</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">glitch art corruption with databending punk destruction</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Helmut Newton fashion photography with high-fashion sophistication</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Renaissance goddess painting with Botticelli divine beauty</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">Art Deco luxury glamour with Tamara de Lempicka sophisticated elegance</li>
+    <li onclick="pick('style', this)" data-toggle-punk="true">French salon impressionism with Renoir soft romanticism</li>
+
+    <!-- GOTH STYLE REFERENCES -->
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Pre-Raphaelite romantic mysticism with Dante Rossetti ethereal beauty</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">symbolist poetry visualization with Gustave Moreau mythological elegance</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Art Nouveau organic curves with Alphonse Mucha decorative grace</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">romantic landscape sublime with Caspar Friedrich melancholic grandeur</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Gothic revival architecture with Augustus Pugin cathedral majesty</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">decadent movement aestheticism with Oscar Wilde literary sophistication</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">surrealist gothic dreams with Giorgio de Chirico metaphysical mystery</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">baroque dramatic chiaroscuro with Caravaggio religious intensity</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">romantic era portraiture with John Singer Sargent aristocratic elegance</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">William Morris craftsmanship with medieval guild devotion</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Aubrey Beardsley illustration with black ink gothic sophistication</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Edward Hopper solitude with urban melancholic isolation</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Flemish primitive devotion with Jan van Eyck religious precision</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Renaissance portraiture nobility with Leonardo da Vinci aristocratic mystery</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">neoclassical sculpture grandeur with Antonio Canova marble perfection</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Gothic manuscript illumination with medieval monk devotion</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">romantic ballet choreography with Giselle ethereal movement</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Victorian mourning photography with memento mori solemnity</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">symbolist theater staging with Maurice Maeterlinck mystical drama</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">academic salon painting with William-Adolphe Bouguereau classical perfection</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Helmut Newton fashion photography with high-fashion sophistication</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Renaissance goddess painting with Botticelli divine beauty</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Art Deco luxury glamour with Tamara de Lempicka sophisticated elegance</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">French salon impressionism with Renoir soft romanticism</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">vampire cinema aesthetics with Hammer Horror gothic sensuality</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Victorian erotic literature with Aubrey Beardsley illustration sophistication</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Pre-Raphaelite model mythology with Lizzie Siddal tragic beauty</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">Gothic romance novel cover with Fabio-style romantic drama</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">French decadent photography with Pierre et Gilles baroque romance</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">corset fashion history with Victorian intimate architecture</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">cemetery angel sculpture with marble intimate devotion</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">opera costume design with Maria Callas dramatic passion</li>
+    <li onclick="pick('style', this)" data-toggle-goth="true" style="display:none;">romantic ballet tutus with Giselle ethereal sensuality</li>
+  </ul>
+</div>
+
+<!-- vibe -->
+<div class="section" id="vibe">
+  <h3 id="label-vibe">Vibe</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-vibe" checked> include</label>
+  <input type="text" value="Vibe" oninput="updateLabel('vibe', this.value)">
+  <ul>
+    <!-- PUNK VIBE -->
+                <li onclick="pick('vibe', this)" data-toggle-punk="true">explosive anarchist energy radiating pure rebellion</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">electric underground intensity crackling with dangerous voltage</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">manic pixie destruction with beautiful chaos energy</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">feral street fighter attitude dripping with aggressive confidence</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">cyberpunk digital warrior vibe with synthetic rebellion</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">riot grrl power emanating feminist fury</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">industrial noise machine energy with mechanical brutality</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">neon club hedonism with party mayhem energy</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">skatepunk adrenaline rush with gravity-defying fearlessness</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">garage band DIY authenticity with raw passion</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">molotov cocktail danger with explosive unpredictability</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">street art vandalism energy with creative destruction</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">motorcycle gang brotherhood with leather-clad loyalty</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">stage diving euphoria with crowd-surfing ecstasy</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">piercing studio pain-pleasure with needle intensity</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">thrift store resourcefulness with anti-fashion creativity</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">abandoned warehouse freedom with urban exploration adventure</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">protest march solidarity with activist determination</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">basement show intimacy with underground community</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">chainsaw guitar aggression with amplified violence</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">rebellious seduction with punk rock sexuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">underground club hedonism with raw sexual energy</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">leather and lace contradiction with tough femininity</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">mosh pit passion with aggressive intimacy</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">backstage groupie magnetism with rock star allure</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">motorcycle mama freedom with road trip sexuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">tattoo parlor intimacy with needle eroticism</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">anarchist bedroom rebellion with anti-establishment sexuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">sensual confidence radiating with magnetic allure</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">provocative playfulness with teasing sophistication</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">sultry bedroom eyes with smoldering intensity</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">luxurious indulgence atmosphere with champagne decadence</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">sensual confidence radiating with magnetic allure</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">provocative playfulness with teasing sophistication</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">sultry bedroom eyes with smoldering intensity</li>
+    <li onclick="pick('vibe', this)" data-toggle-punk="true">luxurious indulgence atmosphere with champagne decadence</li>
+
+    <!-- GOTH VIBE -->
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">ethereal melancholic beauty with haunting romantic mystery</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">vampire aristocracy sophistication with immortal wisdom</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">cathedral sacred solemnity with religious devotion</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">moonlit cemetery poetry with romantic mortality</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">Victorian mansion grandeur with aristocratic melancholy</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">candlelit séance mysticism with supernatural communion</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">opera house drama with theatrical passion</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">rose garden romanticism with thorny beauty</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">library scholarly contemplation with ancient wisdom</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">ballroom waltz elegance with graceful formality</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">mirror reflection vanity with dark narcissism</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">storm watching solitude with tempest meditation</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">antique collecting nostalgia with historical reverence</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">ritual magic ceremony with occult practice</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">garden party sophistication with dark social grace</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">phantom opera mystery with masked intrigue</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">crimson sunset melancholy with twilight poetry</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">chapel prayer devotion with sacred darkness</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">poetry reading intellectualism with literary passion</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">midnight wandering solitude with nocturnal freedom</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">sensual confidence radiating with magnetic allure</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">provocative playfulness with teasing sophistication</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">sultry bedroom eyes with smoldering intensity</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">luxurious indulgence atmosphere with champagne decadence</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">vampire seduction with immortal sexuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">Victorian boudoir elegance with aristocratic sensuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">medevil passion and romance</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">cathedral confession transgression with sacred sexuality</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">moonlit cemetery romance with supernatural passion</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">opera box sophistication with theatrical seduction, gothic performance intimate ART</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">rose garden thorns with beautiful PAIN, gothic romantic intimate suffering</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">library secret knowledge with intellectual seduction, gothic scholarly intimate WISDOM</li>
+    <li onclick="pick('vibe', this)" data-toggle-goth="true" style="display:none;">ballroom forbidden dance with elegant transgression, gothic social intimate rebellion</li>
+  </ul>
+</div>
+
+<!-- LIGHTING -->
+<div class="section" id="lighting">
+  <h3 id="label-lighting">Lighting</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-lighting" checked> include</label>
+  <input type="text" value="Lighting" oninput="updateLabel('lighting', this.value)">
+  <ul>
+    <!-- PUNK LIGHTING - Explosive Visual Chaos -->
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">explosive strobing paparazzi flashbulbs creating blinding chaos</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">electric neon tube lighting pulsing with cyberpunk energy</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">volcanic spotlighting with lens flare explosion</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">prismatic disco ball reflections fragmenting reality</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">holographic glitch lighting with digital artifacts</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">laser array slicing through smoke like punk rock lightsabers</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">radioactive green underglow with toxic neon ambiance</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">fire barrel lighting with orange chaos glow</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">blacklight reactive paint glowing electric colors</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">stroboscopic rave lighting synced to punk heartbeat</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">neon sign bleeding electric crimson and cobalt blue</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">overexposed flash photography with blown-out highlights</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">industrial flood lighting with harsh shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">mirrorball speckles layered with colored gel spotlights</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">LED strip underglow pulsing with electronic music</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">phosphorescent glow-in-the-dark coating activated by blacklight</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">fragmenting prism lighting creating rainbow anarchy</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">neon tube sculpture casting geometric shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">emergency strobe lighting with alarm chaos</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">electric arc lighting with tesla coil energy</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">sensual golden hour glow caressing skin like liquid honey</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">silk-diffused softbox lighting with romantic highlights</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">rose petal pink lighting with gentle shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">champagne bubble ambient lighting with effervescent glow</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">neon strip club lighting with rebellious edge</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">industrial metal reflector lighting with harsh shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">cyber punk LED underglow with digital seduction</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">motorcycle headlight cutting through darkness</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">anarchist basement lighting with exposed bulbs</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">riot colored gel lighting with chaotic passion</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">graffiti wall backlighting with urban seduction</li>
+    <li onclick="pick('lighting', this)" data-toggle-punk="true">chain link fence shadow patterns with industrial intimacy</li>
+
+    
+    <!-- GOTH LIGHTING - Ethereal Darkness & Romantic Shadows -->
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">cathedral chiaroscuro with divine shadow play</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">candlelit séance ambiance with golden wax dripping</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">moonbeam cathedral illumination through stained glass</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">ethereal backlighting with angelic silhouette halos</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">crystal chandelier casting prismatic rainbow shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">mist-diffused lighting with violet undertones</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">fireplace glow with dancing flame shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">midnight blue ambient lighting with silver highlights</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">crimson sunset backlighting with blood-red sky</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">lantern glow through misty graveyard atmosphere</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">dramatic uplighting from below creating ominous towering shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">platinum moonlight with ethereal silver glow</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">vintage portrait lighting with soft focus romanticism</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">stained glass window lighting painting colored patterns</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">velvet shadows with burgundy undertones</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">phantom lighting with ghostly edge glow</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">antique brass lamp casting warm amber pools</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">gargoyle shadow play with architectural drama</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">crypt lighting with votive candle arrays</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">twilight magic hour with ethereal purple sky</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">sensual golden hour glow caressing skin like liquid honey</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">silk-diffused softbox lighting with romantic highlights</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">rose petal pink lighting with gentle shadows</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">champagne bubble ambient lighting with effervescent glow</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">candlelit boudoir with wax-dripping romance</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">vampire court lighting with aristocratic seduction</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">moonlight streaming through bedroom curtains</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">fireplace glow on silk sheets</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">stained glass cathedral lighting with sacred sensuality</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">antique mirror reflections multiplying romantic candlelight</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">cemetery angel statue backlighting with ethereal romance</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">library study lighting with intellectual seduction</li>
+    <li onclick="pick('lighting', this)" data-toggle-goth="true" style="display:none;">velvet curtain filtered lighting with burgundy warmth</li>
+  </ul>
+</div>
+</div>
+<div class="footer">
+  <textarea id="promptBox" placeholder="Your prompt will appear here..." readonly></textarea>
+  <div>
+    <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+    <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+    <button id="saveBtn" onclick="savePrompt()">💾 Save Prompt</button>
+  </div>
+</div>
+
+<script>
+  const sel = {'bodytype':'', 'hairmakeup':'', 'cameraangle':'', 'pose':'', 'clothing':'', 'accessories':'', 'settings':'', 'style':'', 'vibe':'', 'lighting':''};
+  let toggleState = {punkGoth:'punk', sfwNsfw:'sfw'};
+
+  const settingOrder = ['bodytype', 'hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'];
+
+  function updateLabel(section, value) {
+    document.getElementById('label-'+section).textContent = value || section;
+  }
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => {
+      li.style.background='#222';
+      li.classList.remove('selected');
+    });
+    el.style.background='#555';
+    el.classList.add('selected');
+    sel[sec] = el.textContent.trim();
+    update();
+  }
+
+  function toggleItems() {
+    const isPunk = toggleState.punkGoth === 'punk';
+    const isGoth = toggleState.punkGoth === 'goth';
+    const isNsfw = toggleState.sfwNsfw === 'nsfw';
+    
+    // Update title - NSFW doesn't change the main style title
+    let title = isPunk ? 'Punk Rock' : 'Gothic';
+    
+    document.getElementById('style-title').textContent = title;
+    
+    // Show/hide items based on toggle states
+    document.querySelectorAll('[data-toggle-punk]').forEach(item => {
+      const hasNsfw = item.hasAttribute('data-toggle-nsfw');
+      // Show punk items if punk is selected AND (item is SFW OR NSFW mode is on)
+      item.style.display = (isPunk && (!hasNsfw || isNsfw)) ? 'block' : 'none';
+    });
+    
+    document.querySelectorAll('[data-toggle-goth]').forEach(item => {
+      const hasNsfw = item.hasAttribute('data-toggle-nsfw');
+      // Show goth items if goth is selected AND (item is SFW OR NSFW mode is on)
+      item.style.display = (isGoth && (!hasNsfw || isNsfw)) ? 'block' : 'none';
+    });
+    
+    // Handle items that are NSFW but not style-specific (legacy items - should be rare)
+    document.querySelectorAll('[data-toggle-nsfw]:not([data-toggle-punk]):not([data-toggle-goth])').forEach(item => {
+      item.style.display = isNsfw ? 'block' : 'none';
+    });
+    
+    // SFW items are shown by default unless they have specific punk/goth requirements
+    document.querySelectorAll('[data-toggle-sfw]').forEach(item => {
+      // SFW items are always visible (unless overridden by punk/goth logic)
+      if (!item.hasAttribute('data-toggle-punk') && !item.hasAttribute('data-toggle-goth')) {
+        item.style.display = 'block';
+      }
+    });
+    
+    // Clear selections for affected categories
+    const affectedCategories = ['hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'];
+    affectedCategories.forEach(category => {
+      sel[category] = '';
+      document.querySelectorAll('#'+category+' li').forEach(li => {
+        li.style.background='#222';
+        li.classList.remove('selected');
+      });
+    });
+    
+    update();
+  }
+
+  function update() {
+    const parts = ['1girl, solo'];
+    settingOrder.forEach(sec => {
+      if (document.getElementById('enable-' + sec).checked && sel[sec]) {
+        parts.push(sel[sec]);
+      }
+    });
+    const core = parts.join(', ');
+    document.getElementById('promptBox').value = core ? core + ', 8K, ultra-detailed, ultra-textural, masterpiece' : '';
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied!');
+  }
+
+  function savePrompt() {
+    const prompt = document.getElementById('promptBox').value;
+    const negativePrompt = "lowres, worst quality, low quality, bad anatomy, deformed, mutated, disfigured, unnatural proportions, extra limbs, missing limbs, duplicate limbs, unrealistic, blurry, out of focus, grainy, noisy, jpeg artifacts, compression artifacts, glitch artifacts, watermark, signature, logo, text, cartoon, sketch, painting, overexposed, underexposed";
+    
+    // Save positive prompt
+    const positiveBlob = new Blob([prompt], { type: 'text/plain' });
+    const positiveUrl = window.URL.createObjectURL(positiveBlob);
+    const positiveLink = document.createElement('a');
+    positiveLink.href = positiveUrl;
+    positiveLink.download = 'latest_positive_prompt.txt';
+    positiveLink.style.display = 'none';
+    document.body.appendChild(positiveLink);
+    positiveLink.click();
+    
+    // Save negative prompt
+    setTimeout(() => {
+      const negativeBlob = new Blob([negativePrompt], { type: 'text/plain' });
+      const negativeUrl = window.URL.createObjectURL(negativeBlob);
+      const negativeLink = document.createElement('a');
+      negativeLink.href = negativeUrl;
+      negativeLink.download = 'latest_negative_prompt.txt';
+      negativeLink.style.display = 'none';
+      document.body.appendChild(negativeLink);
+      negativeLink.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(positiveLink);
+        document.body.removeChild(negativeLink);
+        window.URL.revokeObjectURL(positiveUrl);
+        window.URL.revokeObjectURL(negativeUrl);
+      }, 100);
+      
+      alert('Prompts saved!\nPositive: latest_positive_prompt.txt\nNegative: latest_negative_prompt.txt\n\nAuto-copy script will move them to ComfyUI.');
+    }, 200);
+  }
+
+  function randomize() {
+    settingOrder.forEach(sec => {
+      if (!document.getElementById('enable-' + sec).checked) {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+        return;
+      }
+      
+      // Get currently visible items based on toggle states
+      let selector = '#'+sec+' li';
+      if (['hairmakeup', 'cameraangle', 'pose', 'clothing', 'accessories', 'settings', 'style', 'vibe', 'lighting'].includes(sec)) {
+        // Build selector based on current toggle states
+        const selectors = [];
+        
+        // Get items that match the current style (punk or goth)
+        if (toggleState.punkGoth === 'punk') {
+          // Add punk SFW items
+          selectors.push('#'+sec+' li[data-toggle-punk="true"]:not([data-toggle-nsfw])');
+          // Add punk NSFW items if NSFW is on
+          if (toggleState.sfwNsfw === 'nsfw') {
+            selectors.push('#'+sec+' li[data-toggle-punk="true"][data-toggle-nsfw="true"]');
+          }
+        } else if (toggleState.punkGoth === 'goth') {
+          // Add goth SFW items
+          selectors.push('#'+sec+' li[data-toggle-goth="true"]:not([data-toggle-nsfw])');
+          // Add goth NSFW items if NSFW is on
+          if (toggleState.sfwNsfw === 'nsfw') {
+            selectors.push('#'+sec+' li[data-toggle-goth="true"][data-toggle-nsfw="true"]');
+          }
+        }
+        
+        // Add generic NSFW items if NSFW is on and no style-specific ones exist
+        if (toggleState.sfwNsfw === 'nsfw') {
+          selectors.push('#'+sec+' li[data-toggle-nsfw="true"]:not([data-toggle-punk]):not([data-toggle-goth])');
+        }
+        
+        // If no specific selectors, include all visible items
+        if (selectors.length === 0) {
+          selectors.push('#'+sec+' li');
+        }
+        
+        // Get all matching elements
+        const list = [];
+        selectors.forEach(sel => {
+          list.push(...Array.from(document.querySelectorAll(sel)));
+        });
+        
+        // Filter to only visible items
+        const visibleList = list.filter(li => li.style.display !== 'none');
+        
+        if (visibleList.length > 0) {
+          const choice = visibleList[Math.floor(Math.random()*visibleList.length)];
+          if (choice) pick(sec, choice);
+        } else {
+          sel[sec] = '';
+          document.querySelectorAll('#'+sec+' li').forEach(li => li.style.background='#222');
+        }
+      } else {
+        // For bodytype (not affected by toggles)
+        const list = Array.from(document.querySelectorAll(selector));
+        if (list.length > 0) {
+          const choice = list[Math.floor(Math.random()*list.length)];
+          if (choice) pick(sec, choice);
+        }
+      }
+    });
+    update();
+  }
+
+  document.getElementById('togglePunkGoth').addEventListener('change', e => {
+    toggleState.punkGoth = e.target.checked ? 'goth' : 'punk';
+    toggleItems();
+    try { localStorage.setItem('togglePunkGoth', toggleState.punkGoth); } catch (err) {}
+  });
+  
+  document.getElementById('toggleSfwNsfw').addEventListener('change', e => {
+    toggleState.sfwNsfw = e.target.checked ? 'nsfw' : 'sfw';
+    toggleItems();
+    try { localStorage.setItem('toggleSfwNsfw', toggleState.sfwNsfw); } catch (err) {}
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    let stPunkGoth, stSfwNsfw;
+    try {
+      stPunkGoth = localStorage.getItem('togglePunkGoth');
+      stSfwNsfw = localStorage.getItem('toggleSfwNsfw');
+    } catch (err) {}
+    if (stPunkGoth) {
+      document.getElementById('togglePunkGoth').checked = stPunkGoth === 'goth';
+      toggleState.punkGoth = stPunkGoth;
+    }
+    if (stSfwNsfw) {
+      document.getElementById('toggleSfwNsfw').checked = stSfwNsfw === 'nsfw';
+      toggleState.sfwNsfw = stSfwNsfw;
+    }
+    
+    // Initialize the display
+    toggleItems();
+  });
+</script>
+
+</body>
+</html>
