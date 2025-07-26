@@ -245,11 +245,12 @@ Generated: {timestamp}
         return lines
     
     def _format_positive_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format positive prompt section"""
+        """Format positive prompt section with support for node references"""
         lines = ["=== POSITIVE PROMPT ==="]
         
         positive_prompt = None
         
+        # First pass: try to find direct text in CLIP nodes
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
@@ -261,23 +262,68 @@ Generated: {timestamp}
             if class_type in ['CLIPTextEncode', 'CLIPTextEncodeSDXL', 'CLIPTextEncodeSDXLRefiner'] and 'text' in inputs:
                 # Handle both string and list formats for prompt text
                 text_data = inputs['text']
-                if isinstance(text_data, list):
-                    prompt_text = ' '.join(str(item).strip() for item in text_data if item).strip()
-                else:
-                    prompt_text = str(text_data).strip()
                 
-                if not prompt_text:
-                    continue
-                    
-                # Only positive prompts (not negative)
-                if 'negative' not in title and 'neg' not in title:
-                    positive_prompt = prompt_text
-                    break
+                # If it's a direct string, use it
+                if isinstance(text_data, str) and text_data.strip():
+                    # Only positive prompts (not negative)
+                    if 'negative' not in title and 'neg' not in title:
+                        positive_prompt = text_data.strip()
+                        break
+                
+                # If it's a node reference, resolve it
+                elif isinstance(text_data, list) and len(text_data) >= 1:
+                    # Only positive prompts (not negative)
+                    if 'negative' not in title and 'neg' not in title:
+                        ref_node_id = text_data[0]
+                        resolved_text = self._resolve_text_node_reference(metadata, ref_node_id)
+                        if resolved_text:
+                            positive_prompt = resolved_text
+                            break
         
         if positive_prompt:
             lines.append(positive_prompt)
         
         return lines
+    
+    def _resolve_text_node_reference(self, metadata: Dict[str, Any], node_id: str) -> Optional[str]:
+        """Resolve a text node reference to get the actual text content"""
+        if node_id not in metadata:
+            return None
+        
+        node_data = metadata[node_id]
+        if not isinstance(node_data, dict):
+            return None
+        
+        class_type = node_data.get('class_type', '')
+        inputs = node_data.get('inputs', {})
+        
+        # ShowText nodes store the actual text in text_0 field
+        if 'ShowText' in class_type:
+            if 'text_0' in inputs:
+                return str(inputs['text_0']).strip()
+            elif 'text' in inputs:
+                # If text is another reference, resolve it recursively (with depth limit)
+                text_data = inputs['text']
+                if isinstance(text_data, list) and len(text_data) >= 1:
+                    return self._resolve_text_node_reference(metadata, text_data[0])
+                elif isinstance(text_data, str):
+                    return text_data.strip()
+        
+        # Text Load Line From File nodes
+        elif 'Text Load Line From File' in class_type:
+            # These nodes don't store the actual loaded text in metadata,
+            # they just have the file path and index
+            return None
+        
+        # Other text nodes
+        elif 'text' in inputs:
+            text_data = inputs['text']
+            if isinstance(text_data, str):
+                return text_data.strip()
+            elif isinstance(text_data, list):
+                return ' '.join(str(item).strip() for item in text_data if item).strip()
+        
+        return None
     
     def _format_negative_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
         """Format negative prompt section"""
