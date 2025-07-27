@@ -220,7 +220,7 @@ class EnhancedBatchSorter:
                     self.stats['sorted_images'] += 1
     
     def _create_checkpoint_metadata_files(self, renamed_records: List[Dict], output_dir: str):
-        """Create metadata files organized by checkpoint and generation"""
+        """Create simplified metadata files - one text file per image only"""
         
         # Group by checkpoint
         checkpoint_groups = {}
@@ -242,12 +242,8 @@ class EnhancedBatchSorter:
             gen_data_dir = os.path.join(checkpoint_path, 'Gen Data')
             os.makedirs(gen_data_dir, exist_ok=True)
             
-            # Create individual and bundled metadata files per generation
-            all_gen_texts = {}
-            
+            # Create only individual metadata files (one per image)
             for gen, records in generations.items():
-                gen_texts = []
-                
                 for record in records:
                     if record['metadata']:
                         formatted_text = self.metadata_formatter.format_metadata_to_text(
@@ -257,29 +253,14 @@ class EnhancedBatchSorter:
                     else:
                         formatted_text = "No metadata found."
                     
-                    # Create individual text file
+                    # Create individual text file (simplified naming)
                     base_name = os.path.splitext(record['new_name'])[0]
                     txt_path = os.path.join(gen_data_dir, f"{base_name}.txt")
                     
                     with open(txt_path, 'w', encoding='utf-8') as f:
                         f.write(formatted_text)
                     
-                    gen_texts.append(formatted_text)
                     self.stats['metadata_files'] += 1
-                
-                # Create generation bundle file
-                all_gen_texts[gen] = gen_texts
-                gen_file = os.path.join(gen_data_dir, f"GEN {gen:02d} META.txt")
-                with open(gen_file, 'w', encoding='utf-8') as f:
-                    f.write("\n\n".join(gen_texts))
-            
-            # Create complete bundle for this checkpoint
-            bundle_path = os.path.join(gen_data_dir, f'{checkpoint}_ALL_GEN_METADATA_BUNDLE.txt')
-            with open(bundle_path, 'w', encoding='utf-8') as f:
-                f.write(f"=== {checkpoint} METADATA BUNDLE ===\n\n")
-                for gen in sorted(all_gen_texts.keys()):
-                    f.write(f"GEN {gen:02d}\n" + '-' * 30 + "\n")
-                    f.write("\n\n".join(all_gen_texts[gen]) + "\n\n")
     
     def _extract_checkpoint_name(self, image_path: str) -> str:
         """Extract base checkpoint name from image metadata"""

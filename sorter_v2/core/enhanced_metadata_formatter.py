@@ -245,12 +245,14 @@ Generated: {timestamp}
         return lines
     
     def _format_positive_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format positive prompt section with support for node references"""
+        """Format positive prompt section with support for node references and base model priority"""
         lines = ["=== POSITIVE PROMPT ==="]
         
         positive_prompt = None
+        base_model_prompt = None
+        refiner_prompt = None
         
-        # First pass: try to find direct text in CLIP nodes
+        # First pass: categorize prompts by base vs refiner
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
@@ -260,25 +262,36 @@ Generated: {timestamp}
             title = node_data.get('_meta', {}).get('title', '').lower()
             
             if class_type in ['CLIPTextEncode', 'CLIPTextEncodeSDXL', 'CLIPTextEncodeSDXLRefiner'] and 'text' in inputs:
-                # Handle both string and list formats for prompt text
+                # Skip negative prompts
+                if 'negative' in title or 'neg' in title:
+                    continue
+                
+                # Determine if this is a refiner node
+                is_refiner = (
+                    'refiner' in class_type.lower() or 
+                    'refiner' in title or
+                    'ascore' in inputs or  # Common refiner parameter
+                    'width' in inputs  # SDXL refiner often has width/height
+                )
+                
+                # Extract text (direct or via node reference)
                 text_data = inputs['text']
+                extracted_text = None
                 
-                # If it's a direct string, use it
                 if isinstance(text_data, str) and text_data.strip():
-                    # Only positive prompts (not negative)
-                    if 'negative' not in title and 'neg' not in title:
-                        positive_prompt = text_data.strip()
-                        break
-                
-                # If it's a node reference, resolve it
+                    extracted_text = text_data.strip()
                 elif isinstance(text_data, list) and len(text_data) >= 1:
-                    # Only positive prompts (not negative)
-                    if 'negative' not in title and 'neg' not in title:
-                        ref_node_id = text_data[0]
-                        resolved_text = self._resolve_text_node_reference(metadata, ref_node_id)
-                        if resolved_text:
-                            positive_prompt = resolved_text
-                            break
+                    ref_node_id = text_data[0]
+                    extracted_text = self._resolve_text_node_reference(metadata, ref_node_id)
+                
+                if extracted_text:
+                    if is_refiner:
+                        refiner_prompt = extracted_text
+                    else:
+                        base_model_prompt = extracted_text
+        
+        # Prioritize base model prompt over refiner prompt
+        positive_prompt = base_model_prompt or refiner_prompt
         
         if positive_prompt:
             lines.append(positive_prompt)
