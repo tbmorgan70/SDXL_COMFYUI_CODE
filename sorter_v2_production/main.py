@@ -34,12 +34,10 @@ sys.path.append(parent_dir)
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.diagnostics import SortLogger
-from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from sorters.checkpoint_sorter import CheckpointSorter
 from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
-from sorters.filename_cleanup import FilenameCleanup
 
 class SorterV2:
     """Main interface for Sorter 2.0"""
@@ -57,12 +55,10 @@ class SorterV2:
             print("2. 🔍 Search & Sort by Metadata")
             print("3. 🌈 Sort by Color")
             print("4. 📂 Flatten Image Folders")
-            print("5. � Cleanup Filenames & Remove Metadata")
-            print("6. �🧪 Test Metadata Extraction")
-            print("7. 📊 View Previous Session Logs")
+            print("5. 📊 View Previous Session Logs")
             print("0. ❌ Exit")
             
-            choice = input("\nChoose option (0-8): ").strip()
+            choice = input("\nChoose option (0-5): ").strip()
             
             if choice == "1":
                 self.sort_by_checkpoint()
@@ -73,12 +69,6 @@ class SorterV2:
             elif choice == "4":
                 self.flatten_images()
             elif choice == "5":
-                self.cleanup_filenames()
-            elif choice == "6":
-                self.generate_metadata_reports()
-            elif choice == "7":
-                self.test_metadata_extraction()
-            elif choice == "8":
                 self.view_session_logs()
             elif choice == "0":
                 print("👋 Goodbye!")
@@ -337,100 +327,6 @@ class SorterV2:
                 print(f"❌ Search failed: {e}")
     
     def sort_by_color(self):
-        """Placeholder for color sorting"""
-        print("\n🌈 COLOR SORTING")
-        print("Coming soon! This will integrate your existing color sorter.")
-        input("Press Enter to continue...")
-    
-    def flatten_images(self):
-        """Placeholder for image flattening"""
-        print("\n📂 FLATTEN IMAGES")
-        print("Coming soon! This will integrate your existing image flattener.")
-        input("Press Enter to continue...")
-    
-    def test_metadata(self):
-        """Test metadata extraction on sample files"""
-        print("\n🧪 TEST METADATA EXTRACTION")
-        print("-" * 40)
-        
-        source_dir = self._get_directory_input("Enter directory with PNG files to test")
-        if not source_dir:
-            return
-        
-        png_files = [f for f in os.listdir(source_dir) if f.lower().endswith('.png')]
-        if not png_files:
-            print("❌ No PNG files found")
-            return
-        
-        test_count = min(10, len(png_files))
-        print(f"📊 Testing metadata extraction on {test_count} files...")
-        
-        extractor = MetadataExtractor()
-        analyzer = MetadataAnalyzer()
-        
-        for i, filename in enumerate(png_files[:test_count]):
-            file_path = os.path.join(source_dir, filename)
-            print(f"\n🔍 Testing {i+1}/{test_count}: {filename}")
-            
-            metadata = extractor.extract_single(file_path)
-            
-            if metadata:
-                primary_checkpoint = analyzer.extract_primary_checkpoint(metadata)
-                loras = analyzer.extract_loras(metadata)
-                sampling = analyzer.extract_sampling_params(metadata)
-                
-                print(f"  ✅ Metadata extracted successfully")
-                print(f"  📋 Primary checkpoint: {primary_checkpoint}")
-                print(f"  🎨 LoRAs: {loras[:3]}{'...' if len(loras) > 3 else ''}")
-                print(f"  ⚙️  Sampling: CFG={sampling.get('cfg')}, Steps={sampling.get('steps')}")
-            else:
-                print(f"  ❌ No metadata found")
-        
-        # Show statistics
-        stats = extractor.get_statistics()
-        print(f"\n📊 Extraction Statistics:")
-        print(f"   Success rate: {stats['success_rate_percent']}%")
-        print(f"   Successful: {stats['successful_extractions']}")
-        print(f"   Failed: {stats['failed_extractions']}")
-    
-    def view_logs(self):
-        """View previous session logs"""
-        print("\n📊 SESSION LOGS")
-        print("-" * 40)
-        
-        logs_dir = os.path.join(os.getcwd(), "sort_logs")
-        if not os.path.exists(logs_dir):
-            print("❌ No logs directory found")
-            return
-        
-        log_files = [f for f in os.listdir(logs_dir) if f.startswith('sort_') and f.endswith('.log')]
-        
-        if not log_files:
-            print("❌ No log files found")
-            return
-        
-        print(f"📋 Found {len(log_files)} log files:")
-        for i, log_file in enumerate(sorted(log_files, reverse=True)[:5]):
-            print(f"   {i+1}. {log_file}")
-        
-        choice = input("Enter number to view log (or press Enter to skip): ").strip()
-        
-        try:
-            index = int(choice) - 1
-            if 0 <= index < len(log_files):
-                log_path = os.path.join(logs_dir, sorted(log_files, reverse=True)[index])
-                print(f"\n📄 Viewing: {log_files[index]}")
-                print("-" * 60)
-                
-                with open(log_path, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                    # Show last 50 lines
-                    for line in lines[-50:]:
-                        print(line.rstrip())
-        except (ValueError, IndexError):
-            print("❌ Invalid selection")
-    
-    def sort_by_color(self):
         """Sort images by dominant color"""
         print("\n🌈 SORT BY COLOR")
         print("-" * 40)
@@ -573,227 +469,42 @@ class SorterV2:
         else:
             print("❌ Image flattening failed")
     
-    def cleanup_filenames(self):
-        """Clean up filenames and remove metadata files"""
-        print("\n🧹 FILENAME CLEANUP & METADATA REMOVAL")
-        print("-" * 50)
-        print("This tool will:")
-        print("• Remove old naming patterns like '[workflow_test_batch1]'")
-        print("• Clean up 'Gen 31 $0152' type patterns")
-        print("• Remove _metadata.json files (optional)")
-        print("• Preview changes before applying")
+    def view_session_logs(self):
+        """View previous session logs"""
+        print("\n📊 SESSION LOGS")
+        print("-" * 40)
         
-        # Get source directory
-        source_dir = self._get_directory_input("Enter directory to clean up")
-        if not source_dir:
+        logs_dir = os.path.join(os.getcwd(), "sort_logs")
+        if not os.path.exists(logs_dir):
+            print("❌ No logs directory found")
             return
         
-        # Cleanup options
-        print("\n🔧 CLEANUP OPTIONS:")
-        rename_files = input("Clean up filenames? (y/n, default=y): ").strip().lower() != 'n'
-        remove_metadata = input("Remove _metadata.json files? (y/n, default=y): ").strip().lower() != 'n'
+        log_files = [f for f in os.listdir(logs_dir) if f.startswith('sort_') and f.endswith('.log')]
         
-        filename_prefix = "image"
-        if rename_files:
-            custom_prefix = input("Enter filename prefix (default='image'): ").strip()
-            if custom_prefix:
-                # Clean the prefix to make it filesystem-safe
-                filename_prefix = re.sub(r'[<>:"/\\|?*]', '_', custom_prefix)
-                filename_prefix = re.sub(r'[^a-zA-Z0-9_-]', '_', filename_prefix)
-                filename_prefix = filename_prefix.strip('_-')
-                if not filename_prefix:
-                    filename_prefix = "image"
-        
-        # Preview mode first
-        print("\n👀 PREVIEW MODE - No files will be changed yet")
-        cleanup = FilenameCleanup(self.logger)
-        
-        print("🔍 Running preview...")
-        cleanup.cleanup_directory(
-            source_dir=source_dir,
-            remove_metadata_files=remove_metadata,
-            rename_files=rename_files,
-            filename_prefix=filename_prefix,
-            dry_run=True
-        )
-        
-        # Show preview results
-        print(f"\n📊 PREVIEW RESULTS:")
-        print(f"   Files to rename: {cleanup.stats['files_renamed']}")
-        print(f"   Metadata files to remove: {cleanup.stats['metadata_files_removed']}")
-        print(f"   Total files processed: {cleanup.stats['total_files']}")
-        
-        if cleanup.stats['files_renamed'] == 0 and cleanup.stats['metadata_files_removed'] == 0:
-            print("✅ No cleanup needed - all files are already clean!")
+        if not log_files:
+            print("❌ No log files found")
             return
         
-        # Confirm changes
-        print(f"\n📋 CONFIRMATION:")
-        print(f"   Directory: {source_dir}")
-        print(f"   Files to rename: {cleanup.stats['files_renamed']}")
-        print(f"   Metadata files to remove: {cleanup.stats['metadata_files_removed']}")
-        if rename_files:
-            print(f"   Filename prefix: '{filename_prefix}'")
+        print(f"📋 Found {len(log_files)} log files:")
+        for i, log_file in enumerate(sorted(log_files, reverse=True)[:5]):
+            print(f"   {i+1}. {log_file}")
         
-        if input("\nApply these changes? (y/n): ").strip().lower() != 'y':
-            print("❌ Cleanup cancelled")
-            return
+        choice = input("Enter number to view log (or press Enter to skip): ").strip()
         
-        # Apply changes
-        print("🚀 Applying cleanup changes...")
-        cleanup = FilenameCleanup(self.logger)  # Fresh instance for actual run
-        success = cleanup.cleanup_directory(
-            source_dir=source_dir,
-            remove_metadata_files=remove_metadata,
-            rename_files=rename_files,
-            filename_prefix=filename_prefix,
-            dry_run=False
-        )
-        
-        if success:
-            print("✅ FILENAME CLEANUP COMPLETE!")
-            print(f"   Files renamed: {cleanup.stats['files_renamed']}")
-            print(f"   Metadata files removed: {cleanup.stats['metadata_files_removed']}")
-            if input("\nOpen folder? (y/n): ").strip().lower() == 'y':
-                import subprocess
-                subprocess.run(['explorer', os.path.abspath(source_dir)], shell=True)
-        else:
-            print("❌ Cleanup completed with errors - check logs for details")
-    
-    def generate_metadata_reports(self):
-        """Generate enhanced metadata reports for PNG files"""
-        print("\n📝 GENERATE ENHANCED METADATA REPORTS")
-        print("-" * 60)
-        print("Creates comprehensive, formatted text reports from ComfyUI metadata")
-        print("Perfect for documentation, sharing, and analysis")
-        
-        # Get source directory
-        source_dir = self._get_directory_input("Enter directory with PNG files")
-        if not source_dir:
-            return
-        
-        # Count PNG files
-        png_files = [f for f in os.listdir(source_dir) if f.lower().endswith('.png')]
-        if not png_files:
-            print("❌ No PNG files found in source directory")
-            return
-        
-        print(f"📊 Found {len(png_files)} PNG files")
-        
-        # Options
-        create_individual = input("Create individual report files? (y/n, default=y): ").strip().lower() != 'n'
-        create_summary = input("Create summary report? (y/n, default=y): ").strip().lower() != 'n'
-        
-        if not create_individual and not create_summary:
-            print("❌ No report types selected")
-            return
-        
-        # Get output directory
-        output_dir = input("Enter output directory (or press Enter for 'metadata_reports'): ").strip().strip('"\'')
-        if not output_dir:
-            output_dir = os.path.join(source_dir, "metadata_reports")
-        
-        # Create output directory
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Confirmation
-        print(f"\n📋 CONFIRMATION:")
-        print(f"   Source: {source_dir}")
-        print(f"   Output: {output_dir}")
-        print(f"   PNG files: {len(png_files)}")
-        print(f"   Individual reports: {'Yes' if create_individual else 'No'}")
-        print(f"   Summary report: {'Yes' if create_summary else 'No'}")
-        
-        if input("\nProceed? (y/n): ").strip().lower() != 'y':
-            print("❌ Operation cancelled")
-            return
-        
-        # Start processing
-        print("🚀 Generating metadata reports...")
-        
-        extractor = MetadataExtractor()
-        formatter = EnhancedMetadataFormatter()
-        
-        processed = 0
-        successful = 0
-        failed = 0
-        summary_data = []
-        
-        for png_file in png_files:
-            processed += 1
-            png_path = os.path.join(source_dir, png_file)
-            
-            print(f"Processing {processed}/{len(png_files)}: {png_file}")
-            
-            try:
-                # Extract metadata
-                metadata = extractor.extract_single(png_path)
-                if not metadata:
-                    print(f"  ⚠️ No metadata found in {png_file}")
-                    failed += 1
-                    continue
+        try:
+            index = int(choice) - 1
+            if 0 <= index < len(log_files):
+                log_path = os.path.join(logs_dir, sorted(log_files, reverse=True)[index])
+                print(f"\n📄 Viewing: {log_files[index]}")
+                print("-" * 60)
                 
-                # Generate formatted report
-                report_text = formatter.format_metadata_to_text(metadata, png_path)
-                
-                # Save individual report
-                if create_individual:
-                    report_filename = os.path.splitext(png_file)[0] + "_metadata_report.txt"
-                    report_path = os.path.join(output_dir, report_filename)
-                    
-                    with open(report_path, 'w', encoding='utf-8') as f:
-                        f.write(report_text)
-                
-                # Collect summary data
-                if create_summary:
-                    summary_data.append({
-                        'filename': png_file,
-                        'metadata': metadata,
-                        'report': report_text
-                    })
-                
-                successful += 1
-                print(f"  ✅ Report generated")
-                
-            except Exception as e:
-                print(f"  ❌ Error: {e}")
-                failed += 1
-        
-        # Generate summary report
-        if create_summary and summary_data:
-            print("\n📊 Generating summary report...")
-            summary_path = os.path.join(output_dir, "metadata_summary_report.txt")
-            
-            with open(summary_path, 'w', encoding='utf-8') as f:
-                f.write("=== BATCH METADATA SUMMARY REPORT ===\n")
-                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Source Directory: {source_dir}\n")
-                f.write(f"Total Files: {len(png_files)}\n")
-                f.write(f"Successfully Processed: {successful}\n")
-                f.write(f"Failed: {failed}\n")
-                f.write("=" * 50 + "\n\n")
-                
-                # Add each report
-                for i, data in enumerate(summary_data, 1):
-                    f.write(f"FILE {i}/{len(summary_data)}: {data['filename']}\n")
-                    f.write("-" * 50 + "\n")
-                    f.write(data['report'])
-                    f.write("\n" + "=" * 50 + "\n\n")
-        
-        # Results
-        print(f"\n✅ METADATA REPORTS COMPLETE!")
-        print(f"   Processed: {processed}/{len(png_files)} files")
-        print(f"   Successful: {successful}")
-        print(f"   Failed: {failed}")
-        
-        if create_individual:
-            print(f"   Individual reports: {successful} files")
-        if create_summary:
-            print(f"   Summary report: metadata_summary_report.txt")
-        
-        if input("\nOpen output folder? (y/n): ").strip().lower() == 'y':
-            import subprocess
-            subprocess.run(['explorer', os.path.abspath(output_dir)], shell=True)
+                with open(log_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    # Show last 50 lines
+                    for line in lines[-50:]:
+                        print(line.rstrip())
+        except (ValueError, IndexError):
+            print("❌ Invalid selection")
     
     def _get_directory_input(self, prompt: str) -> str:
         """Get and validate directory input from user"""

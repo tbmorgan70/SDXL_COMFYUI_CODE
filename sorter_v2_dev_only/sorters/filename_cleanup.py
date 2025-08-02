@@ -39,6 +39,14 @@ class FilenameCleanup:
         Returns:
             Success status
         """
+        # Reset stats for each operation
+        self.stats = {
+            'files_renamed': 0,
+            'metadata_files_removed': 0,
+            'errors': 0,
+            'total_files': 0
+        }
+        
         self.logger.start_operation("Filename Cleanup")
         self.logger._write_log(f"Source: {source_dir}")
         self.logger._write_log(f"Remove metadata files: {remove_metadata_files}")

@@ -1,0 +1,7 @@
+Timestamp,Type,Message,File,Operation
+2025-08-01T21:30:32.632894,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image3.jpg: cannot identify image file 'C:\\Users\\tbmor\\AppData\\Local\\Temp\\tmpsv8gwhhn\\image3.jpg',,Color Sorting
+2025-08-01T21:30:32.632894,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image3.jpg: cannot identify image file 'C:\\Users\\tbmor\\AppData\\Local\\Temp\\tmpsv8gwhhn\\image3.jpg',,Color Sorting
+2025-08-01T21:30:32.633895,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image1.png: broken data stream when reading image file,,Color Sorting
+2025-08-01T21:30:32.635491,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image2.png: broken data stream when reading image file,,Color Sorting
+2025-08-01T21:30:32.636495,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image1.png: broken data stream when reading image file,,Color Sorting
+2025-08-01T21:30:32.636495,General,Error analyzing color for C:\Users\tbmor\AppData\Local\Temp\tmpsv8gwhhn\image2.png: broken data stream when reading image file,,Color Sorting

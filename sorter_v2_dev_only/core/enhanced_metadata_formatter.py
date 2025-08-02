@@ -65,34 +65,9 @@ class EnhancedMetadataFormatter:
     
     def get_base_model(self, metadata: Dict[str, Any]) -> Optional[str]:
         """Extract base model name for grouping (ignoring refiner models)"""
-        base_model = None
-        refiner_model = None
-        
-        for node_id, node_data in metadata.items():
-            if not isinstance(node_data, dict):
-                continue
-                
-            class_type = node_data.get('class_type', '')
-            inputs = node_data.get('inputs', {})
-            title = node_data.get('_meta', {}).get('title', '').lower()
-            
-            if 'ckpt_name' in inputs:
-                # Check if this is a refiner node
-                is_refiner = (
-                    'refiner' in class_type.lower() or 
-                    'refiner' in title or
-                    'start_at_step' in inputs or  # Common refiner parameter
-                    'end_at_step' in inputs
-                )
-                
-                if is_refiner:
-                    refiner_model = inputs['ckpt_name']
-                else:
-                    # This is likely the base model
-                    base_model = inputs['ckpt_name']
-        
-        # Return base model, or refiner if no base found, or None
-        return base_model or refiner_model
+        # Use the same method as MetadataAnalyzer for consistency
+        from .metadata_engine import MetadataAnalyzer
+        return MetadataAnalyzer.extract_primary_checkpoint(metadata)
     
     def get_lora_stack_signature(self, metadata: Dict[str, Any]) -> str:
         """Create a signature string representing the LoRA stack for grouping (improved version)"""
@@ -156,7 +131,9 @@ Generated: {timestamp}
         """Format models section to match original working format"""
         lines = ["=== MODELS ==="]
         
-        base_model = None
+        # Use the same extraction method as MetadataAnalyzer for consistency
+        from .metadata_engine import MetadataAnalyzer
+        base_model = MetadataAnalyzer.extract_primary_checkpoint(metadata)
         vae = None
         
         for node_id, node_data in metadata.items():
@@ -165,10 +142,6 @@ Generated: {timestamp}
                 
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
-            
-            # Find base model
-            if 'ckpt_name' in inputs:
-                base_model = inputs['ckpt_name']
             
             # Find VAE
             if class_type == 'VAELoader' and 'vae_name' in inputs:

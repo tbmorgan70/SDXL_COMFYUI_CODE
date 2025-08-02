@@ -140,6 +140,7 @@ class ColorSorter:
         
         # Track statistics
         color_stats = {}
+        file_color_mapping = {}  # Store color info separately from path objects
         successful = 0
         failed = 0
         
@@ -159,9 +160,11 @@ class ColorSorter:
                 color_stats[color_category] = 0
             color_stats[color_category] += 1
             
-            # Store result for sorting phase
-            setattr(image_file, '_color_category', color_category)
-            setattr(image_file, '_dominant_color', dominant_color)
+            # Store result for sorting phase in separate dictionary
+            file_color_mapping[str(image_file)] = {
+                'color_category': color_category,
+                'dominant_color': dominant_color
+            }
         
         self.logger.end_phase("Color Analysis")
         
@@ -186,7 +189,9 @@ class ColorSorter:
         
         for i, image_file in enumerate(image_files):
             try:
-                color_category = getattr(image_file, '_color_category', 'Unknown')
+                file_path_str = str(image_file)
+                color_info = file_color_mapping.get(file_path_str, {})
+                color_category = color_info.get('color_category', 'Unknown')
                 target_dir = output_path / color_category
                 
                 # Generate target filename
