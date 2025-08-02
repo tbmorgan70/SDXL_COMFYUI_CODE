@@ -1,0 +1,951 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "ANIME\\STYLE\\dreamshaperXL_alpha2Xl10.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "2": {
+    "inputs": {
+      "vae_name": "neptuniaXLVAE_contrastColors.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "4": {
+    "inputs": {
+      "anything": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "Anything Everywhere",
+    "_meta": {
+      "title": "Anything Everywhere"
+    }
+  },
+  "14": {
+    "inputs": {
+      "text": "lowres, worst quality, low quality, bad anatomy, deformed, mutated, disfigured, unnatural proportions, extra limbs, missing limbs, duplicate limbs, unrealistic, blurry, out of focus, grainy, noisy, jpeg artifacts, compression artifacts, glitch artifacts, watermark, signature, logo, text, cartoon, sketch, painting, overexposed, underexposed\n\n",
+      "clip": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "16": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 110945014754213,
+      "steps": 32,
+      "cfg": 9.0,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "start_at_step": 0,
+      "end_at_step": 26,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "189",
+        0
+      ],
+      "positive": [
+        "143",
+        0
+      ],
+      "negative": [
+        "14",
+        0
+      ],
+      "latent_image": [
+        "312:0",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "22": {
+    "inputs": {
+      "samples": [
+        "201",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "28": {
+    "inputs": {
+      "stop_at_clip_layer": -2,
+      "clip": [
+        "189",
+        1
+      ]
+    },
+    "class_type": "CLIPSetLastLayer",
+    "_meta": {
+      "title": "CLIP Set Last Layer"
+    }
+  },
+  "39": {
+    "inputs": {
+      "guide_size": 512.0,
+      "guide_size_for": true,
+      "max_size": 1024.0,
+      "seed": 43220999754961,
+      "steps": 35,
+      "cfg": 5.0,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.5,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3.0,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": false,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "155",
+        0
+      ],
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "28",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ],
+      "positive": [
+        "143",
+        0
+      ],
+      "negative": [
+        "14",
+        0
+      ],
+      "bbox_detector": [
+        "54",
+        0
+      ],
+      "sam_model_opt": [
+        "40",
+        0
+      ],
+      "segm_detector_opt": [
+        "54",
+        1
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer"
+    }
+  },
+  "40": {
+    "inputs": {
+      "model_name": "sam_vit_b_01ec64.pth",
+      "device_mode": "AUTO"
+    },
+    "class_type": "SAMLoader",
+    "_meta": {
+      "title": "SAMLoader (Impact)"
+    }
+  },
+  "54": {
+    "inputs": {
+      "model_name": "bbox/face_yolov8m.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "57": {
+    "inputs": {
+      "mask": [
+        "39",
+        3
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Convert Mask to Image"
+    }
+  },
+  "58": {
+    "inputs": {
+      "images": [
+        "57",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "59": {
+    "inputs": {
+      "guide_size": 512.0,
+      "guide_size_for": true,
+      "max_size": 1024.0,
+      "seed": 304221911550961,
+      "steps": 35,
+      "cfg": 4.5,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.5,
+      "feather": 5,
+      "noise_mask": true,
+      "force_inpaint": true,
+      "bbox_threshold": 0.5,
+      "bbox_dilation": 10,
+      "bbox_crop_factor": 3.0,
+      "sam_detection_hint": "center-1",
+      "sam_dilation": 0,
+      "sam_threshold": 0.93,
+      "sam_bbox_expansion": 0,
+      "sam_mask_hint_threshold": 0.7,
+      "sam_mask_hint_use_negative": "False",
+      "drop_size": 10,
+      "wildcard": "",
+      "cycle": 1,
+      "inpaint_model": false,
+      "noise_mask_feather": 20,
+      "tiled_encode": false,
+      "tiled_decode": false,
+      "image": [
+        "39",
+        0
+      ],
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "28",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ],
+      "positive": [
+        "143",
+        0
+      ],
+      "negative": [
+        "14",
+        0
+      ],
+      "bbox_detector": [
+        "202",
+        0
+      ],
+      "sam_model_opt": [
+        "61",
+        0
+      ]
+    },
+    "class_type": "FaceDetailer",
+    "_meta": {
+      "title": "FaceDetailer - Hands"
+    }
+  },
+  "61": {
+    "inputs": {
+      "model_name": "sam_vit_b_01ec64.pth",
+      "device_mode": "Prefer GPU"
+    },
+    "class_type": "SAMLoader",
+    "_meta": {
+      "title": "SAMLoader (Impact)"
+    }
+  },
+  "63": {
+    "inputs": {
+      "mask": [
+        "59",
+        3
+      ]
+    },
+    "class_type": "MaskToImage",
+    "_meta": {
+      "title": "Convert Mask to Image"
+    }
+  },
+  "64": {
+    "inputs": {
+      "images": [
+        "63",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "112": {
+    "inputs": {
+      "upscale_by": 2,
+      "seed": 309346873044518,
+      "steps": 50,
+      "cfg": 9,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.3,
+      "mode_type": "Linear",
+      "tile_width": 1024,
+      "tile_height": 1024,
+      "mask_blur": 8,
+      "tile_padding": 32,
+      "seam_fix_mode": "None",
+      "seam_fix_denoise": 1,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 8,
+      "seam_fix_padding": 16,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "image": [
+        "59",
+        0
+      ],
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "143",
+        0
+      ],
+      "negative": [
+        "14",
+        0
+      ],
+      "vae": [
+        "2",
+        0
+      ],
+      "upscale_model": [
+        "113",
+        0
+      ]
+    },
+    "class_type": "UltimateSDUpscale",
+    "_meta": {
+      "title": "Ultimate SD Upscale"
+    }
+  },
+  "113": {
+    "inputs": {
+      "model_name": "RealESRGAN_x4plus_anime_6B.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "118": {
+    "inputs": {
+      "images": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "133": {
+    "inputs": {
+      "images": [
+        "213:2",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "135": {
+    "inputs": {
+      "images": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "143": {
+    "inputs": {
+      "text": "1girl, solo, slim with long legs and narrow waist, mesh bralette with ultra-low-rise velvet pants and visible underwear, open-mouthed moan frozen mid-frame, metal ring harness belt, mirror-lined hotel hallway with clothes scattered, strap falling off shoulder, surreal dreaminess with a hint of danger, animated holographic shimmer with flickering neon glow, sitting on a bar stool, legs crossed, teasing smile, 8K, ultra-detailed, cinematic lighting, masterpiece",
+      "clip": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive 1"
+    }
+  },
+  "155": {
+    "inputs": {
+      "timeout": 20,
+      "ontimeout": "send all",
+      "tip": "",
+      "extra1": "",
+      "extra2": "",
+      "extra3": "",
+      "pick_list": "",
+      "video_frames": 463388,
+      "node_identifier": 339211,
+      "images": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "Image Filter",
+    "_meta": {
+      "title": "Image Filter"
+    },
+    "is_changed": [
+      NaN
+    ]
+  },
+  "161": {
+    "inputs": {
+      "filename_prefix": "disco_dollz_anime_ILL2",
+      "images": [
+        "213:2",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "189": {
+    "inputs": {
+      "lora_name": "MY DRIP\\DISCO_DOLLZ\\disco_dollz_Illustrious_V2.safetensors",
+      "strength_model": 1.0,
+      "strength_clip": 1.0,
+      "model": [
+        "190",
+        0
+      ],
+      "clip": [
+        "190",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "190": {
+    "inputs": {
+      "lora_name": "MY DRIP\\LATEST VERSIONS\\Retro_Sci-Fi_Control_Room_Illustrious_V3_NEW.safetensors",
+      "strength_model": 0.9,
+      "strength_clip": 0.9,
+      "model": [
+        "191",
+        0
+      ],
+      "clip": [
+        "191",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "191": {
+    "inputs": {
+      "lora_name": "MY DRIP\\LATEST VERSIONS\\Nova_Skyrift_-_Goth_Girl_-_V1_-_Illustrious.safetensors",
+      "strength_model": 0.8,
+      "strength_clip": 0.8,
+      "model": [
+        "192",
+        0
+      ],
+      "clip": [
+        "192",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "192": {
+    "inputs": {
+      "lora_name": "MY DRIP\\LATEST VERSIONS\\Vintage_Nudes_-_NSFW_-_V5-000008.safetensors",
+      "strength_model": 0.8,
+      "strength_clip": 0.8,
+      "model": [
+        "320:1",
+        0
+      ],
+      "clip": [
+        "320:1",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "198": {
+    "inputs": {
+      "ascore": 10.000000000000002,
+      "width": 1080,
+      "height": 1352,
+      "text": "lowres, worst quality, low quality, bad anatomy, deformed, mutated, disfigured, unnatural proportions, extra limbs, missing limbs, duplicate limbs, unrealistic, blurry, out of focus, grainy, noisy, jpeg artifacts, compression artifacts, glitch artifacts, watermark, signature, logo, text, cartoon, sketch, painting, overexposed, underexposed\n\n",
+      "clip": [
+        "324:1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeSDXLRefiner",
+    "_meta": {
+      "title": "REFINER_NEGATIVE"
+    }
+  },
+  "199": {
+    "inputs": {
+      "ascore": 10.000000000000002,
+      "width": 1080,
+      "height": 1352,
+      "text": "1girl, solo, slim with long legs and narrow waist, mesh bralette with ultra-low-rise velvet pants and visible underwear, open-mouthed moan frozen mid-frame, metal ring harness belt, mirror-lined hotel hallway with clothes scattered, strap falling off shoulder, surreal dreaminess with a hint of danger, animated holographic shimmer with flickering neon glow, sitting on a bar stool, legs crossed, teasing smile, 8K, ultra-detailed, cinematic lighting, masterpiece",
+      "clip": [
+        "324:1",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncodeSDXLRefiner",
+    "_meta": {
+      "title": "REFINER_POSITIVE"
+    }
+  },
+  "201": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 414520165163265,
+      "steps": 8,
+      "cfg": 7.0,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "start_at_step": 26,
+      "end_at_step": 32,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "324:1",
+        0
+      ],
+      "positive": [
+        "199",
+        0
+      ],
+      "negative": [
+        "198",
+        0
+      ],
+      "latent_image": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "202": {
+    "inputs": {
+      "model_name": "bbox/hand_yolov8s.pt"
+    },
+    "class_type": "UltralyticsDetectorProvider",
+    "_meta": {
+      "title": "UltralyticsDetectorProvider"
+    }
+  },
+  "216": {
+    "inputs": {
+      "intensity": 0.02,
+      "scale": 10.0,
+      "temperature": 0.0,
+      "vignette": 0.29850708007812504,
+      "image": [
+        "213:2",
+        0
+      ]
+    },
+    "class_type": "FilmGrain",
+    "_meta": {
+      "title": "FilmGrain"
+    }
+  },
+  "223": {
+    "inputs": {
+      "blur_radius": 3,
+      "method": "mean",
+      "image": [
+        "224",
+        0
+      ]
+    },
+    "class_type": "KuwaharaBlur",
+    "_meta": {
+      "title": "KuwaharaBlur"
+    }
+  },
+  "224": {
+    "inputs": {
+      "blur_radius": 1,
+      "sigma": 1,
+      "image": [
+        "213:2",
+        0
+      ]
+    },
+    "class_type": "Blur",
+    "_meta": {
+      "title": "Blur"
+    }
+  },
+  "226": {
+    "inputs": {
+      "char_size": 0,
+      "font_size": 22,
+      "image": [
+        "223",
+        0
+      ]
+    },
+    "class_type": "AsciiArt",
+    "_meta": {
+      "title": "AsciiArt"
+    }
+  },
+  "228": {
+    "inputs": {
+      "red_shift": 0,
+      "red_direction": "horizontal",
+      "green_shift": 0,
+      "green_direction": "horizontal",
+      "blue_shift": 0,
+      "blue_direction": "horizontal",
+      "image": [
+        "270",
+        0
+      ]
+    },
+    "class_type": "ChromaticAberration",
+    "_meta": {
+      "title": "ChromaticAberration"
+    }
+  },
+  "230": {
+    "inputs": {
+      "intensity": 1.9800982666015614,
+      "blur_radius": 5,
+      "image": [
+        "216",
+        0
+      ]
+    },
+    "class_type": "Glow",
+    "_meta": {
+      "title": "Glow"
+    }
+  },
+  "231": {
+    "inputs": {
+      "direction": "horizontal",
+      "span_limit": 50,
+      "sort_by": "hue",
+      "order": "forward"
+    },
+    "class_type": "PixelSort",
+    "_meta": {
+      "title": "PixelSort"
+    }
+  },
+  "234": {
+    "inputs": {
+      "pixel_size": 8,
+      "image": [
+        "228",
+        0
+      ]
+    },
+    "class_type": "Pixelize",
+    "_meta": {
+      "title": "Pixelize"
+    }
+  },
+  "235": {
+    "inputs": {
+      "amplitude": 10,
+      "frequency": 5,
+      "direction": "horizontal"
+    },
+    "class_type": "SineWave",
+    "_meta": {
+      "title": "SineWave"
+    }
+  },
+  "237": {
+    "inputs": {
+      "vignette": 0,
+      "image": [
+        "226",
+        0
+      ]
+    },
+    "class_type": "Vignette",
+    "_meta": {
+      "title": "Vignette"
+    }
+  },
+  "240": {
+    "inputs": {
+      "image_a": [
+        "213:2",
+        0
+      ],
+      "image_b": [
+        "112",
+        0
+      ]
+    },
+    "class_type": "Image Input Switch",
+    "_meta": {
+      "title": "Image Input Switch"
+    }
+  },
+  "266": {
+    "inputs": {
+      "threshold": 0.5,
+      "image": [
+        "234",
+        0
+      ]
+    },
+    "class_type": "Solarize",
+    "_meta": {
+      "title": "Solarize"
+    }
+  },
+  "268": {
+    "inputs": {
+      "colors": 128,
+      "dither": "floyd-steinberg",
+      "image": [
+        "274",
+        0
+      ]
+    },
+    "class_type": "Quantize",
+    "_meta": {
+      "title": "Quantize"
+    }
+  },
+  "270": {
+    "inputs": {
+      "coeff": 1,
+      "vertex_x": 0.5,
+      "vertex_y": 0.5,
+      "image": [
+        "230",
+        0
+      ]
+    },
+    "class_type": "Parabolize",
+    "_meta": {
+      "title": "Parabolize"
+    }
+  },
+  "272": {
+    "inputs": {
+      "strength": 1,
+      "mode": "sepia",
+      "image": [
+        "231",
+        0
+      ]
+    },
+    "class_type": "ColorTint",
+    "_meta": {
+      "title": "ColorTint"
+    }
+  },
+  "274": {
+    "inputs": {
+      "temperature": 0.0,
+      "hue": 0.0,
+      "brightness": 0.0,
+      "contrast": 0.0,
+      "saturation": 0.0,
+      "gamma": 1.0,
+      "image": [
+        "216",
+        0
+      ]
+    },
+    "class_type": "ColorCorrect",
+    "_meta": {
+      "title": "ColorCorrect"
+    }
+  },
+  "315": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "268",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "312:0": {
+    "inputs": {
+      "resolution": "896x1152 (0.78)",
+      "batch_size": 4,
+      "width_override": 0,
+      "height_override": 0
+    },
+    "class_type": "SDXLEmptyLatentSizePicker+",
+    "_meta": {
+      "title": "\ud83d\udd27 SDXL Empty Latent Size Picker"
+    }
+  },
+  "312:1": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 1
+    },
+    "class_type": "LatentUpscaleBy",
+    "_meta": {
+      "title": "Upscale Latent By"
+    }
+  },
+  "324:1": {
+    "inputs": {
+      "ckpt_name": "REALISM\\NSFW\\biglustydonutmixNSFW_v12.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "REFINER CHECKPOINT LOADER"
+    }
+  },
+  "320:1": {
+    "inputs": {
+      "lora_name": "BODY\\Breast Slider - SDXL_alpha1.0_rank4_noxattn_last.safetensors",
+      "strength_model": 1.1,
+      "strength_clip": 1.1,
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "213:0": {
+    "inputs": {
+      "model_name": "RealESRGAN_x4plus.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "213:1": {
+    "inputs": {
+      "upscale_model": [
+        "213:0",
+        0
+      ],
+      "image": [
+        "59",
+        0
+      ]
+    },
+    "class_type": "ImageUpscaleWithModel",
+    "_meta": {
+      "title": "Upscale Image (using Model)"
+    }
+  },
+  "213:2": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 0.5,
+      "image": [
+        "213:1",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  }
+}

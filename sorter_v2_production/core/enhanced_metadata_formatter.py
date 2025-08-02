@@ -283,8 +283,13 @@ Generated: {timestamp}
         class_type = node_data.get('class_type', '')
         inputs = node_data.get('inputs', {})
         
+        # String Literal nodes (common in ComfyUI workflows) - CRITICAL FIX
+        if 'String Literal' in class_type:
+            if 'string' in inputs:
+                return str(inputs['string']).strip()
+        
         # ShowText nodes store the actual text in text_0 field
-        if 'ShowText' in class_type:
+        elif 'ShowText' in class_type:
             if 'text_0' in inputs:
                 return str(inputs['text_0']).strip()
             elif 'text' in inputs:
@@ -326,20 +331,21 @@ Generated: {timestamp}
             title = node_data.get('_meta', {}).get('title', '').lower()
             
             if class_type in ['CLIPTextEncode', 'CLIPTextEncodeSDXL', 'CLIPTextEncodeSDXLRefiner'] and 'text' in inputs:
-                # Handle both string and list formats for prompt text
-                text_data = inputs['text']
-                if isinstance(text_data, list):
-                    prompt_text = ' '.join(str(item).strip() for item in text_data if item).strip()
-                else:
-                    prompt_text = str(text_data).strip()
-                
-                if not prompt_text:
-                    continue
-                    
                 # Only negative prompts
                 if 'negative' in title or 'neg' in title:
-                    negative_prompt = prompt_text
-                    break
+                    # Extract text (direct or via node reference)
+                    text_data = inputs['text']
+                    extracted_text = None
+                    
+                    if isinstance(text_data, str) and text_data.strip():
+                        extracted_text = text_data.strip()
+                    elif isinstance(text_data, list) and len(text_data) >= 1:
+                        ref_node_id = text_data[0]
+                        extracted_text = self._resolve_text_node_reference(metadata, ref_node_id)
+                    
+                    if extracted_text:
+                        negative_prompt = extracted_text
+                        break
         
         if negative_prompt:
             lines.append(negative_prompt)
