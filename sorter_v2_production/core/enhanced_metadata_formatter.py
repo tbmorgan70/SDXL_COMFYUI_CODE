@@ -52,6 +52,10 @@ class EnhancedMetadataFormatter:
         lines.extend(self._format_sampling_section(metadata))
         lines.append("")
         
+        # Seeds Section
+        lines.extend(self._format_seeds_section(metadata, image_path))
+        lines.append("")
+        
         # Image Parameters
         lines.extend(self._format_image_parameters(metadata))
         lines.append("")
@@ -182,7 +186,7 @@ Generated: {timestamp}
                 
                 lora_info = f"LoRA {lora_count}: {lora_filename}"
                 if model_strength != 1.0 or clip_strength != 1.0:
-                    lora_info += f" (Model: {model_strength}, CLIP: {clip_strength})"
+                    lora_info += f" (Model: {model_strength:.1f}, CLIP: {clip_strength:.1f})"
                 
                 loras.append(lora_info)
                 lora_count += 1
@@ -316,6 +320,28 @@ Generated: {timestamp}
         
         return None
     
+    def _resolve_numeric_node_reference(self, metadata: Dict[str, Any], node_ref: Any) -> Optional[float]:
+        """Resolve a numeric node reference to get the actual numeric value"""
+        if isinstance(node_ref, (int, float)):
+            return float(node_ref)
+        
+        if isinstance(node_ref, list) and len(node_ref) >= 1:
+            node_id = str(node_ref[0])
+            if node_id in metadata:
+                node_data = metadata[node_id]
+                if isinstance(node_data, dict):
+                    class_type = node_data.get('class_type', '')
+                    inputs = node_data.get('inputs', {})
+                    
+                    # Look for common numeric value fields
+                    for field in ['value', 'float', 'number', 'cfg', 'steps']:
+                        if field in inputs:
+                            value = inputs[field]
+                            if isinstance(value, (int, float)):
+                                return float(value)
+        
+        return None
+    
     def _format_negative_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
         """Format negative prompt section"""
         lines = ["=== NEGATIVE PROMPT ==="]
@@ -388,9 +414,9 @@ Generated: {timestamp}
                 if is_refiner:
                     # This is a refiner sampler
                     if 'steps' in inputs:
-                        refiner_steps = inputs['steps']
+                        refiner_steps = self._resolve_numeric_node_reference(metadata, inputs['steps'])
                     if 'cfg' in inputs:
-                        refiner_cfg = inputs['cfg']
+                        refiner_cfg = self._resolve_numeric_node_reference(metadata, inputs['cfg'])
                     if 'sampler_name' in inputs:
                         refiner_sampler_name = inputs['sampler_name']
                     if 'scheduler' in inputs:
@@ -398,9 +424,9 @@ Generated: {timestamp}
                 else:
                     # This is a base sampler - prioritize this for steps
                     if 'steps' in inputs:
-                        base_steps = inputs['steps']
+                        base_steps = self._resolve_numeric_node_reference(metadata, inputs['steps'])
                     if 'cfg' in inputs:
-                        base_cfg = inputs['cfg']
+                        base_cfg = self._resolve_numeric_node_reference(metadata, inputs['cfg'])
                     if 'sampler_name' in inputs:
                         base_sampler_name = inputs['sampler_name']
                     if 'scheduler' in inputs:
@@ -421,6 +447,121 @@ Generated: {timestamp}
             lines.append(f"Sampler Name: {sampler_name}")
         if scheduler:
             lines.append(f"Scheduler: {scheduler}")
+        
+        return lines
+    
+    def _format_seeds_section(self, metadata: Dict[str, Any], image_path: Optional[str] = None) -> List[str]:
+        """Format seeds section with support for multiple seeds (base and refiner)"""
+        lines = ["=== SEEDS ==="]
+        
+        base_seed = None
+        refiner_seed = None
+        other_seeds = []
+        filename_seeds = []
+        
+        for node_id, node_data in metadata.items():
+            if not isinstance(node_data, dict):
+                continue
+                
+            class_type = node_data.get('class_type', '')
+            inputs = node_data.get('inputs', {})
+            title = node_data.get('_meta', {}).get('title', '').lower()
+            
+            # Skip noise generators, face detailers, and other processing nodes
+            node_type_lower = class_type.lower()
+            if any(skip_term in node_type_lower for skip_term in [
+                'facedetailer', 'face_detailer', 'detailer', 'noise'
+            ]):
+                continue
+            
+            # Look for seed values in sampler nodes
+            if 'seed' in inputs and 'sampler' in class_type.lower():
+                seed_value = inputs['seed']
+                
+                # Determine if this is a refiner sampler
+                is_refiner = False
+                if 'refiner' in title:
+                    is_refiner = True
+                elif 'start_at_step' in inputs and inputs.get('start_at_step', 0) > 0:
+                    is_refiner = True
+                
+                if is_refiner:
+                    refiner_seed = seed_value
+                else:
+                    base_seed = seed_value
+            
+            # Check for seeds in Image Saver and filename-related nodes
+            elif 'seed' in inputs and any(term in class_type.lower() for term in [
+                'saveimage', 'save_image', 'imagesave', 'image_save', 'filename'
+            ]):
+                seed_value = inputs['seed']
+                filename_seeds.append({
+                    'node': class_type,
+                    'seed': seed_value
+                })
+            
+            # Also collect seeds from other relevant nodes
+            elif 'seed' in inputs and class_type in [
+                'KSampler', 'KSamplerAdvanced', 'EmptyLatentImage', 
+                'RandomNoise', 'SeedGenerator'
+            ]:
+                seed_value = inputs['seed']
+                other_seeds.append({
+                    'node': class_type,
+                    'seed': seed_value
+                })
+            
+            # Look for filename patterns that might contain seeds
+            elif any(field in inputs for field in ['filename', 'filename_prefix', 'name']):
+                filename_field = None
+                for field in ['filename', 'filename_prefix', 'name']:
+                    if field in inputs:
+                        filename_field = inputs[field]
+                        break
+                
+                if filename_field and isinstance(filename_field, str):
+                    # Extract potential seed from filename (look for long number sequences)
+                    import re
+                    seed_matches = re.findall(r'\d{10,}', filename_field)
+                    for seed_match in seed_matches:
+                        filename_seeds.append({
+                            'node': f"{class_type} (filename)",
+                            'seed': int(seed_match)
+                        })
+        
+        # If no seeds found in metadata, try to extract from actual image filename
+        if (base_seed is None and refiner_seed is None and 
+            not filename_seeds and not other_seeds and image_path):
+            import re
+            import os
+            filename = os.path.basename(image_path)
+            # Look for long number sequences in the filename (likely seeds)
+            seed_matches = re.findall(r'\d{10,}', filename)
+            for seed_match in seed_matches:
+                filename_seeds.append({
+                    'node': "Filename",
+                    'seed': int(seed_match)
+                })
+        
+        # Format output prioritizing base seed, then refiner, then filename seeds, then others
+        if base_seed is not None:
+            lines.append(f"Base Seed: {base_seed}")
+        if refiner_seed is not None:
+            lines.append(f"Refiner Seed: {refiner_seed}")
+        
+        # Add filename seeds if no sampler seeds found
+        if base_seed is None and refiner_seed is None and filename_seeds:
+            for seed_info in filename_seeds:
+                lines.append(f"{seed_info['node']}: {seed_info['seed']}")
+        
+        # Add other seeds if we haven't captured seeds from samplers or filenames
+        elif base_seed is None and refiner_seed is None and not filename_seeds and other_seeds:
+            for seed_info in other_seeds:
+                lines.append(f"{seed_info['node']}: {seed_info['seed']}")
+        
+        # If no seeds found at all
+        if base_seed is None and refiner_seed is None and not filename_seeds and not other_seeds:
+            lines.append("No seeds found")
         
         return lines
     
