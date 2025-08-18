@@ -1,0 +1,3 @@
+Timestamp,Type,Message,File,Operation
+2025-08-15T03:36:23.925947,Metadata Write,Failed to create metadata file: unsupported format string passed to list.__format__,C:/Users/tbmor/Desktop/GRAPHIX/Stable Diffusion/SD CURRENT PROJECTS/ULTRA_disco_nova/disco_nova_batch3\sorted\illustriousRealismBy_v10VAE\disco_nova_batch3_img17.txt,File Sorting
+2025-08-15T03:36:23.927397,Metadata Write,Failed to create metadata file: unsupported format string passed to list.__format__,C:/Users/tbmor/Desktop/GRAPHIX/Stable Diffusion/SD CURRENT PROJECTS/ULTRA_disco_nova/disco_nova_batch3\sorted\illustriousRealismBy_v10VAE\disco_nova_batch3_img18.txt,File Sorting
