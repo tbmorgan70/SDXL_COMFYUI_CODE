@@ -1,61 +1,118 @@
-# SD_COMFYUI_HACKS
-This repo is a curated collection of tools for managing, sorting, and optimizing AI image generation workflows. Built to evolve as your projects grow.
+# 🎯 SDXL ComfyUI Code - Complete Toolkit
+**The ultimate collection of tools for managing, sorting, and optimizing AI image generation workflows.**
 
-## 🎨 Unified Sorter - Now with Color Sorting!
+> 🆕 **Now Unified!** All tools consolidated into one clean, powerful repository. Previously scattered across multiple repos, now everything you need is here in one organized place.
 
-The **Unified Sorter** is a comprehensive tool featuring three powerful modes:
+## 🛠️ Complete Toolkit Overview
 
-### 1. **Text File Sorter** 📝
-- Organizes text files using customizable placeholders
-- Supports move or copy operations
-- Perfect for organizing prompts, logs, and documentation
+This unified repository contains four powerful tools:
 
-### 2. **ComfyUI Batch Sorter** 🖼️
-- Renames images by Base+LoRA-sorted GEN format
-- Generates detailed metadata files
-- Sorts images into folders by checkpoint filenames
-- Handles non-PNG files automatically
+### 1. **🎯 Main Sorter 2.0** (`sorter/`) - *Production Ready*
+- **Advanced ComfyUI Image Organizer**
+- Sort by Base Checkpoint (SDXL, Pony, etc.)
+- Search & Sort by Metadata (LoRAs, prompts, settings)
+- Color-based sorting with visual previews
+- Both GUI and CLI interfaces
+- **Start here for most users!**
 
-### 3. **🌈 Color Sorter** ✨ *NEW!*
-- **Dominant Color Analysis**: Automatically detects each image's primary color
-- **Smart Classification**: Sorts into 11 color categories (Red, Blue, Green, Yellow, Purple, Orange, Pink, Brown, Black, White, Gray)
-- **Custom Renaming**: Optional color-based file prefixes (e.g., `[MySet_RED] image.png`)
-- **Visual Preview**: Creates color distribution bar showing your collection breakdown
-- **Perfect Final Step**: Ideal for final organization after other sorting methods
+### 2. **🔄 CivitAI Converter** (`civitai_converter/`)
+- Convert ComfyUI workflows to CivitAI format
+- Metadata preservation and cleanup
+- Batch processing support
 
-## 🚀 Getting Started
+### 3. **🌐 HTML Builder Suite** (`builder/`)
+- Dynamic prompt generation interfaces
+- Interactive HTML dashboards
+- Custom workflow builders
+- *Will be integrated with main sorter in future releases*
 
-### Prerequisites
+### 4. **📝 Unified Legacy Sorter** (`unified_sorter.py`)
+- Original multi-mode sorter
+- Text file organization
+- ComfyUI batch processing
+- Color analysis features
+
+## 🚀 Quick Start Guide
+
+### **Recommended: Sorter 2.0 (Most Users)**
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd SD_COMFYUI_HACKS
+# Navigate to the main sorter
+cd sorter/
 
-# Install dependencies
-pip install -r requirements.txt
+# GUI Version (Recommended)
+python gui.py
+
+# Command Line Version
+python main.py
 ```
 
-### Quick Start
+### **Alternative: Legacy Unified Sorter**
 ```bash
-# Launch the main unified sorter
+# Launch the original unified sorter
 python unified_sorter.py
-
-# Or try the color sorting demo
-python demo_color_sorter.py
 ```
 
-### File Structure
+### **CivitAI Converter**
+```bash
+cd civitai_converter/
+python comfyui_to_civitai_converter.py
+```
+
+### **Prerequisites**
+```bash
+# Install all dependencies
+pip install -r requirements.txt
+
+# Or install for specific tools only:
+pip install -r sorter/requirements.txt        # For Sorter 2.0
+pip install -r civitai_converter/requirements.txt  # For converter (if exists)
+```
+
+### **📁 Repository Structure**
 ```
 SDXL_COMFYUI_CODE/
-├── unified_sorter.py          # 🎯 Main application (start here!)
-├── sorter/                    # 🚀 Production sorter v2.0
+├── 🎯 sorter/                 # Main Sorter 2.0 (Production)
 │   ├── gui.py                 # GUI interface
 │   ├── main.py                # CLI interface
-│   └── core/                  # Core sorting logic
-├── civitai_converter/         # 🔄 ComfyUI to Civitai converter
-├── builder/                   # 🌐 HTML interface builders
-├── tests/                     # 🧪 Unit tests
-└── archive/                   # 📦 Legacy versions (reference only)
+│   ├── core/                  # Core sorting logic
+│   └── sorters/               # Individual sorting modules
+├── 🔄 civitai_converter/      # ComfyUI to CivitAI converter
+├── 🌐 builder/                # HTML interface builders
+├── 📝 unified_sorter.py       # Legacy unified sorter
+├── 🧪 tests/                  # Unit tests
+├── 📦 archive/                # Legacy versions (reference)
+└── 📚 docs/                   # Documentation files
+```
+
+### **🎯 Which Tool Should I Use?**
+
+| **Use Case** | **Recommended Tool** | **Why** |
+|--------------|---------------------|---------|
+| **Sort ComfyUI images by checkpoint** | `sorter/` | Most advanced, GUI, fastest |
+| **Organize by colors and metadata** | `sorter/` | Full feature set, visual previews |
+| **Convert workflows for CivitAI** | `civitai_converter/` | Specialized tool |
+| **Build custom HTML interfaces** | `builder/` | Interactive dashboards |
+| **Quick text file organization** | `unified_sorter.py` | Simple, lightweight |
+
+---
+
+## 📚 Documentation & Guides
+
+- **📖 [Migration Guide](MIGRATION_GUIDE.md)** - Switching from old repos/versions
+- **🗺️ [Development Roadmap](ROADMAP.md)** - Future plans and priorities
+- **🔧 [Sorter 2.0 Guide](sorter/README.md)** - Detailed sorter documentation
+- **🔄 [Converter Guide](civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - CivitAI conversion help
+- **🌐 [Builder Guide](builder/README.md)** - HTML interface documentation
+
+## 🤝 Contributing
+
+We welcome contributions! Whether it's:
+- 🐛 **Bug reports** - Help us identify issues
+- ✨ **Feature requests** - Suggest improvements
+- 📝 **Documentation** - Improve guides and examples
+- 💻 **Code contributions** - Submit pull requests
+
+See our [Roadmap](ROADMAP.md) for current development priorities.
 ├── color_sorter.py            # 🌈 Color sorting engine
 ├── text_file_sorter.py        # 📝 Text file organizer
 ├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor

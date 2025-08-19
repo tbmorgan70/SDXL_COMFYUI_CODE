@@ -2,6 +2,9 @@
 
 **Advanced ComfyUI Image Organizer - Clean, Fast, Reliable**
 
+> ⭐ **Now part of the unified SDXL_COMFYUI_CODE repository!**  
+> This is the main production sorter tool. For other tools, see the [main repository README](../README.md).
+
 ## Quick Start
 
 ### GUI Version (Recommended)
