@@ -1,291 +1,96 @@
-# SD_COMFYUI_HACKS
-This repo is a curated collection of tools for managing, sorting, and optimizing AI image generation workflows. Built to evolve as your projects grow.
+# 🚀 Sorter 2.0 - Production Release
 
-## 🎨 Unified Sorter - Complete Image Management Suite!
+**Advanced ComfyUI Image Organizer - Clean, Fast, Reliable**
 
-The **Unified Sorter** is a comprehensive tool featuring four powerful modes:
+## Quick Start
 
-### 1. **Text File Sorter** 📝
-- Organizes text files using customizable placeholders
-- Supports move or copy operations
-- Perfect for organizing prompts, logs, and documentation
-
-### 2. **ComfyUI Batch Sorter** 🖼️
-- Renames images by Base+LoRA-sorted GEN format
-- Generates detailed metadata files
-- Sorts images into folders by checkpoint filenames
-- Handles non-PNG files automatically
-
-### 3. **🌈 Color Sorter** ✨
-- **Dominant Color Analysis**: Automatically detects each image's primary color
-- **Smart Classification**: Sorts into 11 color categories (Red, Blue, Green, Yellow, Purple, Orange, Pink, Brown, Black, White, Gray)
-- **Custom Renaming**: Optional color-based file prefixes (e.g., `[MySet_RED] image.png`)
-- **Visual Preview**: Creates color distribution bar showing your collection breakdown
-- **Perfect Final Step**: Ideal for final organization after other sorting methods
-
-### 4. **📂 Image Flattener** 🆕
-- **Undo ComfyUI Sorting**: Perfect for reversing nested folder organization
-- **Flatten All Images**: Moves all images from nested folders into a single directory
-- **Smart Naming**: Automatically handles filename conflicts with numbered suffixes
-- **Empty Folder Cleanup**: Optionally removes empty directories after flattening
-- **Batch Processing**: Handles large collections efficiently
-
-## 🚀 Getting Started
-
-### Prerequisites
+### GUI Version (Recommended)
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd SD_COMFYUI_HACKS
-
-# Install dependencies
-pip install -r requirements.txt
+python gui.py
 ```
 
-### Quick Start
+### Command Line Version
 ```bash
-# Launch the main unified sorter
-python unified_sorter.py
-
-# Or try the color sorting demo
-python demo_color_sorter.py
+python main.py
 ```
 
-### File Structure
-```
-SD_COMFYUI_HACKS/
-├── unified_sorter.py          # 🎯 Main application (start here!)
-├── flatten_images.py          # 📂 Image flattening utility
-├── color_sorter.py            # 🌈 Color sorting engine
-├── text_file_sorter.py        # 📝 Text file organizer
-├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor
-├── demo_color_sorter.py       # 🧪 Color sorting demo
-├── requirements.txt           # 📦 Dependencies
-└── README.md                  # 📖 Documentation
-```
+## Features
 
-## 🎯 Color Sorter Features
+### 🎯 Sort by Base Checkpoint
+- Organizes images by their base model (SDXL, Pony, etc.)
+- Smart model detection from metadata
+- Optional LoRA stack grouping
+- **Your #1 priority feature!**
 
-- **HSV-based Analysis**: Uses HSV color space for accurate classification
-- **Handles Any Image Format**: PNG, JPG, JPEG, BMP, TIFF, WebP
-- **Noise Reduction**: Groups similar colors to avoid over-categorization
-- **Batch Processing**: Handles hundreds of images efficiently
-- **Move or Copy**: Choose whether to move files or create copies
-- **Preview Generation**: Visual color distribution chart for your collection
+### 🔍 Search & Sort by Metadata
+- Find images by LoRAs, prompts, settings, etc.
+- Flexible search modes (ANY, ALL, EXACT)
+- Case-sensitive options
 
-## 📁 Example Output Structure
-```
-color_sorted/
-├── Red/
-│   ├── [MySet_RED] sunset.png
-│   └── [MySet_RED] roses.png
-├── Blue/
-│   ├── [MySet_BLUE] ocean.png
-│   └── [MySet_BLUE] sky.png
-├── Green/
-│   └── [MySet_GREEN] forest.png
-└── color_distribution_preview.png
-```
+### 🌈 Sort by Color
+- Organizes by dominant colors (red, blue, green, etc.)
+- Supports all image formats (PNG, JPG, GIF, BMP, TIFF, WebP)
+- Configurable dark threshold
 
-Perfect for organizing AI-generated images by color themes, mood boards, or final collection curation!
+### 📂 Flatten Image Folders
+- Consolidates nested folders into one directory
+- Smart duplicate handling with automatic renaming
+- Optional empty folder cleanup
 
-## 📂 Image Flattener Features
+### 📊 Session Logs
+- View detailed logs of previous operations
+- Error tracking and performance statistics
+- Comprehensive audit trail
 
-- **Universal Image Support**: Works with all common formats (PNG, JPG, JPEG, BMP, TIFF, WebP, SVG)
-- **Conflict Resolution**: Automatically renames files with numeric suffixes when duplicates are found
-- **Selective Cleanup**: Option to remove empty directories after flattening
-- **Preservation Mode**: Can flatten without removing original folder structure
-- **Batch Processing**: Efficiently handles thousands of images
-- **Perfect Undo**: Ideal for reversing ComfyUI sorting or any nested organization
+## Installation
 
-## 📁 Example Flattening Process
-```
-Before (Nested Structure):
-sorted/
-├── checkpoint_a/
-│   ├── lora1/
-│   │   ├── image1.png
-│   │   └── image2.png
-│   └── lora2/
-│       └── image3.png
-└── checkpoint_b/
-    └── image4.png
+1. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-After Flattening:
-flattened_images/
-├── image1.png
-├── image2.png
-├── image3.png
-└── image4.png
-```
+2. **Run the Application:**
+   - GUI: `python gui.py`
+   - CLI: `python main.py`
 
+## GUI Features
 
-# SDXL ComfyUI Prompt Builders Collection
+- **Compact Design:** 750x700 window fits perfectly on any screen
+- **Real-time Progress:** Live progress tracking with auto-close on completion
+- **Dark Theme:** Modern CustomTkinter interface
+- **Smart Confirmations:** Detailed operation previews before execution
+- **Error Handling:** Clear error messages and logging
 
-A comprehensive collection of interactive HTML-based prompt builders designed for generating high-quality AI image prompts, specifically optimized for SDXL and ComfyUI workflows.
+## Requirements
 
-## 🎯 Overview
+- Python 3.7+
+- CustomTkinter (for GUI)
+- Pillow (for image processing)
+- Standard libraries: json, pathlib, threading, queue
 
-This collection contains specialized prompt builders for various artistic styles and subjects. Each builder provides an intuitive interface for assembling complex prompts by selecting from curated categories of elements.
+## File Operations
 
-## 📁 Available Builders
+- **Copy Mode (Default):** Preserves original files
+- **Move Mode:** Transfers files to new locations
+- **Metadata Files:** Optional .txt files with image details
+- **Smart Renaming:** Handles filename conflicts automatically
 
-### Character & Portrait Builders
-- **`1girl_cybergoth_legacy.html`** - Cybergoth girl character prompts
-- **`1girl_extended_NSFW.html`** - Extended character options with adult content
-- **`1girl_solo_setting_NSFW.html`** - Solo character settings with adult themes
-- **`Nova_Skyrift.html`** - Nova Skyrift character portrait builder
-- **`Nova_Skyrift_cybergoth_nsfw.html`** - Cybergoth variant with adult content
-- **`Nova_Skydrift_x_Retro_SciFi.html`** - Retro sci-fi themed characters
+## Supported Formats
 
-### Vintage & Retro Builders
-- **`ULTRA_1girl_vintage_NSFW.html`** - 1970s vintage girl prompts
-- **`ULTRA_1girl_vintage_dualtoggle_NSFW.html`** - Dual-toggle vintage builder
-- **`ULTRA_CUSTOM_1girl_vintage_NSFW.html`** - Customizable vintage builder
+- **Images:** PNG, JPG, JPEG, GIF, BMP, TIFF, WebP
+- **Metadata:** ComfyUI PNG metadata extraction
+- **Output:** Organized folder structure with optional metadata files
 
-### Theme-Specific Builders
-- **`disco_dollz_legacy_SFW.html`** - Disco-themed safe-for-work prompts
-- **`ULTRA_disco_dollz_latest.HTML`** - Advanced disco theme builder
-- **`Pink_Gunz_anime_SFW.html`** - Anime-style safe content
+## Logging
 
-### Specialized Effect Builders
-- **`ULTRA_1girl_glitch_cybergoth_NSFW.html`** - Glitch effect cybergoth
-- **`ULTRA_super_heavy_glitch.html`** - Heavy glitch effects
-- **`ULTRA_nova_skyrift_dualtoggle.html`** - Dual-toggle interface
-- **`ULTRA_retro_scifi_controlroom.html`** - Retro sci-fi control room scenes
-
-### Utility Builders
-- **`HD_wallpaper_legacy.html`** - High-definition wallpaper prompts
-- **`prompt_elements_dashboard.html`** - Comprehensive prompt elements reference
-
-## 🚀 Getting Started
-
-### Quick Start
-1. Open any HTML file in your web browser
-2. Click elements from different categories to build your prompt
-3. Use the "🎲 Randomize" button for inspiration
-4. Copy the generated prompt with "📋 Copy Prompt"
-
-### Basic Usage
-Each builder follows a consistent pattern:
-- **Categories**: Different aspects like outfit, body type, mood, etc.
-- **Selection**: Click items to add them to your prompt
-- **Preview**: Real-time prompt assembly in the text area
-- **Controls**: Randomize and copy functionality
-
-## 🔧 Features
-
-### Core Features
-- **Interactive Selection**: Click-to-select interface for all prompt elements
-- **Real-time Preview**: See your prompt build as you make selections
-- **Randomization**: Generate random combinations for inspiration
-- **Copy to Clipboard**: One-click copying of completed prompts
-- **Dark Theme**: Eye-friendly dark interface for extended use
-
-### Advanced Features
-- **NSFW Toggle**: Content filtering for appropriate use (where applicable)
-- **Dual Toggle**: Advanced control options in select builders
-- **Category Expansion**: Collapsible sections for organized navigation
-- **Responsive Design**: Works on desktop and mobile devices
-
-## 📋 Prompt Categories
-
-Common categories across builders include:
-- **Race/Ethnicity**: Character appearance options
-- **Body Type**: Physical characteristics and build
-- **Outfit/Clothing**: Detailed clothing and style options
-- **Makeup & Beauty**: Cosmetic and beauty details
-- **Accessories**: Jewelry, props, and additional items
-- **Background/Setting**: Environmental and scene details
-- **Pose**: Character positioning and stance
-- **Mood/Expression**: Emotional tone and atmosphere
-- **Lighting**: Illumination and visual effects
-- **Style**: Artistic rendering approach
-
-## 🎨 Builder Types
-
-### Legacy Builders
-- Basic functionality with core features
-- Proven reliable prompt generation
-- Ideal for quick prompt creation
-
-### ULTRA Builders
-- Enhanced feature sets
-- More detailed customization options
-- Advanced styling and effects
-- Optimized for high-quality output
-
-### Dashboard Tools
-- Comprehensive reference materials
-- Organized prompt element libraries
-- Educational and reference purposes
-
-## 💡 Usage Tips
-
-### For Best Results
-1. **Mix Categories**: Select from multiple categories for rich prompts
-2. **Experiment**: Use randomize function to discover new combinations
-3. **Refine**: Manually edit generated prompts as needed
-4. **Save Favorites**: Keep track of successful prompt combinations
-
-### ComfyUI Integration
-- Generated prompts work directly with SDXL models
-- Optimized for ComfyUI workflow compatibility
-- Include quality and style suffixes for best results
-
-### Content Guidelines
-- NSFW builders include age verification and content warnings
-- SFW builders are safe for all audiences
-- Toggle options provide content filtering where available
-
-## 🔒 Content Ratings
-
-- **SFW**: Safe for work, general audiences
-- **NSFW**: Adult content, age verification required
-- **Legacy**: Original versions with proven functionality
-- **ULTRA**: Enhanced versions with expanded features
-
-## 🛠️ Technical Details
-
-### Browser Compatibility
-- Works in all modern web browsers
-- No external dependencies required
-- Pure HTML/CSS/JavaScript implementation
-
-### File Structure
-- Self-contained HTML files
-- Embedded CSS styling
-- Inline JavaScript functionality
-- No server requirements
-
-### Customization
-- Easy to modify prompt lists
-- Customizable styling via CSS
-- Extensible JavaScript functions
-
-## 📝 Contributing
-
-To add new prompt elements or create new builders:
-1. Follow existing file naming conventions
-2. Maintain consistent UI/UX patterns
-3. Include appropriate content warnings
-4. Test across different browsers
-
-## 📄 License
-
-These prompt builders are provided for creative and educational use. Please respect content guidelines and age restrictions where applicable.
+All operations are logged to `sort_logs/` directory:
+- Detailed operation logs
+- Error tracking
+- Performance statistics
+- File processing history
 
 ---
 
-*Last updated: July 2025*
-*Compatible with: SDXL, ComfyUI, and most AI image generation platforms*
+**Built for Production Use - Reliable, Fast, User-Friendly**
 
-
-
-
-
-
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
+*Clean codebase extracted from development version - ready for deployment*

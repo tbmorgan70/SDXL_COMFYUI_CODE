@@ -1,0 +1,15 @@
+# SDXL ComfyUI Code Requirements
+# Main dependencies for all tools
+
+# Image processing
+pillow>=9.0.0
+
+# GUI for sorter
+customtkinter>=5.0.0
+
+# Development and testing
+pytest>=7.0.0
+black>=22.0.0
+
+# Optional: for enhanced metadata processing
+exifread>=3.0.0

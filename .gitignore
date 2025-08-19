@@ -190,7 +190,10 @@ output/
 *.log
 test_images/
 test_output/
+sort_logs/
 
-# Legacy or unrelated folders (uncomment if you want to exclude them)
-# colorSortedImageGrid-main/
-# builder/
+# Archive folder for old versions
+archive/
+
+# Debug and metadata files
+debug_metadata*.json

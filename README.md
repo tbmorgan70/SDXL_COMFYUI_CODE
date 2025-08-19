@@ -46,8 +46,16 @@ python demo_color_sorter.py
 
 ### File Structure
 ```
-SD_COMFYUI_HACKS/
+SDXL_COMFYUI_CODE/
 ├── unified_sorter.py          # 🎯 Main application (start here!)
+├── sorter/                    # 🚀 Production sorter v2.0
+│   ├── gui.py                 # GUI interface
+│   ├── main.py                # CLI interface
+│   └── core/                  # Core sorting logic
+├── civitai_converter/         # 🔄 ComfyUI to Civitai converter
+├── builder/                   # 🌐 HTML interface builders
+├── tests/                     # 🧪 Unit tests
+└── archive/                   # 📦 Legacy versions (reference only)
 ├── color_sorter.py            # 🌈 Color sorting engine
 ├── text_file_sorter.py        # 📝 Text file organizer
 ├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor
