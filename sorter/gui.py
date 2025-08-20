@@ -366,9 +366,16 @@ class SorterGUI(ctk.CTk):
     
     def _build_search_form(self):
         """Build search & sort form"""
+        # Source directory
+        src_row = ctk.CTkFrame(self.search_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
+        self.search_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.search_src_label.pack(side="left", padx=(10, 0))
+        
         # Search terms
         search_row = ctk.CTkFrame(self.search_frame)
-        search_row.pack(fill="x", padx=15, pady=(15, 5))
+        search_row.pack(fill="x", padx=15, pady=5)
         ctk.CTkLabel(search_row, text="Search Terms:").pack(side="left")
         self.search_entry = ctk.CTkEntry(search_row, width=300, placeholder_text="Enter search terms (comma-separated)")
         self.search_entry.pack(side="left", padx=(10, 0))
@@ -507,6 +514,8 @@ class SorterGUI(ctk.CTk):
                 # Update current mode's source label
                 if self.mode_var.get() == "Sort by Checkpoint":
                     self.checkpoint_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Search & Sort":
+                    self.search_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Sort by Color":
                     self.color_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Flatten Images":
