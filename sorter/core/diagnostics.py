@@ -1,5 +1,5 @@
 """
-Sorter 2.0 - Enhanced Diagnostics & Logging System
+Sorter 2.3 - Enhanced Diagnostics & Logging System
 
 Provides comprehensive logging, batch statistics, and diagnostics
 for large-scale image sorting operations.
@@ -60,7 +60,7 @@ class SortLogger:
         self.progress_callback: Optional[Callable] = None
         
         # Initialize log file
-        self._write_log("=== Sorter 2.0 Session Started ===")
+        self._write_log("=== Sorter 2.3 Session Started ===")
         self._write_log(f"Session ID: {self.session_id}")
         self._write_log(f"Log Directory: {self.logs_path}")
     

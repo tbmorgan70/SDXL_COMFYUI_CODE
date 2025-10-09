@@ -1,5 +1,5 @@
 """
-Enhanced Metadata Formatter for Sorter 2.0
+Enhanced Metadata Formatter for Sorter 2.3
 
 Creates comprehensive, beautifully formatted metadata text files
 with all ComfyUI workflow information in a readable format.

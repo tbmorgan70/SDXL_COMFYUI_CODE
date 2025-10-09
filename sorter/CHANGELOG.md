@@ -1,6 +1,6 @@
-# 📋 Sorter 2.0 - Changelog
+# 📋 Sorter 2.3 - Changelog
 
-All notable changes to the Sorter 2.0 project will be documented in this file.
+All notable changes to the Sorter 2.3 project will be documented in this file.
 
 ## [2.3.0] - 2025-10-08 - "Workflow Enhancement Update" ✨
 
@@ -89,7 +89,7 @@ Found the new features useful? Have suggestions for improvements? Let us know!
 | Version | Release Date | Key Features |
 |---------|-------------|--------------|
 | **2.3.0** | 2025-10-08 | 🧬 LoRA Stack Sorting, 📄 Metadata-Only Mode, 📁 Auto-Open Folder |
-| 2.2.0 | Previous | Base functionality, Checkpoint sorting, Color sorting |
+| 2.0.0 | Previous | Base functionality, Checkpoint sorting, Color sorting |
 
 ---
 

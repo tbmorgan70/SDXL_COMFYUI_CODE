@@ -1,5 +1,5 @@
 """
-Sorter 2.0 - Bulletproof Metadata Engine
+Sorter 2.3 - Bulletproof Metadata Engine
 
 Handles ComfyUI metadata extraction with robust error handling,
 memory optimization, and support for large batches (500+ files).

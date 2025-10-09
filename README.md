@@ -7,7 +7,7 @@
 
 This unified repository contains four powerful tools:
 
-### 1. **🎯 Main Sorter 2.0** (`sorter/`) - *Production Ready*
+### 1. **🎯 Main Sorter 2.3** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
 - **NEW!** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
@@ -37,7 +37,7 @@ This unified repository contains four powerful tools:
 
 ## 🚀 Quick Start Guide
 
-### **Recommended: Sorter 2.0 (Most Users)**
+### **Recommended: Sorter 2.3 (Most Users)**
 ```bash
 # Navigate to the main sorter
 cd sorter/
@@ -67,14 +67,14 @@ python comfyui_to_civitai_converter.py
 pip install -r requirements.txt
 
 # Or install for specific tools only:
-pip install -r sorter/requirements.txt        # For Sorter 2.0
+pip install -r sorter/requirements.txt        # For Sorter 2.3
 pip install -r civitai_converter/requirements.txt  # For converter (if exists)
 ```
 
 ### **📁 Repository Structure**
 ```
 SDXL_COMFYUI_CODE/
-├── 🎯 sorter/                 # Main Sorter 2.0 (Production)
+├── 🎯 sorter/                 # Main Sorter 2.3 (Production)
 │   ├── gui.py                 # GUI interface
 │   ├── main.py                # CLI interface
 │   ├── core/                  # Core sorting logic
@@ -121,7 +121,7 @@ Every operation now ends with a handy "Open Output Folder" button for instant ac
 - **✨ [Sorter Changelog](sorter/CHANGELOG.md)** - Latest features and improvements
 - **📖 [Migration Guide](MIGRATION_GUIDE.md)** - Switching from old repos/versions
 - **🗺️ [Development Roadmap](ROADMAP.md)** - Future plans and priorities
-- **🔧 [Sorter 2.0 Guide](sorter/README.md)** - Detailed sorter documentation
+- **🔧 [Sorter 2.3 Guide](sorter/README.md)** - Detailed sorter documentation
 - **🔄 [Converter Guide](civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - CivitAI conversion help
 - **🌐 [Builder Guide](builder/README.md)** - HTML interface documentation
 

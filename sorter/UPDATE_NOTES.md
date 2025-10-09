@@ -1,6 +1,6 @@
 # 🆕 New Features Update - Version 2.3.0
 
-**For existing Sorter 2.0 users - here's what's new!**
+**For existing Sorter users - here's what's new in 2.3!**
 
 ---
 

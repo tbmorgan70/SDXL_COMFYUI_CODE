@@ -1,6 +1,6 @@
-# 🚀 Sorter 2.0 - Feature Showcase
+# 🚀 Sorter 2.3 - Feature Showcase
 
-**Quick reference for all the powerful features available in Sorter 2.0**
+**Quick reference for all the powerful features available in Sorter 2.3**
 
 ---
 
@@ -179,4 +179,4 @@ Automatically provides a "📁 Open Output Folder" button after **every successf
 
 ---
 
-*This showcase covers Sorter 2.0 version 2.3.0 features. For technical details, see [README.md](README.md) and [CHANGELOG.md](CHANGELOG.md).*
+*This showcase covers Sorter 2.3 version 2.3.0 features. For technical details, see [README.md](README.md) and [CHANGELOG.md](CHANGELOG.md).*

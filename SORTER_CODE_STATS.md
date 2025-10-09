@@ -1,4 +1,4 @@
-# 🎉 Sorter 2.0 - Code Statistics & Project Overview
+# 🎉 Sorter 2.3 - Code Statistics & Project Overview
 
 ## 📊 **The Impressive Numbers**
 
@@ -138,7 +138,7 @@
 
 ## 💪 **The Bottom Line**
 
-**Sorter 2.0 represents nearly 5,000 lines of thoughtfully crafted, production-ready Python code.** This isn't just a script - it's a comprehensive tool with professional-grade architecture, dual interfaces, advanced features, and the foundation for future expansion.
+**Sorter 2.3 represents nearly 6,000 lines of thoughtfully crafted, production-ready Python code.** This isn't just a script - it's a comprehensive tool with professional-grade architecture, dual interfaces, advanced features, and the foundation for future expansion.
 
 **From scattered legacy code to a unified, powerful toolkit - this is serious software development! 🚀**
 

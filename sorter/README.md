@@ -1,4 +1,4 @@
-# 🚀 Sorter 2.0 - Production Release
+# 🚀 Sorter 2.3 - Workflow Enhancement Release
 
 **Advanced ComfyUI Image Organizer - Clean, Fast, Reliable**
 
