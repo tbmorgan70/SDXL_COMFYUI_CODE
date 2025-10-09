@@ -10,6 +10,9 @@ This unified repository contains four powerful tools:
 ### 1. **🎯 Main Sorter 2.0** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
+- **NEW!** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
+- **NEW!** 📄 Generate Metadata Only - Extract metadata without moving files  
+- **NEW!** 📁 Auto-Open Output Folder - Instant access to results
 - Search & Sort by Metadata (LoRAs, prompts, settings)
 - Color-based sorting with visual previews
 - Both GUI and CLI interfaces
@@ -89,6 +92,8 @@ SDXL_COMFYUI_CODE/
 | **Use Case** | **Recommended Tool** | **Why** |
 |--------------|---------------------|---------|
 | **Sort ComfyUI images by checkpoint** | `sorter/` | Most advanced, GUI, fastest |
+| **Group images by LoRA combinations** | `sorter/` | 🧬 NEW! LoRA Stack sorting |
+| **Extract metadata without moving files** | `sorter/` | 📄 NEW! Metadata-only mode |
 | **Organize by colors and metadata** | `sorter/` | Full feature set, visual previews |
 | **Convert workflows for CivitAI** | `civitai_converter/` | Specialized tool |
 | **Build custom HTML interfaces** | `builder/` | Interactive dashboards |
@@ -96,8 +101,24 @@ SDXL_COMFYUI_CODE/
 
 ---
 
-## 📚 Documentation & Guides
+## 🆕 What's New in Version 2.3.0 (October 2025)
 
+### 🧬 LoRA Stack Sorting
+The most requested feature! Group your images by **identical LoRA combinations** - perfect for finding images with the same style effects regardless of checkpoint used.
+
+### � Metadata-Only Mode  
+Extract comprehensive metadata without moving files. Perfect for cataloging and analysis workflows.
+
+### 📁 Auto-Open Results
+Every operation now ends with a handy "Open Output Folder" button for instant access to your organized images.
+
+**See full details in [Sorter Changelog](sorter/CHANGELOG.md)**
+
+---
+
+## �📚 Documentation & Guides
+
+- **✨ [Sorter Changelog](sorter/CHANGELOG.md)** - Latest features and improvements
 - **📖 [Migration Guide](MIGRATION_GUIDE.md)** - Switching from old repos/versions
 - **🗺️ [Development Roadmap](ROADMAP.md)** - Future plans and priorities
 - **🔧 [Sorter 2.0 Guide](sorter/README.md)** - Detailed sorter documentation

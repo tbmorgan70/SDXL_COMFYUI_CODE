@@ -25,9 +25,11 @@ sys.path.append(parent_dir)
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.diagnostics import SortLogger
 from sorters.checkpoint_sorter import CheckpointSorter
+from sorters.lora_stack_sorter import LoRAStackSorter
 from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
+from sorters.metadata_generator import MetadataGenerator
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -36,7 +38,7 @@ ctk.set_default_color_theme("blue")  # "blue", "green", "dark-blue"
 class ProgressWindow(ctk.CTkToplevel):
     """Progress tracking window with real-time updates"""
     
-    def __init__(self, parent, title="Processing..."):
+    def __init__(self, parent, title="Processing...", output_dir=None):
         super().__init__(parent)
         
         self.title(title)
@@ -49,6 +51,9 @@ class ProgressWindow(ctk.CTkToplevel):
         x = (self.winfo_screenwidth() // 2) - (500 // 2)
         y = (self.winfo_screenheight() // 2) - (300 // 2)
         self.geometry(f"500x300+{x}+{y}")
+        
+        # Store output directory for "Open Folder" functionality
+        self.output_dir = output_dir
         
         # Create UI
         self.setup_ui()
@@ -114,15 +119,29 @@ class ProgressWindow(ctk.CTkToplevel):
         self.log_text = ctk.CTkTextbox(main_frame, height=100)
         self.log_text.pack(fill="both", expand=True, pady=10)
         
-        # Cancel button
+        # Button frame for multiple buttons
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(pady=5, fill="x")
+        
+        # Open Output Folder button (initially hidden)
+        self.open_folder_button = ctk.CTkButton(
+            button_frame,
+            text="📁 Open Output Folder",
+            command=self.open_output_folder,
+            fg_color="green",
+            hover_color="darkgreen"
+        )
+        # Don't pack it initially - it will be shown on completion
+        
+        # Cancel/Close button
         self.cancel_button = ctk.CTkButton(
-            main_frame,
+            button_frame,
             text="Cancel",
             command=self.on_cancel,
             fg_color="red",
             hover_color="darkred"
         )
-        self.cancel_button.pack(pady=5)
+        self.cancel_button.pack(side="right", padx=5)
         
         self.cancelled = False
     
@@ -192,8 +211,21 @@ class ProgressWindow(ctk.CTkToplevel):
             self.title_label.configure(text="✅ Complete!")
             self.operation_label.configure(text="Operation completed successfully")
             self.cancel_button.configure(text="Close", fg_color="green", hover_color="darkgreen")
-            # Auto-close after 2 seconds on success
-            self.after(2000, self.destroy)
+            
+            # Debug logging for output directory
+            self.log_message(f"🔍 Debug: output_dir = '{self.output_dir}'")
+            if self.output_dir:
+                self.log_message(f"🔍 Debug: Directory exists = {os.path.exists(self.output_dir)}")
+            
+            # Show "Open Output Folder" button if output directory exists
+            if self.output_dir and os.path.exists(self.output_dir):
+                self.open_folder_button.pack(side="left", padx=5)
+                self.update_idletasks()  # Force UI update
+                self.log_message("📁 Open Output Folder button added")
+            else:
+                self.log_message("❌ Open Output Folder button NOT added")
+            
+            # Remove auto-close to let user decide when to close
         else:
             self.title_label.configure(text="❌ Failed!")
             self.operation_label.configure(text="Operation failed")
@@ -204,6 +236,24 @@ class ProgressWindow(ctk.CTkToplevel):
         self.operation_label.configure(text="An error occurred")
         self.log_message(f"ERROR: {error_msg}")
         self.cancel_button.configure(text="Close", fg_color="red", hover_color="darkred")
+    
+    def open_output_folder(self):
+        """Open the output folder in the system file explorer"""
+        if self.output_dir and os.path.exists(self.output_dir):
+            try:
+                # Windows
+                if os.name == 'nt':
+                    os.startfile(self.output_dir)
+                # macOS
+                elif sys.platform == 'darwin':
+                    os.system(f'open "{self.output_dir}"')
+                # Linux and others
+                else:
+                    os.system(f'xdg-open "{self.output_dir}"')
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not open folder: {str(e)}")
+        else:
+            messagebox.showwarning("Warning", "Output folder not found or doesn't exist")
     
     def on_cancel(self):
         self.cancelled = True
@@ -264,7 +314,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Search & Sort", "Sort by Color", "Flatten Images", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -275,16 +325,20 @@ class SorterGUI(ctk.CTk):
         
         # Individual mode frames
         self.checkpoint_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.lora_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.search_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.color_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.flatten_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.logs_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         
         # Build all forms
         self._build_checkpoint_form()
+        self._build_lora_form()
         self._build_search_form()
         self._build_color_form()
         self._build_flatten_form()
+        self._build_metadata_form()
         self._build_logs_form()
         
         # Run button
@@ -361,6 +415,47 @@ class SorterGUI(ctk.CTk):
         # Info
         info_label = ctk.CTkLabel(self.checkpoint_frame, 
                                  text="🎯 Organizes images by their base checkpoint models. Your #1 priority feature!",
+                                 text_color="#aaa", font=ctk.CTkFont(size=11))
+        info_label.pack(padx=15, pady=(5, 15))
+    
+    def _build_lora_form(self):
+        """Build LoRA stack sorting form"""
+        # Source directory
+        src_row = ctk.CTkFrame(self.lora_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
+        self.lora_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.lora_src_label.pack(side="left", padx=(10, 0))
+        
+        # Output directory
+        out_row = ctk.CTkFrame(self.lora_frame)
+        out_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkButton(out_row, text="📂 Select Output Directory (Optional)", command=lambda: self._choose_directory("output")).pack(side="left")
+        self.lora_out_label = ctk.CTkLabel(out_row, text="Will create 'lora_sorted' subfolder if not set", text_color="#888")
+        self.lora_out_label.pack(side="left", padx=(10, 0))
+        
+        # Options row 1
+        opts1 = ctk.CTkFrame(self.lora_frame)
+        opts1.pack(fill="x", padx=15, pady=5)
+        
+        self.lora_move_var = ctk.BooleanVar(value=False)
+        self.lora_metadata_var = ctk.BooleanVar(value=True)
+        self.lora_rename_var = ctk.BooleanVar(value=False)
+        
+        ctk.CTkCheckBox(opts1, text="Move files", variable=self.lora_move_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts1, text="Create metadata files", variable=self.lora_metadata_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.lora_rename_var).pack(side="left")
+        
+        # Rename row
+        rename_row = ctk.CTkFrame(self.lora_frame)
+        rename_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(rename_row, text="Rename Prefix:").pack(side="left")
+        self.lora_prefix_entry = ctk.CTkEntry(rename_row, width=150, placeholder_text="e.g. lora_stack")
+        self.lora_prefix_entry.pack(side="left", padx=(10, 20))
+        
+        # Info
+        info_label = ctk.CTkLabel(self.lora_frame, 
+                                 text="🎨 Sorts images purely by LoRA combinations - ignores checkpoints, VAE, and other settings",
                                  text_color="#aaa", font=ctk.CTkFont(size=11))
         info_label.pack(padx=15, pady=(5, 15))
     
@@ -505,6 +600,38 @@ class SorterGUI(ctk.CTk):
                     font=ctk.CTkFont(size=12),
                     text_color="#aaa").pack(pady=10)
     
+    def _build_metadata_form(self):
+        """Build metadata generation form"""
+        # Source directory
+        src_row = ctk.CTkFrame(self.metadata_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
+        self.metadata_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.metadata_src_label.pack(side="left", padx=(10, 0))
+        
+        # Output directory
+        out_row = ctk.CTkFrame(self.metadata_frame)
+        out_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkButton(out_row, text="📂 Select Output Directory", command=lambda: self._choose_directory("output")).pack(side="left")
+        self.metadata_out_label = ctk.CTkLabel(out_row, text="No folder selected", text_color="#888")
+        self.metadata_out_label.pack(side="left", padx=(10, 0))
+        
+        # Options
+        opts = ctk.CTkFrame(self.metadata_frame)
+        opts.pack(fill="x", padx=15, pady=5)
+        
+        self.metadata_overwrite_var = ctk.BooleanVar(value=False)
+        self.metadata_recursive_var = ctk.BooleanVar(value=True)
+        
+        ctk.CTkCheckBox(opts, text="Overwrite existing metadata files", variable=self.metadata_overwrite_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts, text="Include subdirectories", variable=self.metadata_recursive_var).pack(side="left")
+        
+        # Info
+        info_label = ctk.CTkLabel(self.metadata_frame, 
+                                 text="📄 Generate metadata text files without moving or organizing images",
+                                 text_color="#aaa", font=ctk.CTkFont(size=11))
+        info_label.pack(padx=15, pady=(5, 15))
+    
     def _choose_directory(self, dir_type):
         """Choose directory and update appropriate labels"""
         if dir_type == "source":
@@ -520,6 +647,10 @@ class SorterGUI(ctk.CTk):
                     self.color_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Flatten Images":
                     self.flatten_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Sort by LoRA Stack":
+                    self.lora_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Generate Metadata":
+                    self.metadata_src_label.configure(text=os.path.basename(directory))
                 
                 self.log_message(f"📁 Source directory selected: {directory}")
         
@@ -536,13 +667,17 @@ class SorterGUI(ctk.CTk):
                     self.color_out_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Flatten Images":
                     self.flatten_out_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Sort by LoRA Stack":
+                    self.lora_out_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Generate Metadata":
+                    self.metadata_out_label.configure(text=os.path.basename(directory))
                 
                 self.log_message(f"📂 Output directory selected: {directory}")
     
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.search_frame, self.color_frame, self.flatten_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -550,6 +685,9 @@ class SorterGUI(ctk.CTk):
         if mode == "Sort by Checkpoint":
             self.checkpoint_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🎯 Checkpoint sorting mode selected")
+        elif mode == "Sort by LoRA Stack":
+            self.lora_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("🎨 LoRA stack sorting mode selected")
         elif mode == "Search & Sort":
             self.search_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🔍 Search & sort mode selected")
@@ -559,6 +697,9 @@ class SorterGUI(ctk.CTk):
         elif mode == "Flatten Images":
             self.flatten_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📂 Flatten images mode selected")
+        elif mode == "Generate Metadata":
+            self.metadata_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("📄 Generate metadata mode selected")
         elif mode == "View Session Logs":
             self.logs_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📊 View logs mode selected")
@@ -575,12 +716,16 @@ class SorterGUI(ctk.CTk):
         
         if mode == "Sort by Checkpoint":
             self.sort_by_checkpoint()
+        elif mode == "Sort by LoRA Stack":
+            self.sort_by_lora_stack()
         elif mode == "Search & Sort":
             self.search_and_sort()
         elif mode == "Sort by Color":
             self.sort_by_color()
         elif mode == "Flatten Images":
             self.flatten_images()
+        elif mode == "Generate Metadata":
+            self.generate_metadata()
         elif mode == "View Session Logs":
             self.view_session_logs()
     
@@ -639,7 +784,7 @@ class SorterGUI(ctk.CTk):
             return
         
         # Show progress window and run in background
-        progress_window = ProgressWindow(self, "Sorting by Checkpoint")
+        progress_window = ProgressWindow(self, "Sorting by Checkpoint", output_dir)
         
         def run_sort():
             try:
@@ -672,6 +817,84 @@ class SorterGUI(ctk.CTk):
                                 f"   Unknown checkpoints: {stats.get('unknown_checkpoint', 0)}"
                     progress_window.enqueue(("log", success_msg))
                 
+                progress_window.enqueue(("complete", True))
+                
+            except Exception as e:
+                progress_window.enqueue(("error", str(e)))
+        
+        Thread(target=run_sort, daemon=True).start()
+    
+    def sort_by_lora_stack(self):
+        """Sort images by LoRA stack combinations - GUI implementation"""
+        if not self.source_dir:
+            messagebox.showerror("Error", "Please select a source directory")
+            return
+        
+        if not os.path.exists(self.source_dir):
+            messagebox.showerror("Error", "Source directory does not exist")
+            return
+        
+        # Count PNG files
+        png_files = [f for f in os.listdir(self.source_dir) if f.lower().endswith('.png')]
+        if not png_files:
+            messagebox.showerror("Error", "No PNG files found in source directory")
+            return
+        
+        self.log_message(f"📊 Found {len(png_files)} PNG files to sort")
+        
+        # Get output directory
+        output_dir = self.output_dir if self.output_dir else os.path.join(self.source_dir, "lora_sorted")
+        
+        # Get user options
+        move_files = self.lora_move_var.get()
+        create_metadata = self.lora_metadata_var.get()
+        rename_files = self.lora_rename_var.get()
+        user_prefix = self.lora_prefix_entry.get().strip() if rename_files else ""
+        
+        # Validate prefix if renaming
+        if rename_files and not user_prefix:
+            messagebox.showerror("Error", "Prefix is required for renaming. Using default 'lora'.")
+            user_prefix = "lora"
+        
+        # Confirm operation
+        operation = "MOVE" if move_files else "COPY"
+        
+        confirmation = messagebox.askyesno(
+            "Confirm LoRA Stack Sorting",
+            f"📋 CONFIRMATION:\n" +
+            f"   Source: {self.source_dir}\n" +
+            f"   Output: {output_dir}\n" +
+            f"   Files: {len(png_files)} PNG files\n" +
+            f"   Operation: {operation}\n" +
+            f"   Metadata files: {'Yes' if create_metadata else 'No'}\n" +
+            f"   Grouping: LoRA Stack Only\n" +
+            f"   Rename files: {'Yes' if rename_files else 'No'}\n" +
+            (f"   Naming pattern: {user_prefix}_001, {user_prefix}_002, etc.\n" if rename_files and user_prefix else "") +
+            f"\nProceed with sorting?"
+        )
+        
+        if not confirmation:
+            return
+        
+        # Show progress window and run in background
+        progress_window = ProgressWindow(self, "Sorting by LoRA Stack", output_dir)
+        
+        def run_sort():
+            try:
+                # Create sorter and run operation
+                lora_sorter = LoRAStackSorter()
+                
+                result = lora_sorter.sort_by_lora_stack(
+                    source_dir=self.source_dir,
+                    output_dir=output_dir,
+                    move_files=move_files,
+                    create_metadata=create_metadata,
+                    rename_files=rename_files,
+                    rename_prefix=user_prefix,
+                    progress_callback=progress_window.update_progress
+                )
+                
+                # Signal completion
                 progress_window.enqueue(("complete", True))
                 
             except Exception as e:
@@ -730,7 +953,7 @@ class SorterGUI(ctk.CTk):
             return
         
         # Show progress window and run in background
-        progress_window = ProgressWindow(self, "Searching & Sorting")
+        progress_window = ProgressWindow(self, "Searching & Sorting", output_dir)
         
         def run_search():
             try:
@@ -825,7 +1048,7 @@ class SorterGUI(ctk.CTk):
             return
         
         # Show progress window and run in background
-        progress_window = ProgressWindow(self, "Sorting by Color")
+        progress_window = ProgressWindow(self, "Sorting by Color", output_dir)
         
         def run_sort():
             try:
@@ -897,7 +1120,7 @@ class SorterGUI(ctk.CTk):
             return
         
         # Show progress window and run in background
-        progress_window = ProgressWindow(self, "Flattening Images")
+        progress_window = ProgressWindow(self, "Flattening Images", output_dir)
         
         def run_flatten():
             try:
@@ -1008,6 +1231,70 @@ class SorterGUI(ctk.CTk):
         except Exception as e:
             text_widget.delete("1.0", "end")
             text_widget.insert("1.0", f"Error loading log file: {e}")
+
+    def generate_metadata(self):
+        """Generate metadata files without moving or organizing images"""
+        if not self.source_dir:
+            messagebox.showerror("Error", "Please select a source directory")
+            return
+        
+        if not self.output_dir:
+            messagebox.showerror("Error", "Please select an output directory")
+            return
+        
+        if not os.path.exists(self.source_dir):
+            messagebox.showerror("Error", "Source directory does not exist")
+            return
+        
+        # Get user options
+        overwrite_existing = self.metadata_overwrite_var.get()
+        include_subdirs = self.metadata_recursive_var.get()
+        
+        self.log_message("📄 Starting metadata generation...")
+        
+        try:
+            # Create and run progress window
+            progress_window = ProgressWindow(
+                parent=self,
+                title="Generating Metadata",
+                output_dir=self.output_dir
+            )
+            
+            # Create metadata generator and run operation
+            metadata_gen = MetadataGenerator()
+            
+            def run_generation():
+                result = metadata_gen.generate_metadata_files(
+                    source_dir=self.source_dir,
+                    output_dir=self.output_dir,
+                    overwrite_existing=overwrite_existing,
+                    include_subdirectories=include_subdirs,
+                    progress_callback=progress_window.update_progress
+                )
+                
+                # Extract stats for display
+                generator_stats = result.get('generator_stats', {})
+                success = generator_stats.get('processed_images', 0) > 0
+                
+                # Log summary to the progress window
+                if success:
+                    progress_window.log_message(f"✅ Generated {generator_stats.get('metadata_files_created', 0)} metadata files")
+                    progress_window.log_message(f"📊 Processed {generator_stats.get('processed_images', 0)} images")
+                else:
+                    progress_window.log_message("❌ No files were processed")
+                
+                # Complete the progress window
+                progress_window.on_complete(success)
+            
+            # Run in separate thread
+            import threading
+            thread = threading.Thread(target=run_generation)
+            thread.daemon = True
+            thread.start()
+            
+        except Exception as e:
+            self.log_message(f"❌ Error during metadata generation: {str(e)}")
+            messagebox.showerror("Error", f"Failed to generate metadata: {str(e)}")
 
 def main():
     """Launch the Sorter 2.0 GUI"""
