@@ -279,7 +279,7 @@ class SorterGUI(ctk.CTk):
         self.logger = SortLogger()
         
         # Initialize variables
-        self.source_dir = ""
+        self.source_dir = r"D:\ComfyUI_windows_portable\ComfyUI\output"
         self.output_dir = ""
         self.current_operation = None
         
@@ -374,7 +374,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.checkpoint_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.checkpoint_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.checkpoint_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.checkpoint_src_label.pack(side="left", padx=(10, 0))
         
         # Output directory
@@ -424,7 +424,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.lora_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.lora_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.lora_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.lora_src_label.pack(side="left", padx=(10, 0))
         
         # Output directory
@@ -465,7 +465,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.search_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.search_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.search_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.search_src_label.pack(side="left", padx=(10, 0))
         
         # Search terms
@@ -512,7 +512,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.color_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.color_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.color_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.color_src_label.pack(side="left", padx=(10, 0))
         
         # Output directory
@@ -556,7 +556,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.flatten_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Nested Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.flatten_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.flatten_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.flatten_src_label.pack(side="left", padx=(10, 0))
         
         # Output directory
@@ -606,7 +606,7 @@ class SorterGUI(ctk.CTk):
         src_row = ctk.CTkFrame(self.metadata_frame)
         src_row.pack(fill="x", padx=15, pady=(15, 5))
         ctk.CTkButton(src_row, text="📁 Select Source Directory", command=lambda: self._choose_directory("source")).pack(side="left")
-        self.metadata_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.metadata_src_label = ctk.CTkLabel(src_row, text="output", text_color="#888")
         self.metadata_src_label.pack(side="left", padx=(10, 0))
         
         # Output directory
@@ -635,7 +635,9 @@ class SorterGUI(ctk.CTk):
     def _choose_directory(self, dir_type):
         """Choose directory and update appropriate labels"""
         if dir_type == "source":
-            directory = filedialog.askdirectory(title="Select Source Directory")
+            # Start dialog in current source directory or ComfyUI output default
+            initial_dir = self.source_dir if self.source_dir and os.path.exists(self.source_dir) else r"D:\ComfyUI_windows_portable\ComfyUI\output"
+            directory = filedialog.askdirectory(title="Select Source Directory", initialdir=initial_dir)
             if directory:
                 self.source_dir = directory
                 # Update current mode's source label

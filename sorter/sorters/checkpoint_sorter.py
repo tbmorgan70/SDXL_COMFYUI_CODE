@@ -174,10 +174,11 @@ class CheckpointSorter:
         
         for file_path, rel_path in png_files:
             metadata = metadata_results.get(file_path)
+            filename = os.path.basename(file_path) if file_path else None
             
             if metadata:
-                # Extract primary checkpoint
-                primary_checkpoint = self.metadata_analyzer.extract_primary_checkpoint(metadata)
+                # Extract primary checkpoint (with filename for better model detection)
+                primary_checkpoint = self.metadata_analyzer.extract_primary_checkpoint(metadata, filename)
                 
                 if primary_checkpoint:
                     # Clean up checkpoint name for folder naming
@@ -219,8 +220,9 @@ class CheckpointSorter:
         records = []
         for file_path, rel_path in png_files:
             metadata = metadata_results.get(file_path)
+            filename = os.path.basename(file_path) if file_path else None
             if metadata:
-                group_signature = self.metadata_formatter.get_grouping_signature(metadata)
+                group_signature = self.metadata_formatter.get_grouping_signature(metadata, filename)
             else:
                 group_signature = 'None'
             
@@ -255,10 +257,11 @@ class CheckpointSorter:
         
         for record in records:
             metadata = metadata_results.get(record['file_path'])
+            filename = os.path.basename(record['file_path']) if record['file_path'] else None
             
             if metadata:
-                # Extract just the base checkpoint for folder name
-                primary_checkpoint = self.metadata_analyzer.extract_primary_checkpoint(metadata)
+                # Extract just the base checkpoint for folder name (with filename for better model detection)
+                primary_checkpoint = self.metadata_analyzer.extract_primary_checkpoint(metadata, filename)
                 
                 if primary_checkpoint:
                     folder_name = self._clean_checkpoint_name(primary_checkpoint)

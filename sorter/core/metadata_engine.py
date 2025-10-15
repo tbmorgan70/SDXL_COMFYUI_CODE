@@ -188,52 +188,115 @@ class MetadataAnalyzer:
         return list(set(loras))  # Remove duplicates
     
     @staticmethod
-    def extract_primary_checkpoint(metadata: Dict[str, Any]) -> Optional[str]:
+    def extract_primary_checkpoint(metadata: Dict[str, Any], image_filename: Optional[str] = None) -> Optional[str]:
         """
         Extract the primary/base checkpoint (not refiner) for sorting
         
         This is your #1 priority feature - base checkpoint sorting
+        Now with filename fallback support for model name extraction
         """
         if not metadata:
             return None
         
-        # Track potential base and refiner checkpoints
-        base_ckpt = None
-        refiner_ckpt = None
+        # First try to extract model from filename if available (ComfyUI naming pattern)
+        filename_model = None
+        if image_filename:
+            filename_model = MetadataAnalyzer._extract_model_from_filename(image_filename)
+        
+        # Track checkpoints with priority order
+        base_checkpoints = []
+        refiner_checkpoints = []
+        all_checkpoints = []
 
-        for title, entry in metadata.items():
+        for node_id, entry in metadata.items():
+            if not isinstance(entry, dict):
+                continue
+                
             class_type = entry.get('class_type', '')
             inputs = entry.get('inputs', {})
-            title = str(title).lower()
+            node_title = str(node_id).lower()
 
-            # Explicit base checkpoint field takes highest priority
-            if 'base_ckpt' in inputs and inputs['base_ckpt']:
-                base_ckpt = inputs['base_ckpt']
+            # Skip non-checkpoint loading nodes
+            if class_type not in ['CheckpointLoaderSimple', 'CheckpointLoader', 'UNETLoader']:
+                continue
 
-            # Standard checkpoint name
+            # Get checkpoint name
+            ckpt_name = None
             if 'ckpt_name' in inputs:
-                ckpt = inputs['ckpt_name']
-                is_refiner = (
-                    'refiner' in class_type.lower()
-                    or 'refiner' in title
-                    or 'start_at_step' in inputs
-                    or 'end_at_step' in inputs
-                    or any(key in inputs for key in ['refiner_ckpt', 'refiner_model'])
-                )
-                if is_refiner:
-                    if not refiner_ckpt:
-                        refiner_ckpt = ckpt
-                else:
-                    if not base_ckpt:
-                        base_ckpt = ckpt
+                ckpt_name = inputs['ckpt_name']
+            elif 'unet_name' in inputs:
+                ckpt_name = inputs['unet_name']
+            
+            if not ckpt_name:
+                continue
+                
+            # Track all checkpoints
+            all_checkpoints.append(ckpt_name)
+            
+            # Determine if this is explicitly a refiner
+            # Be more strict about refiner detection
+            is_explicit_refiner = (
+                'refiner' in class_type.lower() or
+                'refiner' in node_title or
+                # Check if this node has explicit refiner-specific parameters
+                ('start_at_step' in inputs and 'end_at_step' in inputs) or
+                any(key in inputs for key in ['refiner_ckpt', 'refiner_model', 'ascore'])
+            )
+            
+            if is_explicit_refiner:
+                refiner_checkpoints.append(ckpt_name)
+            else:
+                # This is likely the base checkpoint
+                base_checkpoints.append(ckpt_name)
 
-            # Dedicated refiner fields (used if nothing else found)
-            for field in ['refiner_ckpt', 'refiner_model']:
-                if field in inputs and not refiner_ckpt:
-                    refiner_ckpt = inputs[field]
-
-        # Prefer base checkpoint when available, otherwise fall back to refiner
-        return base_ckpt or refiner_ckpt
+        # Priority order:
+        # 1. Model name from filename (highest priority)
+        # 2. First base checkpoint found from workflow
+        # 3. First checkpoint overall from workflow
+        
+        if filename_model:
+            return filename_model
+        elif base_checkpoints:
+            return base_checkpoints[0]
+        elif all_checkpoints:
+            return all_checkpoints[0]
+        
+        return None
+    
+    @staticmethod
+    def _extract_model_from_filename(filename: str) -> Optional[str]:
+        """
+        Extract model name from ComfyUI filename pattern
+        
+        ComfyUI filenames often contain the model name in patterns like:
+        2025-10-15-182703_pieModels_elderberryPie_710452282418503.png
+        """
+        if not filename:
+            return None
+            
+        # Remove file extension
+        base_name = filename.replace('.png', '').replace('.jpg', '').replace('.jpeg', '')
+        
+        # Split by underscores and look for model patterns
+        parts = base_name.split('_')
+        
+        # Look for model name patterns (typically after timestamp)
+        # Pattern: YYYY-MM-DD-HHMMSS_modelName_seed or similar
+        if len(parts) >= 3:
+            # Skip timestamp part (first part), look at subsequent parts
+            for i in range(1, len(parts) - 1):  # Exclude last part (usually seed)
+                part = parts[i]
+                # Look for likely model names (skip common prefixes)
+                if part and len(part) > 3 and part not in ['ComfyUI', 'output', 'temp']:
+                    # If we find what looks like a model name, combine it with next part if it exists
+                    if i + 1 < len(parts) - 1:  # Not the last part
+                        next_part = parts[i + 1]
+                        # Check if this looks like a model name pattern
+                        if any(keyword in (part + next_part).lower() for keyword in ['model', 'mix', 'xl', 'pie', 'diffusion']):
+                            return f"{part}_{next_part}"
+                    return part
+        
+        return None
     
     @staticmethod
     def extract_sampling_params(metadata: Dict[str, Any]) -> Dict[str, Any]:

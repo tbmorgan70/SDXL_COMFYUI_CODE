@@ -30,8 +30,11 @@ class EnhancedMetadataFormatter:
         """
         lines = []
         
+        # Extract filename from image_path
+        filename = os.path.basename(image_path) if image_path else None
+        
         # Models Section
-        lines.extend(self._format_models_section(metadata))
+        lines.extend(self._format_models_section(metadata, filename))
         lines.append("")
         
         # LoRAs Section
@@ -67,11 +70,11 @@ class EnhancedMetadataFormatter:
         
         return "\n".join(lines)
     
-    def get_base_model(self, metadata: Dict[str, Any]) -> Optional[str]:
+    def get_base_model(self, metadata: Dict[str, Any], image_filename: Optional[str] = None) -> Optional[str]:
         """Extract base model name for grouping (ignoring refiner models)"""
         # Use the same method as MetadataAnalyzer for consistency
         from .metadata_engine import MetadataAnalyzer
-        return MetadataAnalyzer.extract_primary_checkpoint(metadata)
+        return MetadataAnalyzer.extract_primary_checkpoint(metadata, image_filename)
     
     def get_lora_stack_signature(self, metadata: Dict[str, Any]) -> str:
         """Create a signature string representing the LoRA stack for grouping (improved version)"""
@@ -93,9 +96,9 @@ class EnhancedMetadataFormatter:
         loras = sorted(set(loras))
         return ",".join(loras) if loras else ""
     
-    def get_grouping_signature(self, metadata: Dict[str, Any]) -> str:
+    def get_grouping_signature(self, metadata: Dict[str, Any], image_filename: Optional[str] = None) -> str:
         """Create a complete grouping signature matching the older working version"""
-        base_model = self.get_base_model(metadata)
+        base_model = self.get_base_model(metadata, image_filename)
         loras = []
         
         # Extract all LoRAs
@@ -131,13 +134,13 @@ File: {filename}
 Generated: {timestamp}
 {self.separator}"""
     
-    def _format_models_section(self, metadata: Dict[str, Any]) -> List[str]:
+    def _format_models_section(self, metadata: Dict[str, Any], image_filename: Optional[str] = None) -> List[str]:
         """Format models section to match original working format"""
         lines = ["=== MODELS ==="]
         
         # Use the same extraction method as MetadataAnalyzer for consistency
         from .metadata_engine import MetadataAnalyzer
-        base_model = MetadataAnalyzer.extract_primary_checkpoint(metadata)
+        base_model = MetadataAnalyzer.extract_primary_checkpoint(metadata, image_filename)
         vae = None
         
         for node_id, node_data in metadata.items():
