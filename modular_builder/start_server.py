@@ -18,7 +18,7 @@ from pathlib import Path
 
 # Configuration
 PORT = 8000
-HTML_FILE = "Nova_skyrift_darkside_adventures_newnogood.html"  # Main HTML file to open
+HTML_FILE = "modular_prompt_builder.html"  # Main HTML file to open
 
 def find_available_port(start_port=8000):
     """Find an available port starting from start_port"""
@@ -36,7 +36,7 @@ def main():
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
     
-    print("🚀 Nova Skyrift Prompt Builder Server")
+    print("🚀 Modular Random Prompt Builder Server")
     print("=" * 50)
     
     # Find available port
