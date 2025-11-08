@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<!-- ULTRA Dual Toggle Prompt Builder -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nova Skyrift's Adventures through Space & Time</title>
+  <style>
+    /* Punk Static Effects */
+    #disco-static {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0,255,65,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      animation: punkFlicker 0.08s steps(4) infinite;
+      z-index: 1000;
+    }
+
+    @keyframes punkFlicker {
+      0% { opacity: 0.1; transform: scale(1) rotate(0deg); }
+      25% { opacity: 0.25; transform: scale(1.02) rotate(0.5deg); }
+      50% { opacity: 0.05; transform: scale(0.98) rotate(-0.3deg); }
+      75% { opacity: 0.18; transform: scale(1.01) rotate(0.2deg); }
+      100% { opacity: 0.15; transform: scale(1) rotate(0deg); }
+    }
+
+    #disco-scanlines {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255,0,64,0.05) 25%,
+          transparent 50%,
+          rgba(0,255,65,0.04) 75%,
+          transparent 100%
+        ),
+        linear-gradient(
+          rgba(255,255,255,0.02) 50%, 
+          transparent 50%
+        ) 0 0 / 100% 1px;
+      animation: punkScanlines 2s linear infinite;
+      z-index: 999;
+    }
+
+    @keyframes punkScanlines {
+      0% { transform: translateX(0) skew(0deg); }
+      100% { transform: translateX(30px) skew(0.5deg); }
+    }
+
+    /* Disco Ball Sparkles */
+    #disco-sparkles {
+      pointer-events: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.8) 1px, transparent 2px),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 1px, transparent 2px),
+        radial-gradient(circle at 70% 10%, rgba(255,255,255,0.7) 1px, transparent 2px),
+        radial-gradient(circle at 30% 90%, rgba(255,255,255,0.5) 1px, transparent 2px);
+      background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px;
+      animation: sparkleRotate 8s linear infinite;
+      z-index: 998;
+    }
+
+    @keyframes sparkleRotate {
+      0% { transform: rotate(0deg); opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { transform: rotate(360deg); opacity: 0.3; }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      padding-bottom: 130px;
+      background: 
+        linear-gradient(45deg, #000000 0%, #1a0000 25%, #000000 50%, #001a00 75%, #000000 100%),
+        radial-gradient(circle at 30% 70%, #ff0040 0%, transparent 40%),
+        radial-gradient(circle at 70% 30%, #00ff41 0%, transparent 30%);
+      background-size: 100% 100%, 300px 300px, 200px 200px;
+      color: #ffffff;
+      text-align: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff0040, #ffffff, #00ff41, #ff0040);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: punkTitle 2s ease-in-out infinite, titleGlitch 0.15s infinite;
+      position: relative;
+      text-shadow: 0 0 20px rgba(255,0,64,0.8);
+      font-weight: 900;
+    }
+
+    @keyframes punkTitle {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes titleGlitch {
+      0%, 85%, 100% { transform: translate(0); }
+      90% { transform: translate(-3px, 2px) skew(-1deg); }
+      95% { transform: translate(2px, -1px) skew(0.5deg); }
+    }
+
+    .glitch-text {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glitch-text::before,
+    .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      overflow: hidden;
+    }
+
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -2px 0 #ff0040;
+      animation: glitchTop 1.5s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: 2px 0 #00ff41;
+      animation: glitchBottom 1.8s infinite linear alternate-reverse;
+      clip: rect(0, 900px, 0, 0);
+    }
+
+    @keyframes glitchTop {
+      0%, 100% { clip: rect(2px, 9999px, 8px, 0); }
+      10% { clip: rect(8px, 9999px, 16px, 0); }
+      20% { clip: rect(4px, 9999px, 12px, 0); }
+      30% { clip: rect(12px, 9999px, 20px, 0); }
+      40% { clip: rect(6px, 9999px, 14px, 0); }
+    }
+
+    @keyframes glitchBottom {
+      0%, 100% { clip: rect(15px, 9999px, 23px, 0); }
+      10% { clip: rect(20px, 9999px, 28px, 0); }
+      20% { clip: rect(18px, 9999px, 26px, 0); }
+      30% { clip: rect(22px, 9999px, 30px, 0); }
+      40% { clip: rect(16px, 9999px, 24px, 0); }
+    }
+
+    #sections {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 200px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .section {
+      flex: 0 0 calc(24% - 10px);
+      margin: 5px;
+      max-height: 170px;
+      overflow-y: auto;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(20,0,0,0.9) 50%, rgba(0,20,0,0.8) 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 3px;
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      position: relative;
+      animation: punkSectionPulse 3s ease-in-out infinite;
+      transform: skew(-1deg);
+    }
+
+    @keyframes punkSectionPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 8px rgba(255,0,64,0.4),
+          inset 0 0 20px rgba(0,0,0,0.5);
+        border-left-color: #ff0040;
+        transform: skew(-1deg);
+      }
+      50% { 
+        box-shadow: 
+          0 0 20px rgba(0,255,65,0.5),
+          inset 0 0 30px rgba(0,0,0,0.7);
+        border-left-color: #00ff41;
+        transform: skew(-0.5deg);
+      }
+    }
+
+    .section:nth-child(even) {
+      animation-delay: 2s;
+    }
+
+    .section h3 { 
+      margin-top: 0; 
+      font-size: 14px;
+      position: relative;
+    }
+    .cat-toggle {
+      display: block;
+      text-align: left;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .section input {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 4px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    ul { list-style: none; padding: 0; }
+    li {
+      background: linear-gradient(90deg, #1a1a1a 0%, #222 100%);
+      margin: 4px 0;
+      padding: 6px;
+      cursor: pointer;
+      border-radius: 2px;
+      border-left: 2px solid #333;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    li:hover { 
+      background: linear-gradient(90deg, #333 0%, #444 100%);
+      transform: translateX(3px) skew(-0.5deg);
+      border-left-color: #ff0040;
+      box-shadow: 
+        0 0 12px rgba(255,0,64,0.6),
+        inset 0 0 10px rgba(255,0,64,0.1);
+      transition: all 0.15s ease;
+    }
+    
+    li.selected {
+      background: linear-gradient(90deg, rgba(255,0,64,0.2) 0%, rgba(0,255,65,0.2) 100%);
+      border-left: 3px solid #00ff41;
+      box-shadow: 
+        0 0 15px rgba(0,255,65,0.8),
+        inset 0 0 15px rgba(0,255,65,0.2);
+      animation: selectedPunkPulse 2s ease-in-out infinite;
+      transform: translateX(2px) skew(-0.3deg);
+    }
+
+    @keyframes selectedPunkPulse {
+      0%, 100% { 
+        box-shadow: 
+          0 0 15px rgba(0,255,65,0.8),
+          inset 0 0 15px rgba(0,255,65,0.2);
+      }
+      50% { 
+        box-shadow: 
+          0 0 25px rgba(255,0,64,0.9),
+          inset 0 0 20px rgba(255,0,64,0.3);
+      }
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: 
+        linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(20,0,0,0.95) 100%),
+        radial-gradient(circle at 50% 0%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 3px solid #333;
+      border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+      animation: punkFooterGlow 2.5s ease-in-out infinite;
+      z-index: 1001;
+    }
+
+    @keyframes punkFooterGlow {
+      0%, 100% { 
+        border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+      }
+      50% { 
+        border-image: linear-gradient(90deg, #00ff41, #ff0040, #00ff41) 1;
+        box-shadow: 0 -5px 30px rgba(255,0,64,0.3);
+      }
+    }
+
+    #promptBox {
+      width: 90%;
+      height: 80px;
+      margin: 0;
+      background: 
+        linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,0,0,0.9) 100%),
+        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.1) 0%, transparent 60%);
+      border: 2px solid #333;
+      border-left: 4px solid #ff0040;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      position: relative;
+      animation: punkPromptGlitch 0.3s infinite;
+      padding: 8px;
+      box-shadow: 
+        0 0 15px rgba(255,0,64,0.3),
+        inset 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    @keyframes punkPromptGlitch {
+      0%, 92%, 100% { transform: translate(0) skew(0deg); }
+      94% { transform: translate(-1px, 1px) skew(-0.2deg); }
+      96% { transform: translate(1px, -1px) skew(0.1deg); }
+    }
+
+    .toggles { 
+      margin-bottom: 20px; 
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+    }
+    
+    .toggle-container {
+      position: relative;
+    }
+    
+    .toggle-switch {
+      width: 140px;
+      height: 40px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%);
+      border: 2px solid #ff0040;
+      border-radius: 25px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 0 15px rgba(255,0,64,0.3),
+        inset 0 0 10px rgba(0,0,0,0.5);
+    }
+    
+    .toggle-switch:hover {
+      box-shadow: 
+        0 0 25px rgba(255,0,64,0.5),
+        inset 0 0 15px rgba(0,0,0,0.7);
+      transform: scale(1.02);
+    }
+    
+    .toggle-slider {
+      width: 60px;
+      height: 32px;
+      background: linear-gradient(135deg, #ff0040 0%, #ff6eb7 50%, #ff0040 100%);
+      border-radius: 20px;
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.8),
+        inset 0 0 5px rgba(255,255,255,0.3);
+      animation: toggleGlow 2s ease-in-out infinite alternate;
+    }
+    
+    .toggle-switch.active .toggle-slider {
+      left: 72px;
+      background: linear-gradient(135deg, #00ff41 0%, #41ff00 50%, #00ff41 100%);
+      box-shadow: 
+        0 0 10px rgba(0,255,65,0.8),
+        inset 0 0 5px rgba(255,255,255,0.3);
+    }
+    
+    .toggle-label-left, .toggle-label-right {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: bold;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      text-shadow: 0 0 5px rgba(0,0,0,0.8);
+    }
+    
+    .toggle-label-left {
+      left: 12px;
+      color: #ffffff;
+    }
+    
+    .toggle-label-right {
+      right: 12px;
+      color: #888;
+    }
+    
+    .toggle-switch.active .toggle-label-left {
+      color: #888;
+    }
+    
+    .toggle-switch.active .toggle-label-right {
+      color: #ffffff;
+    }
+    
+    @keyframes toggleGlow {
+      0% { 
+        box-shadow: 
+          0 0 10px rgba(255,0,64,0.8),
+          inset 0 0 5px rgba(255,255,255,0.3);
+      }
+      100% { 
+        box-shadow: 
+          0 0 20px rgba(255,0,64,1),
+          inset 0 0 8px rgba(255,255,255,0.5);
+      }
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      background: 
+        linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%),
+        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.2) 0%, transparent 70%);
+      color: #ffffff;
+      border: 2px solid #333;
+      border-left: 3px solid #ff0040;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.15s ease;
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.3),
+        inset 0 0 15px rgba(0,0,0,0.5);
+      transform: skew(-2deg);
+    }
+    button:hover { 
+      background: 
+        linear-gradient(135deg, #333 0%, #555 50%, #333 100%),
+        radial-gradient(circle at 30% 30%, rgba(0,255,65,0.3) 0%, transparent 70%);
+      border-left-color: #00ff41;
+      box-shadow: 
+        0 0 20px rgba(0,255,65,0.6),
+        inset 0 0 20px rgba(0,255,65,0.1);
+      transform: translateY(-2px) skew(-1deg);
+      text-shadow: 0 0 8px rgba(0,255,65,0.8);
+    }
+
+    button:active {
+      transform: translateY(0) skew(-2deg);
+      box-shadow: 
+        0 0 10px rgba(255,0,64,0.8),
+        inset 0 0 25px rgba(0,0,0,0.8);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,0,64,0.3), transparent);
+      transition: left 0.3s;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    /* Enhanced Category Dropdown Styling */
+    select[id^="category-"] {
+      width: 100% !important;
+      margin-bottom: 8px !important;
+      background: #333 !important;
+      color: #fff !important;
+      border: 1px solid #555 !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      min-height: 32px !important;
+      box-sizing: border-box !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+
+    select[id^="category-"]:hover {
+      background: #444 !important;
+      border-color: #00ff41 !important;
+      box-shadow: 0 0 8px rgba(0, 255, 65, 0.3) !important;
+    }
+
+    select[id^="category-"]:focus {
+      outline: none !important;
+      background: #444 !important;
+      border-color: #00ff41 !important;
+      box-shadow: 0 0 12px rgba(0, 255, 65, 0.5) !important;
+    }
+
+    /* Make dropdown options more readable */
+    select[id^="category-"] option {
+      background: #333 !important;
+      color: #fff !important;
+      padding: 6px 8px !important;
+      font-size: 13px !important;
+    }
+  </style>
+</head>
+<body>
+<div id="disco-static"></div>
+<div id="disco-scanlines"></div>
+  <div id="disco-sparkles"></div>
+
+<h1 class="glitch-text" data-text="Modular Prompt Generator">Modular Prompt Generator</h1>
+<div class="project-info">
+  <p style="color: #00ff41; font-size: 16px; margin: 10px 0;">🔧 Modular CSV-Based Categories | 🔒 Lock System | 📦 Batch Generation</p>
+</div>
+<div id="sections">
+
+<!-- Body Type -->
+<div class="section" id="bodytype">
+  <h3 id="label-bodytype">Body Type</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-bodytype"> 🔒 lock</label>
+  <select id="category-bodytype" onchange="loadCategory('bodytype', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Default)</option></select>
+  <input type="text" value="Body Type" oninput="updateLabel('bodytype', this.value)">
+<ul>
+    <li onclick="pick('bodytype', this)">petite frame and delicate features, small breasts</li>
+    <li onclick="pick('bodytype', this)">wide hips, perfect ass, small breasts</li>
+    <li onclick="pick('bodytype', this)">busty with large breasts and curvy hips</li>
+    <li onclick="pick('bodytype', this)">athletic with perky breasts, toned ass</li>
+    <li onclick="pick('bodytype', this)">curvy with full breasts and wide hips</li>
+    <li onclick="pick('bodytype', this)">mom bod with soft curves and nurturing presence</li>
+    <li onclick="pick('bodytype', this)">petite with a small frame, perky breasts, and a cute butt</li>
+    <li onclick="pick('bodytype', this)">body of a college centrefold</li>
+    <li onclick="pick('bodytype', this)">freckled, slim and petite with firm medium breasts</li>
+    <li onclick="pick('bodytype', this)">a softer fuller figure, large breasts, round belly</li>
+    <li onclick="pick('bodytype', this)">tall and slender with long legs, small breasts</li>
+    <li onclick="pick('bodytype', this)">slim with a flat stomach, small breasts</li>
+    <li onclick="pick('bodytype', this)">voluptuous with a curvy figure, large breasts, and wide hips</li>
+    <li onclick="pick('bodytype', this)">average build with a healthy figure, medium breasts</li>
+    <li onclick="pick('bodytype', this)">muscular with toned arms and legs, strong physique, defined abs, fake breasts</li>
+    <li onclick="pick('bodytype', this)">petite with a small frame, perky breasts, and a cute butt</li>
+    <li onclick="pick('bodytype', this)">slender with a delicate frame, small breasts, and a graceful posture</li>
+    <li onclick="pick('bodytype', this)">curvy with a voluptuous figure, large breasts, and a round butt</li>
+    <li onclick="pick('bodytype', this)">athletic with a toned physique, firm breasts, and a strong core</li>
+    <li onclick="pick('bodytype', this)">slim with a lean build, small breasts, and a flat stomach</li>
+    <li onclick="pick('bodytype', this)">full-figured with a soft body, large breasts, and wide hips</li>
+    <li onclick="pick('bodytype', this)">tall and statuesque with long legs, medium breasts, and a confident stance</li>
+    <li onclick="pick('bodytype', this)">petite and delicate with small breasts, a narrow waist, and a cute butt</li>
+    <li onclick="pick('bodytype', this)">muscular and defined with toned arms and legs, strong abs, and fake breasts</li>
+    <li onclick="pick('bodytype', this)">slender and graceful with a small frame, perky breasts, and a poised demeanor</li>
+    <li onclick="pick('bodytype', this)">curvy and voluptuous with large breasts, wide hips, and a round butt</li>
+    <li onclick="pick('bodytype', this)">athletic and fit with a toned physique, firm breasts, and a strong core</li>
+    <li onclick="pick('bodytype', this)">slim and lean with a flat stomach, small breasts, and a healthy glow</li>
+    <li onclick="pick('bodytype', this)">full-figured and soft with large breasts, wide hips, and a warm smile</li>
+    <li onclick="pick('bodytype', this)">tall and elegant with long legs, medium breasts, and a graceful posture</li>
+    <li onclick="pick('bodytype', this)">petite and charming with small breasts, a narrow waist, and a playful attitude</li>
+    <li onclick="pick('bodytype', this)">muscular and strong with toned arms and legs, defined abs, and fake breasts</li>
+    <li onclick="pick('bodytype', this)">slender and delicate with a small frame, perky breasts, and a refined demeanor</li>
+    <li onclick="pick('bodytype', this)">curvy and alluring with large breasts, wide hips, and a seductive smile</li>
+    <li onclick="pick('bodytype', this)">athletic and agile with a toned physique, firm breasts, and a confident stance</li>
+    <li onclick="pick('bodytype', this)">slim and graceful with a flat stomach, small breasts, and a radiant glow</li>
+  </ul>
+</div>
+
+<!-- Scene -->
+<div class="section" id="scene">
+  <h3 id="label-scene">Scene</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-scene" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-scene"> 🔒 lock</label>
+  <select id="category-scene" onchange="loadCategory('scene', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Default)</option></select>
+  <input type="text" value="Scene" oninput="updateLabel('scene', this.value)">
+<ul>
+  <li onclick="pick('scene', this)">leaning against rusted doorway, pistol hanging loose, rain dripping off chin</li>
+  <li onclick="pick('scene', this)">standing atop crumbling overpass, cityscape ablaze behind, wind tugging at coat</li>
+  <li onclick="pick('scene', this)">perched on ledge, overlooking neon-lit streets, expression contemplative</li>
+  <li onclick="pick('scene', this)">crouched in shadows, watching as figures pass, heart racing</li>
+  <li onclick="pick('scene', this)">huddled beneath flickering sign, rain-soaked and shivering</li>
+  <li onclick="pick('scene', this)">leaning against crumbling wall, eyes scanning the street for threats</li>
+  <li onclick="pick('scene', this)">standing on rooftop edge, neon city sprawling below, wind tugging at coat</li
+  <li onclick="pick('scene', this)">huddled beneath flickering sign, rain-soaked and shivering</li>
+  <li onclick="pick('scene', this)">crouched behind abandoned vehicle, heart pounding, breath held</li>
+  <li onclick="pick('scene', this)">kneeling beside wrecked android, cigarette glowing in the dark</li>
+  <li onclick="pick('scene', this)">standing in flooded street ankle-deep, neon light cutting through the mist</li>
+  <li onclick="pick('scene', this)">sitting on cracked marble statue, one hand bandaged, city burning behind</li>
+  <li onclick="pick('scene', this)">walking through empty market, flickering signs dying as she passes</li>
+  <li onclick="pick('scene', this)">lying on rain-slick roof, plasma scar glowing faintly under ribs</li>
+  <li onclick="pick('scene', this)">crouched near shattered mirror, reflection split across a dozen shards</li>
+  <li onclick="pick('scene', this)">arms outstretched under acid rain, eyes closed, blood washing from hands</li>
+  <li onclick="pick('scene', this)">one knee on the ground, weapon dropped, expression unreadable</li>
+  <li onclick="pick('scene', this)">backlit by explosion, hair whipping forward, calm amid chaos</li>
+  <li onclick="pick('scene', this)">slumped in neon alley corner, cigarette ember the only light</li>
+  <li onclick="pick('scene', this)">reaching toward broken camera lens, glass reflecting her eye</li>
+  <li onclick="pick('scene', this)">sitting cross-legged on cracked highway, neon sign flickering behind</li>
+  <li onclick="pick('scene', this)">kneeling at water's edge, neon skyline dissolving into reflection</li>
+  <li onclick="pick('scene', this)">standing over fallen figure, smoke curling from gun barrel</li>
+</ul>
+</div>
+
+<!-- Outfit -->
+<div class="section" id="outfit">
+  <h3 id="label-outfit">Outfit</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-outfit" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-outfit"> 🔒 lock</label>
+  <select id="category-outfit" onchange="loadCategory('outfit', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Outfit" oninput="updateLabel('outfit', this.value)">
+<ul>
+  <li onclick="pick('outfit', this)">black synth-leather bodysuit, high collar, zippers frayed, faint blood spray on sleeve</li>
+  <li onclick="pick('outfit', this)">tactical harness over torn undershirt, carbon fiber plates, exposed skin streaked with grime</li>
+  <li onclick="pick('outfit', this)">chrome-lined trenchcoat, scorched hem, glowing circuitry under seams</li>
+  <li onclick="pick('outfit', this)">mesh crop top under cracked ballistic vest, acid stains and ash smudges</li>
+  <li onclick="pick('outfit', this)">tattered hooded cloak, edges singed, pockets filled with scavenged tech</li>
+  <li onclick="pick('outfit', this)">fingerless gloves, reinforced knuckles, frayed edges</li>
+  <li onclick="pick('outfit', this)">combat boots, scuffed and worn, steel toes glinting</li>
+  <li onclick="pick('outfit', this)">utility belt loaded with pouches, tools, and a sidearm</li>
+  <li onclick="pick('outfit', this)">dark cargo pants, multiple pockets, knee pads scratched and dented</li>
+  <li onclick="pick('outfit', this)">sleek visor with HUD display, cracked on one side, faint blood splatter</li>
+  <li onclick="pick('outfit', this)">armored gloves with exposed fingertips, smudged with oil and dirt</li>
+  <li onclick="pick('outfit', this)">high-tech wrist gauntlet, cracked screen, blinking red light</li>
+  <li onclick="pick('outfit', this)">stealth suit with adaptive camohing, seams worn thin, dirt smudges</li>
+  <li onclick="pick('outfit', this)">industrial latex catsuit patched with duct tape, old serial number across thigh</li>
+  <li onclick="pick('outfit', this)">asymmetrical leather jacket, collar wired with blue neon filament, knife sheathed at ribs</li>
+  <li onclick="pick('outfit', this)">torn nylon bodystocking beneath armored corset, blood dried along laces</li>
+  <li onclick="pick('outfit', this)">oversized bomber jacket, reflective logo faded, bullet holes stitched shut</li>
+  <li onclick="pick('outfit', this)">carbon-fiber exosuit frame with missing plates, power lines trailing sparks</li>
+  <li onclick="pick('outfit', this)">black vinyl coat unbuttoned to waist, chains looping from belt, rainwater streaked with oil</li>
+  <li onclick="pick('outfit', this)">ragged synthsilk skirt torn at knee, gunmetal garters, glowing cuffs at wrists</li>
+  <li onclick="pick('outfit', this)">biohazard rain poncho transparent and slick, smeared with crimson fingerprints</li>
+  <li onclick="pick('outfit', this)">neon harness wrapped across chest and arms, skin painted with industrial grease</li>
+  <li onclick="pick('outfit', this)">urban scavenger rags layered over combat leggings, wires braided through belt</li>
+  <li onclick="pick('outfit', this)">street samurai bodysuit, matte finish with scorched panels, dried blood at throat seam</li>
+</ul>
+</div>
+
+<!-- Visual FX -->
+<div class="section" id="visualfx">
+  <h3 id="label-visualfx">Visual FX</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-visualfx" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-visualfx"> 🔒 lock</label>
+  <select id="category-visualfx" onchange="loadCategory('visualfx', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Visual FX" oninput="updateLabel('visualfx', this.value)">
+<ul>
+  <li onclick="pick('visualfx', this)">rain streaking across lens, neon reflections breaking through smoke</li>
+  <li onclick="pick('visualfx', this)">flickering sign light casting stuttered shadows across wet pavement</li>
+  <li onclick="pick('visualfx', this)">glitching holograms flickering in and out of existence</li>
+  <li onclick="pick('visualfx', this)">static distortion across the frame, momentary loss of detail</li>
+  <li onclick="pick('visualfx', this)">digital rain cascading down the screen, pixelated edges</li>
+  <li onclick="pick('visualfx', this)">holographic glitches warping the environment, reality bending</li>
+  <li onclick="pick('visualfx', this)">data moshing effect, colors bleeding into each other</li>
+  <li onclick="pick('visualfx', this)">chromatic aberration fringing around bright lights</li>
+  <li onclick="pick('visualfx', this)">neon light trails following movement, long exposure effect</li>
+  <li onclick="pick('visualfx', this)">rain droplets on lens, distorting neon reflections</li>
+  <li onclick="pick('visualfx', this)">lens distortion creating a fisheye effect</li>
+  <li onclick="pick('visualfx', this)">holographic static flickering over the image, like a broken projection</li>
+  <li onclick="pick('visualfx', this)">light diffusion through fog, soft glow around neon signs</li>
+  <li onclick="pick('visualfx', this)">high-contrast spotlight cutting through steam, edges haloed in haze</li>
+  <li onclick="pick('visualfx', this)">sodium streetlight glow bleeding into cool blue shadows</li>
+  <li onclick="pick('visualfx', this)">digital static overlay, corrupted feed, faint scanline drift</li>
+  <li onclick="pick('visualfx', this)">sparks raining from overhead cable, slow-motion capture</li>
+  <li onclick="pick('visualfx', this)">infrared haze and lens flares washing across frame</li>
+  <li onclick="pick('visualfx', this)">acid-green underglow mixing with violet reflections</li>
+  <li onclick="pick('visualfx', this)">harsh interrogation light, overexposed edges, face in silhouette</li>
+  <li onclick="pick('visualfx', this)">light leaking through cracked glass, red bloom flaring like a wound</li>
+  <li onclick="pick('visualfx', this)">faint electrical arcs crawling along metallic surfaces</li>
+  <li onclick="pick('visualfx', this)">camera flare from siren lights, rain creating prismatic halos</li>
+  <li onclick="pick('visualfx', this)">dust motes drifting through beam of emergency light</li>
+  <li onclick="pick('visualfx', this)">shutter flicker effect, one frame missing every heartbeat</li>
+  <li onclick="pick('visualfx', this)">neon reflections rippling in oily water, distorted and alive</li>
+</ul>
+</div>
+
+<!-- Art Reference -->
+<div class="section" id="artreference">
+  <h3 id="label-artreference">Art/Esthetic/Artist Reference</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-artreference" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-artreference"> 🔒 lock</label>
+  <select id="category-artreference" onchange="loadCategory('artreference', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Mixed Artists)</option></select>
+  <input type="text" value="Art Reference" oninput="updateLabel('artreference', this.value)">
+<ul>
+  <li onclick="pick('artreference', this)">inspired by Ridley Scott's Blade Runner cinematography, wet neon realism</li>
+  <li onclick="pick('artreference', this)">in the style of Katsuhiro Otomo's Akira, chaotic urban sprawl and vibrant decay</li>
+  <li onclick="pick('artreference', this)">influenced by Masamune Shirow's Ghost in the Shell, cybernetic enhancement and existential themes</li>
+  <li onclick="pick('artreference', this)">inspired by the works of H.R. Giger, biomechanical surrealism and dark eroticism</li>
+  <li onclick="pick('artreference', this)">in the style of Hayao Miyazaki, whimsical yet haunting landscapes</li>
+  <li onclick="pick('artreference', this)">influenced by the visual language of Jean-Pierre Jeunet, intricate details and surreal storytelling</li>
+  <li onclick="pick('artreference', this)">inspired by the works of Satoshi Kon, blending reality and dreams</li>
+  <li onclick="pick('artreference', this)">in the style of Karan Singh's neon-drenched cyberpunk art, vibrant colors and dynamic compositions</li>
+  <li onclick="pick('artreference', this)">influenced by the visual style of Shinkai Makoto, breathtaking landscapes and emotional depth</li>
+  <li onclick="pick('artreference', this)">inspired by the works of Katsuhiro Otomo, intricate details and surreal storytelling</li>
+  <li onclick="pick('artreference', this)">influenced by the visual style of Shinkai Makoto, breathtaking landscapes and emotional depth</li>
+  <li onclick="pick('artreference', this)">inspired by the works of Denis Villeneuve, sci-fi minimalism, smoke, silhouettes, sensory overload</li>
+  <li onclick="pick('artreference', this)">Denis Villeneuve sci-fi minimalism, smoke, silhouettes, sensory overload</li>
+  <li onclick="pick('artreference', this)">Gregory Crewdson-style cinematic despair, every frame a crime scene</li>
+  <li onclick="pick('artreference', this)">Pascal Blanché palette muted by industrial gray and sickly green light</li>
+  <li onclick="pick('artreference', this)">David Fincher visual tone—high contrast, controlled chaos, grime on precision</li>
+  <li onclick="pick('artreference', this)">80s Japanese cyberpunk poster art, chrome reflections and acid magenta</li>
+  <li onclick="pick('artreference', this)">Moebius line weight and emptiness filtered through dystopian sorrow</li>
+  <li onclick="pick('artreference', this)">Matte-painted skyline haze, ruined city glow, Tarkovsky-like melancholy</li>
+  <li onclick="pick('artreference', this)">retro VHS horror aesthetic, flickering distortion, low dynamic range</li>
+  <li onclick="pick('artreference', this)">oil-painted sci-fi realism, dirty color blending and soft bleed highlights</li>
+  <li onclick="pick('artreference', this)">pulp illustration grit mixed with modern lens bloom and chromatic aberration</li>
+  <li onclick="pick('artreference', this)">industrial surrealism, brutalist geometry, thin neon veins across concrete</li>
+  <li onclick="pick('artreference', this)">graphic-novel noir lighting, cinematic backdrops soaked in despair</li>
+  <li onclick="pick('artreference', this)">photoreal still life in a dying city, reflections warped by pollution</li>
+  <li onclick="pick('artreference', this)">Syd Mead's optimistic futurism turned rotten, designs collapsing under rust</li>
+</ul>
+</div>
+
+
+<!-- Setting -->
+<div class="section" id="setting">
+  <h3 id="label-setting">Setting</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-setting" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-setting"> 🔒 lock</label>
+  <select id="category-setting" onchange="loadCategory('setting', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Setting" oninput="updateLabel('setting', this.value)">
+<ul>
+  <li onclick="pick('setting', this)">abandoned megacity street flooded waist-deep, neon signs reflected in chemical rain</li>
+  <li onclick="pick('setting', this)">collapsed subway tunnel glowing with red emergency strobes, static humming in the dark</li>
+  <li onclick="pick('setting', this)">industrial wasteland outside city walls, wind turbines toppled and burning</li>
+  <li onclick="pick('setting', this)">rooftop market built from scavenged drones, smoke curling from oil drums</li>
+  <li onclick="pick('setting', this)">abandoned subway station, walls covered in bioluminescent moss</li>
+  <li onclick="pick('setting', this)">overgrown park reclaiming a corporate plaza, rusting sculptures half-buried in foliage</li>
+  <li onclick="pick('setting', this)">neon-lit back-alley bazaar, stalls overflowing with hacked cyberware and black-market tech</li>
+  <li onclick="pick('setting', this)">dilapidated high-rise rooftop, wind whipping through broken antennas</li>
+  <li onclick="pick('setting', this)">forgotten industrial complex, conveyor belts frozen in time, dust motes in stray light beams</li>
+  <li onclick="pick('setting', this)">derelict spaceport terminal, flickering holo-ads and abandoned luggage carts</li>
+  <li onclick="pick('setting', this)">crumbling highway overpass, vines creeping through the concrete</li>
+  <li onclick="pick('setting', this)">abandoned shopping mall, escalators frozen mid-descent, graffiti covering the walls</li>
+  <li onclick="pick('setting', this)">fog-shrouded industrial docks, rusting cranes silhouetted against dim city lights</li>
+  <li onclick="pick('setting', this)">neon-bathed street corner, rain slick pavement reflecting flickering signs</li>
+  <li onclick="pick('setting', this)">abandoned subway entrance, flickering lights casting long shadows</li>
+  <li onclick="pick('setting', this)">derelict corporate tower, shattered glass hallways, elevator music looping</li>
+  <li onclick="pick('setting', this)">cyber-slum alley slick with rain and blood, flicker of a vending-machine shrine</li>
+  <li onclick="pick('setting', this)">underground fight club lit by faulty holograms, crowd chanting over feedback</li>
+  <li onclick="pick('setting', this)">bridge checkpoint guarded by half-awake drones, graffiti glowing like prayer marks</li>
+  <li onclick="pick('setting', this)">burned-out nightclub still pulsing faint bass, mannequins melted to bar stools</li>
+  <li onclick="pick('setting', this)">train graveyard at dawn, magnetic dust rising in cold fog</li>
+  <li onclick="pick('setting', this)">data-farm catacombs beneath the city, coolant mist and whispering servers</li>
+  <li onclick="pick('setting', this)">junkyard cathedral of broken satellites, lightning crawling along their frames</li>
+  <li onclick="pick('setting', this)">hollowed freeway interchange turned refugee camp, floodlights shaking on cables</li>
+  <li onclick="pick('setting', this)">chemical plant ruins, puddles glowing toxic green under drones' searchlights</li>
+  <li onclick="pick('setting', this)">warehouse district blackout, only a single crimson hologram pulsing alive</li>
+</ul>
+</div>
+
+<!-- Mood -->
+<div class="section" id="mood">
+  <h3 id="label-mood">Mood</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-mood" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-mood"> 🔒 lock</label>
+  <select id="category-mood" onchange="loadCategory('mood', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Mood" oninput="updateLabel('mood', this.value)">
+<ul>
+  <li onclick="pick('mood', this)">permanent midnight sky, electric fog drifting between monoliths</li>
+  <li onclick="pick('mood', this)">burnt ozone scent in the air, light pollution drowning the stars</li>
+  <li onclick="pick('mood', this)">quiet dread under humming streetlights, puddles reflecting firelight</li>
+  <li onclick="pick('mood', this)">rain never stops, like the city is trying to wash itself clean and failing</li>
+  <li onclick="pick('mood', this)">distant sirens buried beneath the pulse of synthetic bass</li>
+  <li onclick="pick('mood', this)">flickering neon signs casting erratic shadows</li>
+  <li onclick="pick('mood', this)">humming power lines overhead, a low drone in the background</li>
+  <li onclick="pick('mood', this)">distant explosions echoing through the streets</li>
+  <li onclick="pick('mood', this)">flickering streetlights casting long shadows</li>
+  <li onclick="pick('mood', this)">abandoned buildings looming like tombstones</li>
+  <li onclick="pick('mood', this)">crumbling highway overpass, vines creeping through the concrete</li>
+  <li onclick="pick('mood', this)">flickering streetlights casting long shadows</li>
+  <li onclick="pick('mood', this)">abandoned subway entrance, flickering lights casting long shadows</li>
+  <li onclick="pick('mood', this)">distant thunder rolling over steel and glass, rain pattering like static</li>
+  <li onclick="pick('mood', this)">neon haze blurring the edges of reality, everything dripping wet and glowing</li>
+  <li onclick="pick('mood', this)">smog thick enough to taste, ghosts of laughter from broken billboards</li>
+  <li onclick="pick('mood', this)">neon flicker spasming across blood-slick glass</li>
+  <li onclick="pick('mood', this)">air vibrating with tension, drones circling like vultures</li>
+  <li onclick="pick('mood', this)">everything damp, metallic, alive but barely breathing</li>
+  <li onclick="pick('mood', this)">heartbeat of the city synced with a failing reactor's rhythm</li>
+  <li onclick="pick('mood', this)">the world smells of oil, rust, and adrenaline</li>
+  <li onclick="pick('mood', this)">silence so dense it feels radioactive</li>
+  <li onclick="pick('mood', this)">paranoia baked into the rain, hope outlawed long ago</li>
+  <li onclick="pick('mood', this)">screens whispering propaganda to no one left alive</li>
+  <li onclick="pick('mood', this)">cold beauty in the ruin, everything broken but still trying to shine</li>
+</ul>
+</div>
+
+<!-- Accessories -->
+<div class="section" id="accessories">
+  <h3 id="label-accessories">Accessories</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-accessories" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-accessories"> 🔒 lock</label>
+  <select id="category-accessories" onchange="loadCategory('accessories', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Accessories" oninput="updateLabel('accessories', this.value)">
+<ul>
+  <li onclick="pick('accessories', this)">rusted cybernetic arm grafted with surgical staples, flickering LEDs under skin</li>
+  <li onclick="pick('accessories', this)">neon respirator mask, condensation pooling behind tinted visor</li>
+  <li onclick="pick('accessories', this)">tattered hooded cloak, pockets filled with scavenged tech</li>
+  <li onclick="pick('accessories', this)">fingerless gloves with embedded circuitry, worn and frayed</li>
+  <li onclick="pick('accessories', this)">utility jumpsuit with reinforced stitching and hidden pockets</li>
+  <li onclick="pick('accessories', this)">combat boots with steel toes and hidden compartments</li>
+  <li onclick="pick('accessories', this)">hacked wrist console with cracked screen and flickering holograms</li>
+  <li onclick="pick('accessories', this)">chrome-plated cybernetic eye with glowing red iris</li>
+  <li onclick="pick('accessories', this)">datajack port embedded in neck, scar tissue visible</li>
+  <li onclick="pick('accessories', this)">subdermal armor plating, barely visible under the skin</li>
+  <li onclick="pick('accessories', this)">modular backpack with detachable drone and tool kit</li>
+  <li onclick="pick('accessories', this)">stealth cloak woven from light-bending fibers, edges frayed</li>
+  <li onclick="pick('accessories', this)">utility belt stacked with expired med-packs and stolen data drives</li>
+  <li onclick="pick('accessories', this)">broken wrist console looping static and heart-rate monitor</li>
+  <li onclick="pick('accessories', this)">chipped visor goggles, HUD flickering between life and death</li>
+  <li onclick="pick('accessories', this)">hacked neural uplink glowing faintly at the base of the skull</li>
+  <li onclick="pick('accessories', this)">blood-smeared combat gloves with retractable carbon blades</li>
+  <li onclick="pick('accessories', this)">burned ID badge hanging from neck, edges melted</li>
+  <li onclick="pick('accessories', this)">radiation detector reassembled from children's toys and scrap</li>
+  <li onclick="pick('accessories', this)">microdrone companion the size of a fist, patched with duct tape and hope</li>
+  <li onclick="pick('accessories', this)">syringe gun for adrenaline shots, clipped to thigh harness</li>
+  <li onclick="pick('accessories', this)">black-market cyberware case engraved with teeth marks</li>
+  <li onclick="pick('accessories', this)">handmade necklace of processor chips and broken dog tags</li>
+  <li onclick="pick('accessories', this)">holo-cigarette that projects dying memories when exhaled</li>
+  <li onclick="pick('accessories', this)">laser scalpel disguised as lipstick, faint heat shimmer at tip</li>
+</ul>
+</div>
+
+<!-- Hair & Makeup -->
+<div class="section" id="hairmakeup">
+  <h3 id="label-hairmakeup">Hair & Makeup</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-hairmakeup" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-hairmakeup"> 🔒 lock</label>
+  <select id="category-hairmakeup" onchange="loadCategory('hairmakeup', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Hair & Makeup" oninput="updateLabel('hairmakeup', this.value)">
+<ul>
+  <li onclick="pick('hairmakeup', this)">platinum buzzcut with black roots showing, oil sheen and streak of blood near temple</li>
+  <li onclick="pick('hairmakeup', this)">short asymmetrical bob, dyed copper and uneven, mascara bleeding in the rain</li>
+  <li onclick="pick('hairmakeup', this)">slicked-back chrome hair reflecting red neon, lips cracked and dusted with ash</li>
+  <li onclick="pick('hairmakeup', this)">jet-black hair in a loose braid, sweat and soot clinging to strands</li>
+  <li onclick="pick('hairmakeup', this)">shaved head with intricate tattoo patterns, dark eyeliner smudged under eyes</li>
+  <li onclick="pick('hairmakeup', this)">long silver hair tangled with wires, lips painted deep crimson, chipped from biting</li>
+  <li onclick="pick('hairmakeup', this)">short spiky hair dyed electric blue, smudged black lipstick and dirt-streaked cheeks</li>
+  <li onclick="pick('hairmakeup', this)">messy pixie cut with neon pink highlights, dark circles under eyes, faint scar on eyebrow</li>
+  <li onclick="pick('hairmakeup', this)">long dreadlocks tied back with strips of cloth, lips bare and cracked</li>
+  <li onclick="pick('hairmakeup', this)">asymmetrical cut with shaved side, hair dyed deep purple, eyeliner smudged from sweat</li>
+  <li onclick="pick('hairmakeup', this)">short platinum hair with undercut, dark lipstick smeared from a scuffle</li>
+  <li onclick="pick('hairmakeup', this)">long wavy hair dyed midnight blue, smudged silver eyeshadow, faint bruise on cheekbone</li>
+  <li onclick="pick('hairmakeup', this)">buzzed sides with long top dyed fiery red, black eyeliner running down cheeks</li>
+  <li onclick="pick('hairmakeup', this)">messy bun with strands of hair falling loose, lips pale and cracked</li>
+  <li onclick="pick('hairmakeup', this)">short curly hair dyed neon green, dark lipstick chipped from biting</li>
+  <li onclick="pick('hairmakeup', this)">silver undercut glowing faintly with fiberoptic strands, eyeliner sharp as a blade</li>
+  <li onclick="pick('hairmakeup', this)">white hair cropped short, grease smudges along cheekbones, one side burned</li>
+  <li onclick="pick('hairmakeup', this)">messy shoulder-length hair, streaked violet, lipstick smeared from a fight</li>
+  <li onclick="pick('hairmakeup', this)">long dark hair tied with wire, eyes lined in metallic crimson shadow</li>
+  <li onclick="pick('hairmakeup', this)">half-shaved scalp with bioports visible, faint glow under skin, lips matte black</li>
+  <li onclick="pick('hairmakeup', this)">bleached fringe falling over cybernetic eye, faint smear of silver glitter on cheek</li>
+  <li onclick="pick('hairmakeup', this)">wet and tangled bob, dark mascara running down cheekbones, bruised lips</li>
+  <li onclick="pick('hairmakeup', this)">neon blue hair pulled into topknot, eyeliner smudged from sweat and smoke</li>
+  <li onclick="pick('hairmakeup', this)">shaved sides, molten copper mohawk, black lipstick chipped from biting</li>
+  <li onclick="pick('hairmakeup', this)">long hair slick with rain, underlight dyed magenta, one bloodshot eye</li>
+  <li onclick="pick('hairmakeup', this)">messy ponytail, cigarette burn marks on fingers, faint sparkle of holo-glitter on lips</li>
+</ul>
+</div>
+
+<!-- Emotion -->
+<div class="section" id="emotion">
+  <h3 id="label-emotion">Emotion</h3>
+  <label class="cat-toggle"><input type="checkbox" id="enable-emotion" checked onchange="updateCombinationsCount()"> include</label>
+  <label class="cat-toggle"><input type="checkbox" id="lock-emotion"> 🔒 lock</label>
+  <select id="category-emotion" onchange="loadCategory('emotion', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <input type="text" value="Emotion" oninput="updateLabel('emotion', this.value)">
+<ul>
+  <li onclick="pick('emotion', this)">cold defiance, lips parted slightly, eyes fixed like a blade</li>
+  <li onclick="pick('emotion', this)">tired anger behind half-lidded eyes, mouth smeared with rain and blood</li>
+  <li onclick="pick('emotion', this)">bitter amusement, faint smirk despite the chaos around her</li>
+  <li onclick="pick('emotion', this)">defiant resilience, chin held high, eyes blazing with determination</li>
+  <li onclick="pick('emotion', this)">quiet sorrow, eyes glistening with unshed tears, lips pressed tight</li>
+  <li onclick="pick('emotion', this)">haunted vigilance, scanning the shadows, jaw clenched</li>
+  <li onclick="pick('emotion', this)">fierce concentration, brows furrowed, lips slightly parted</li>
+  <li onclick="pick('emotion', this)">weary acceptance, shoulders slumped, eyes distant yet alert</li>
+  <li onclick="pick('emotion', this)">grim determination, teeth bared in a snarl, eyes locked on target</li>
+  <li onclick="pick('emotion', this)">silent grief, tears mingling with rain, expression stoic</li>
+  <li onclick="pick('emotion', this)">resigned fatigue, eyes half-closed, breath visible in cold air</li>
+  <li onclick="pick('emotion', this)">steely resolve, jaw set, eyes burning with purpose</li>
+  <li onclick="pick('emotion', this)">hollow calm, face expressionless as sparks fall past her</li>
+  <li onclick="pick('emotion', this)">grim satisfaction, jaw tense, a single tear mixing with grime</li>
+  <li onclick="pick('emotion', this)">feral grin through bloodied teeth, laughter swallowed by thunder</li>
+  <li onclick="pick('emotion', this)">numb detachment, blank stare illuminated by neon reflection</li>
+  <li onclick="pick('emotion', this)">slow-burn fury rising behind clenched teeth and dark circles</li>
+  <li onclick="pick('emotion', this)">unsteady breath, eyes wide and glassy, haunted by what she's seen</li>
+  <li onclick="pick('emotion', this)">weary focus, lips trembling but steady aim in her gaze</li>
+  <li onclick="pick('emotion', this)">shattered but unbroken, tears invisible in the downpour</li>
+  <li onclick="pick('emotion', this)">apathetic defiance, shoulders relaxed, danger unacknowledged</li>
+  <li onclick="pick('emotion', this)">haunted curiosity, eyes tracking something just out of frame</li>
+  <li onclick="pick('emotion', this)">subtle despair hidden under a professional stillness</li>
+  <li onclick="pick('emotion', this)">calm transcendence, face lit by chaos like holy fire</li>
+</ul>
+</div>
+</div>
+<div class="footer">
+  <div style="margin-bottom: 10px; text-align: left;">
+    <label for="basePrompt" style="display: block; margin-bottom: 4px; font-weight: bold;">Base Prompt:</label>
+    <input type="text" id="basePrompt" value="1girl, solo" oninput="update()" style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; box-sizing: border-box;">
+  </div>
+  <div style="margin-bottom: 10px; text-align: left;">
+    <label for="qualityTags" style="display: block; margin-bottom: 4px; font-weight: bold;">Quality Tags:</label>
+    <input type="text" id="qualityTags" value="8K, ultra-textural, highly detailed, cinematic lighting, masterpiece" oninput="update()" style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; box-sizing: border-box;">
+  </div>
+  <div style="margin-bottom: 10px; padding: 10px; background: rgba(255, 0, 64, 0.1); border: 1px solid rgba(255, 0, 64, 0.3); border-radius: 4px; text-align: center;">
+    <span style="font-weight: bold; color: #ff0040;">🎰 Possible Combinations: </span>
+    <span id="combinationsCount" style="font-size: 1.2em; font-weight: bold; color: #00ff41;">0</span>
+  </div>
+  <textarea id="promptBox" placeholder="Your prompt will appear here..." readonly></textarea>
+  <div>
+    <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
+    <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
+    <button id="batchBtn" onclick="showBatchDialog()">📦 Batch Generate</button>
+  </div>
+</div>
+
+<script>
+  const sel = {
+    bodytype: '',
+    scene: '',
+    outfit: '',
+    visualfx: '',
+    artreference: '',
+    setting: '',
+    mood: '',
+    accessories: '',
+    hairmakeup: '',
+    emotion: ''
+  };
+  const settingOrder = [
+    'bodytype',
+    'scene',
+    'outfit',
+    'visualfx',
+    'artreference',
+    'setting',
+    'mood',
+    'accessories',
+    'hairmakeup',
+    'emotion'
+  ];
+
+  function updateLabel(section, value) {
+    document.getElementById('label-'+section).textContent = value || section;
+  }
+
+  // Dynamic Category System
+  let availableCategories = [];
+
+  // Fetch available category files from server
+  async function loadAvailableCategories() {
+    try {
+      const response = await fetch('categories/');
+      if (response.ok) {
+        const html = await response.text();
+        // Extract CSV filenames from directory listing
+        const csvFiles = html.match(/cat_[^"]*\.csv/g) || [];
+        // Remove duplicates and convert to category names
+        availableCategories = [...new Set(csvFiles.map(file => file.replace('.csv', '')))];
+        console.log('Available categories:', availableCategories);
+        populateAllDropdowns();
+      }
+    } catch (error) {
+      console.log('Could not auto-detect categories, using fallback list');
+      // Fallback list of known categories
+      availableCategories = [
+        'cat_bodytype_default', 'cat_bodytype_fantasy', 'cat_bodytype_scifi',
+        'cat_scene_cyberpunk', 'cat_scene_fantasy', 'cat_scene_horror',
+        'cat_outfit_fantasy', 'cat_visualfx_fantasy', 'cat_emotion_positive'
+      ];
+      populateAllDropdowns();
+    }
+  }
+
+  // Populate all category dropdowns with available files
+  function populateAllDropdowns() {
+    const categorySelects = document.querySelectorAll('select[id^="category-"]');
+    
+    categorySelects.forEach(select => {
+      // Keep the current option
+      const currentValue = select.value;
+      
+      // Clear existing options except "default"
+      select.innerHTML = '<option value="default">Current (Default)</option>';
+      
+      // Add all available categories to every dropdown
+      availableCategories.forEach(catFile => {
+        const parts = catFile.split('_');
+        if (parts.length >= 3) {
+          const attribute = parts[1];
+          // Capture everything from the third part onward
+          const focus = parts.slice(2).join(' ');
+          const displayName = `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} - ${focus.charAt(0).toUpperCase() + focus.slice(1)}`;
+          
+          const option = document.createElement('option');
+          option.value = catFile;
+          option.textContent = displayName;
+          select.appendChild(option);
+        }
+      });
+      
+      // Restore previous selection if it still exists
+      if (currentValue && currentValue !== 'default') {
+        select.value = currentValue;
+      }
+    });
+  }
+
+  // CSV Loading Functions
+  async function loadCategory(categoryId, csvFile) {
+    if (csvFile === 'default') {
+      return; // Keep current content
+    }
+    
+    try {
+      console.log(`Attempting to load: categories/${csvFile}.csv`);
+      const response = await fetch(`categories/${csvFile}.csv`);
+      
+      if (!response.ok) {
+        console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
+        alert(`Could not load category file: ${csvFile}.csv\nError: ${response.status} - ${response.statusText}\n\nTip: You may need to run this from a local server (like Live Server extension) instead of opening the HTML file directly.`);
+        return;
+      }
+      
+      const csvText = await response.text();
+      console.log(`CSV loaded successfully:`, csvText.substring(0, 100) + '...');
+      
+      const items = parseCSV(csvText);
+      console.log(`Parsed ${items.length} items:`, items);
+      
+      if (items.length === 0) {
+        alert(`No items found in ${csvFile}.csv. Please check the file format.`);
+        return;
+      }
+      
+      updateCategoryItems(categoryId, items);
+      
+      // Clear current selection for this category
+      sel[categoryId] = '';
+      document.querySelectorAll('#'+categoryId+' li').forEach(li => {
+        li.style.background='#222';
+        li.classList.remove('selected');
+      });
+      update();
+      
+      alert(`Successfully loaded ${items.length} items from ${csvFile}.csv`);
+      
+    } catch (error) {
+      console.error('Error loading category:', error);
+      
+      if (error.message.includes('Failed to fetch')) {
+        alert(`Cannot load CSV files when opening HTML directly in browser.\n\n🔧 SOLUTIONS:\n1. Use VS Code Live Server extension\n2. Use Python: python -m http.server 8000\n3. Use Node.js: npx http-server\n\nThen open: http://localhost:8000`);
+      } else {
+        alert(`Error loading category: ${error.message}`);
+      }
+    }
+  }
+  
+  function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const items = [];
+    
+    console.log(`Parsing CSV with ${lines.length} lines`);
+    
+    // Skip header row (first line should be "prompt_piece")
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line && line !== '') {
+        // Remove outer quotes if present
+        let item = line;
+        if (item.startsWith('"') && item.endsWith('"')) {
+          item = item.slice(1, -1);
+        }
+        
+        // Skip empty items
+        if (item && item.trim() !== '') {
+          items.push(item.trim());
+        }
+      }
+    }
+    
+    console.log(`Parsed ${items.length} valid items`);
+    return items;
+  }
+  
+  function updateCategoryItems(categoryId, items) {
+    const ul = document.querySelector(`#${categoryId} ul`);
+    if (!ul) return;
+    
+    // Clear existing items
+    ul.innerHTML = '';
+    
+    // Add new items
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      li.onclick = function() { pick(categoryId, this); };
+      ul.appendChild(li);
+    });
+    
+    // Update combinations counter after loading new items
+    updateCombinationsCount();
+  }
+
+  function pick(sec, el) {
+    document.querySelectorAll('#'+sec+' li').forEach(li => {
+      li.style.background='#222';
+      li.classList.remove('selected');
+    });
+    el.style.background='#555';
+    el.classList.add('selected');
+    sel[sec] = el.textContent.trim();
+    update();
+  }
+
+
+
+  function update() {
+    const parts = [];
+    
+    // Get base prompt from input box
+    const basePrompt = document.getElementById('basePrompt').value.trim();
+    if (basePrompt) {
+      parts.push(basePrompt);
+    }
+    
+    settingOrder.forEach(sec => {
+      if (document.getElementById('enable-' + sec).checked && sel[sec]) {
+        parts.push(sel[sec]);
+      }
+    });
+    const core = parts.join(', ');
+    
+    // Get quality tags from input box and append
+    const qualityTags = document.getElementById('qualityTags').value.trim();
+    const finalPrompt = qualityTags ? core + ', ' + qualityTags : core;
+    
+    document.getElementById('promptBox').value = finalPrompt;
+    
+    // Update combinations counter
+    updateCombinationsCount();
+  }
+
+  function updateCombinationsCount() {
+    let totalCombinations = 1;
+    
+    settingOrder.forEach(sec => {
+      // Only count enabled categories
+      if (document.getElementById('enable-' + sec).checked) {
+        // Get all visible items for this category
+        const allItems = Array.from(document.querySelectorAll('#'+sec+' li'));
+        const visibleItems = allItems.filter(li => li.style.display !== 'none');
+        const count = visibleItems.length;
+        
+        if (count > 0) {
+          totalCombinations *= count;
+        }
+      }
+    });
+    
+    // Format large numbers with commas for readability
+    const formattedCount = totalCombinations.toLocaleString();
+    document.getElementById('combinationsCount').textContent = formattedCount;
+  }
+
+  function copyPrompt() {
+    const box = document.getElementById('promptBox');
+    box.select();
+    document.execCommand('copy');
+    alert('Prompt copied!');
+  }
+
+  function showBatchDialog() {
+    const count = prompt('How many prompts would you like to generate?', '10');
+    if (count && !isNaN(count) && parseInt(count) > 0) {
+      generateBatchPrompts(parseInt(count));
+    }
+  }
+
+  function generateBatchPrompts(count) {
+    const prompts = [];
+    
+    // Store current selections to restore later
+    const currentSelections = {...sel};
+    
+    for (let i = 0; i < count; i++) {
+      // Generate a random prompt
+      randomizeForBatch();
+      
+      // Get the generated prompt
+      const parts = [];
+      
+      // Get base prompt from input box
+      const basePrompt = document.getElementById('basePrompt').value.trim();
+      if (basePrompt) {
+        parts.push(basePrompt);
+      }
+      
+      settingOrder.forEach(sec => {
+        if (document.getElementById('enable-' + sec).checked && sel[sec]) {
+          parts.push(sel[sec]);
+        }
+      });
+      
+      const core = parts.join(', ');
+      // Get quality tags from input box and append
+      const qualityTags = document.getElementById('qualityTags').value.trim();
+      const finalPrompt = qualityTags ? core + ', ' + qualityTags : core;
+      
+      if (finalPrompt) {
+        prompts.push(finalPrompt);
+      }
+    }
+    
+    // Restore original selections
+    Object.assign(sel, currentSelections);
+    update();
+    
+    // Download the prompts as a text file
+    downloadPrompts(prompts);
+  }
+
+  function randomizeForBatch() {
+    settingOrder.forEach(sec => {
+      if (!document.getElementById('enable-' + sec).checked) {
+        sel[sec] = '';
+        return;
+      }
+      
+      // Skip if category is locked during batch generation
+      const lockCheckbox = document.getElementById('lock-' + sec);
+      if (lockCheckbox && lockCheckbox.checked) {
+        return; // Keep current selection, don't randomize
+      }
+      
+      // Get all visible items for this section
+      const allItems = Array.from(document.querySelectorAll('#'+sec+' li'));
+      const visibleItems = allItems.filter(li => li.style.display !== 'none');
+      
+      if (visibleItems.length > 0) {
+        const choice = visibleItems[Math.floor(Math.random() * visibleItems.length)];
+        if (choice) {
+          sel[sec] = choice.textContent.trim();
+        }
+      } else {
+        sel[sec] = '';
+      }
+    });
+  }
+
+  function downloadPrompts(prompts) {
+    // Filter out empty prompts and trim whitespace
+    const cleanPrompts = prompts.filter(prompt => prompt && prompt.trim().length > 0).map(prompt => prompt.trim());
+    const content = cleanPrompts.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    a.href = url;
+    a.download = `cyberpunk_prompts_${timestamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    alert(`${cleanPrompts.length} prompts have been saved to cyberpunk_prompts_${timestamp}.txt`);
+  }
+
+  function randomize() {
+    settingOrder.forEach(sec => {
+      // Skip if category is disabled
+      if (!document.getElementById('enable-' + sec).checked) {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => {
+          li.style.background='#222';
+          li.classList.remove('selected');
+        });
+        return;
+      }
+      
+      // Skip if category is locked
+      const lockCheckbox = document.getElementById('lock-' + sec);
+      if (lockCheckbox && lockCheckbox.checked) {
+        return; // Keep current selection, don't randomize
+      }
+      
+      // Get all visible items for this section
+      const allItems = Array.from(document.querySelectorAll('#'+sec+' li'));
+      const visibleItems = allItems.filter(li => li.style.display !== 'none');
+      
+      if (visibleItems.length > 0) {
+        const choice = visibleItems[Math.floor(Math.random() * visibleItems.length)];
+        if (choice) pick(sec, choice);
+      } else {
+        sel[sec] = '';
+        document.querySelectorAll('#'+sec+' li').forEach(li => {
+          li.style.background='#222';
+          li.classList.remove('selected');
+        });
+      }
+    });
+    update();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the modular system
+    console.log('Modular Prompt Generator initialized');
+    // Load available categories and populate dropdowns
+    loadAvailableCategories();
+    // Initialize the combinations counter
+    updateCombinationsCount();
+  });
+</script>
+
+</body>
+</html>
