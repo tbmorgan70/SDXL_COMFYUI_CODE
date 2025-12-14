@@ -26,6 +26,7 @@ sys.path.insert(0, parent_dir)
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from core.diagnostics import SortLogger
+from core.file_operations import FileOperationsHandler
 
 
 class LoRAStackSorter:
@@ -35,6 +36,7 @@ class LoRAStackSorter:
         self.metadata_extractor = MetadataExtractor()
         self.metadata_formatter = EnhancedMetadataFormatter()
         self.logger = SortLogger()
+        self.file_handler = FileOperationsHandler(self.logger)
         
         # Statistics
         self.stats = {
@@ -261,19 +263,27 @@ class LoRAStackSorter:
                         else:
                             new_filename = filename
                         
-                        # Move or copy file
+                        # Move or copy file with its metadata
                         dest_path = os.path.join(group_dir, new_filename)
                         
-                        if move_files:
-                            import shutil
-                            shutil.move(file_path, dest_path)
-                            self.stats['moved_images'] += 1
-                            self.logger.log_info(f"Moved: {filename} -> {safe_name}/{new_filename}")
+                        success, moved_files = self.file_handler.move_image_with_metadata(
+                            file_path, dest_path, move_files
+                        )
+                        
+                        if success:
+                            if move_files:
+                                self.stats['moved_images'] += 1
+                                self.logger.log_info(f"Moved: {filename} -> {safe_name}/{new_filename}")
+                            else:
+                                self.stats['copied_images'] += 1
+                                self.logger.log_info(f"Copied: {filename} -> {safe_name}/{new_filename}")
+                            
+                            # Log all moved files (image + metadata)
+                            for moved_file in moved_files:
+                                self.logger.log_info(moved_file)
                         else:
-                            import shutil
-                            shutil.copy2(file_path, dest_path)
-                            self.stats['copied_images'] += 1
-                            self.logger.log_info(f"Copied: {filename} -> {safe_name}/{new_filename}")
+                            operation = "move" if move_files else "copy"
+                            raise Exception(f"Failed to {operation} file")
                         
                         # Create metadata file if requested
                         if create_metadata:

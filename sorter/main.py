@@ -44,7 +44,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 2.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 2.4.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -531,7 +531,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 2.0...")
+        print("\n\n👋 Exiting Sorter 2.4.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

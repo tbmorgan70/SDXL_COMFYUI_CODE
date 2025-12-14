@@ -27,6 +27,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from core.diagnostics import SortLogger
+from core.file_operations import FileOperationsHandler
 
 class CheckpointSorter:
     """Sort images by their base checkpoint/model"""
@@ -36,6 +37,7 @@ class CheckpointSorter:
         self.metadata_analyzer = MetadataAnalyzer()
         self.metadata_formatter = EnhancedMetadataFormatter()
         self.logger = logger or SortLogger()
+        self.file_handler = FileOperationsHandler(self.logger)
         
         # Statistics
         self.stats = {
@@ -408,16 +410,22 @@ class CheckpointSorter:
                     # Handle filename conflicts
                     dest_path = self._resolve_filename_conflict(dest_path)
                     
-                    # Move or copy the file
-                    if move_files:
-                        shutil.move(file_path, dest_path)
-                        operation = "MOVE"
-                    else:
-                        shutil.copy2(file_path, dest_path)
-                        operation = "COPY"
+                    # Move or copy the file with its metadata
+                    success, moved_files = self.file_handler.move_image_with_metadata(
+                        file_path, dest_path, move_files
+                    )
                     
-                    self.logger.log_file_operation(operation, file_path, dest_path)
-                    self.stats['sorted_images'] += 1
+                    if success:
+                        operation = "MOVE" if move_files else "COPY"
+                        self.logger.log_file_operation(operation, file_path, dest_path)
+                        self.stats['sorted_images'] += 1
+                        
+                        # Log all moved files (image + metadata)
+                        for moved_file in moved_files:
+                            self.logger.log_info(moved_file)
+                    else:
+                        operation = "move" if move_files else "copy"
+                        raise Exception(f"Failed to {operation} file")
                     
                     # Create metadata file if requested
                     if create_metadata_files:

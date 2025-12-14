@@ -12,6 +12,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from core.diagnostics import SortLogger
+from core.file_operations import FileOperationsHandler
 
 # Color categories with RGB ranges
 COLOR_CATEGORIES = {
@@ -33,6 +34,7 @@ class ColorSorter:
     
     def __init__(self, logger: SortLogger = None):
         self.logger = logger or SortLogger()
+        self.file_handler = FileOperationsHandler(self.logger)
     
     def rgb_to_hsv(self, r, g, b):
         """Convert RGB to HSV values."""
@@ -218,16 +220,22 @@ class ColorSorter:
                         target_file = target_dir / f"{stem}_{counter}{suffix}"
                         counter += 1
                 
-                # Move or copy file
-                if move_files:
-                    shutil.move(str(image_file), str(target_file))
-                    operation = "MOVED"
-                else:
-                    shutil.copy2(str(image_file), str(target_file))
-                    operation = "COPIED"
+                # Move or copy file with its metadata
+                success, moved_files = self.file_handler.move_image_with_metadata(
+                    str(image_file), str(target_file), move_files
+                )
                 
-                self.logger.log_file_operation(operation, str(image_file), str(target_file))
-                successful += 1
+                if success:
+                    operation = "MOVED" if move_files else "COPIED"
+                    self.logger.log_file_operation(operation, str(image_file), str(target_file))
+                    successful += 1
+                    
+                    # Log all moved files (image + metadata)
+                    for moved_file in moved_files:
+                        self.logger.log_info(moved_file)
+                else:
+                    operation = "move" if move_files else "copy"
+                    raise Exception(f"Failed to {operation} file")
                 
                 if i % 25 == 0:  # Progress every 25 files
                     self.logger.update_progress(i, total_files, str(image_file.name))

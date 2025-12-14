@@ -16,12 +16,14 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from core.diagnostics import SortLogger
+from core.file_operations import FileOperationsHandler
 
 class ImageFlattener:
     """Enhanced image flattening with progress tracking and logging"""
     
     def __init__(self, logger: SortLogger = None):
         self.logger = logger or SortLogger()
+        self.file_handler = FileOperationsHandler(self.logger)
         self.image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp', '.svg'}
     
     def flatten_images(self, source_dir, target_dir="flattened_images", 
@@ -100,16 +102,22 @@ class ImageFlattener:
                         counter += 1
                         duplicates_count += 1
                 
-                # Move or copy the file
-                if move_files:
-                    shutil.move(str(file_path), str(target_file))
-                    operation = "MOVED"
-                else:
-                    shutil.copy2(str(file_path), str(target_file))
-                    operation = "COPIED"
+                # Move or copy the file with its metadata
+                success, moved_files = self.file_handler.move_image_with_metadata(
+                    str(file_path), str(target_file), move_files
+                )
                 
-                self.logger.log_file_operation(operation, str(file_path), str(target_file))
-                moved_count += 1
+                if success:
+                    operation = "MOVED" if move_files else "COPIED"
+                    self.logger.log_file_operation(operation, str(file_path), str(target_file))
+                    moved_count += 1
+                    
+                    # Log all moved files (image + metadata)
+                    for moved_file in moved_files:
+                        self.logger.log_info(moved_file)
+                else:
+                    operation = "move" if move_files else "copy"
+                    raise Exception(f"Failed to {operation} file")
                 
                 # Progress update every 25 files
                 if i % 25 == 0:

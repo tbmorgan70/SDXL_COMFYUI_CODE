@@ -1,6 +1,33 @@
-# 📋 Sorter 2.3 - Changelog
+# 📋 Sorter 2.4 - Changelog
 
-All notable changes to the Sorter 2.3 project will be documented in this file.
+All notable changes to the Sorter 2.4 project will be documented in this file.
+
+## [2.4.0] - 2024-12-13 - "Metadata Preservation Update" 🗂️
+
+### 🔥 Major Enhancement
+
+#### 📄 Automatic Metadata File Preservation
+- **ENHANCED FILE OPERATIONS**: All sorters now automatically move `.txt` metadata files with PNG images
+- **Smart Detection**: Automatically finds and handles associated metadata files
+- **No More Orphaned Files**: Flatten mode no longer leaves metadata behind in empty folders
+- **Comprehensive Logging**: All metadata file operations are tracked and logged
+- **Backward Compatible**: All existing functionality preserved while adding metadata support
+
+**Problem Solved**: Previously when running "Flatten" on a folder that had been sorted by base model, it would leave empty folders with just metadata files instead of moving both the images AND their metadata together.
+
+**Technical Implementation**:
+- New `FileOperationsHandler` class in `core/file_operations.py`
+- Enhanced error handling and progress reporting
+- Updated all sorters: Checkpoint, LoRA Stack, Search, Color, and Flatten
+- Metadata files detected by `.txt` extension matching PNG basename
+
+### 🛠️ What Changed
+- **All file move/copy operations** now include associated metadata files
+- **Empty folder cleanup** now works properly after flattening sorted folders  
+- **Enhanced logging** shows both image and metadata file operations
+- **No breaking changes** - all existing features work exactly the same
+
+---
 
 ## [2.3.0] - 2025-10-08 - "Workflow Enhancement Update" ✨
 

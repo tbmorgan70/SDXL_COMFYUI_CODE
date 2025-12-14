@@ -7,12 +7,13 @@
 
 This unified repository contains four powerful tools:
 
-### 1. **🎯 Main Sorter 2.3** (`sorter/`) - *Production Ready*
+### 1. **🎯 Main Sorter 2.4** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
-- **NEW!** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
-- **NEW!** 📄 Generate Metadata Only - Extract metadata without moving files  
-- **NEW!** 📁 Auto-Open Output Folder - Instant access to results
+- **v2.3** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
+- **v2.3** 📄 Generate Metadata Only - Extract metadata without moving files  
+- **v2.3** 📁 Auto-Open Output Folder - Instant access to results
+- **v2.4** 🗂️ Automatic Metadata Preservation - PNG images move with their .txt files
 - Search & Sort by Metadata (LoRAs, prompts, settings)
 - Color-based sorting with visual previews
 - Both GUI and CLI interfaces
@@ -37,7 +38,7 @@ This unified repository contains four powerful tools:
 
 ## 🚀 Quick Start Guide
 
-### **Recommended: Sorter 2.3 (Most Users)**
+### **Recommended: Sorter 2.4 (Most Users)**
 ```bash
 # Navigate to the main sorter
 cd sorter/
@@ -67,7 +68,7 @@ python comfyui_to_civitai_converter.py
 pip install -r requirements.txt
 
 # Or install for specific tools only:
-pip install -r sorter/requirements.txt        # For Sorter 2.3
+pip install -r sorter/requirements.txt        # For Sorter 2.4
 pip install -r civitai_converter/requirements.txt  # For converter (if exists)
 ```
 

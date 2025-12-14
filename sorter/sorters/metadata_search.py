@@ -25,6 +25,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.diagnostics import SortLogger
+from core.file_operations import FileOperationsHandler
 
 class MetadataSearchSorter:
     """Sort images based on metadata content search"""
@@ -33,6 +34,7 @@ class MetadataSearchSorter:
         self.metadata_extractor = MetadataExtractor()
         self.metadata_analyzer = MetadataAnalyzer()
         self.logger = logger or SortLogger()
+        self.file_handler = FileOperationsHandler(self.logger)
         
         # Statistics
         self.stats = {
@@ -403,16 +405,22 @@ class MetadataSearchSorter:
                         # Handle filename conflicts
                         dest_path = self._resolve_filename_conflict(dest_path)
                     
-                    # Move or copy the file
-                    if move_files:
-                        shutil.move(file_path, dest_path)
-                        operation = "move"
-                    else:
-                        shutil.copy2(file_path, dest_path)
-                        operation = "copy"
+                    # Move or copy the file with its metadata
+                    success, moved_files = self.file_handler.move_image_with_metadata(
+                        file_path, dest_path, move_files
+                    )
                     
-                    self.logger.log_file_operation(operation, file_path, dest_path, True)
-                    self.stats['images_sorted'] += 1
+                    if success:
+                        operation = "move" if move_files else "copy"
+                        self.logger.log_file_operation(operation, file_path, dest_path, True)
+                        self.stats['images_sorted'] += 1
+                        
+                        # Log all moved files (image + metadata)
+                        for moved_file in moved_files:
+                            self.logger.log_info(moved_file)
+                    else:
+                        operation = "move" if move_files else "copy"
+                        raise Exception(f"Failed to {operation} file")
                     
                 except Exception as e:
                     self.logger.log_error(f"Failed to sort file: {str(e)}", file_path, "File Operation")
