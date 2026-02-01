@@ -3,7 +3,7 @@ echo 🚀 Installing Sorter 2.0 Dependencies...
 echo.
 
 echo Installing Python packages...
-pip install -r requirements.txt
+"C:\Users\tbmor\AppData\Local\Programs\Python\Python311\python.exe" -m pip install -r requirements.txt
 
 echo.
 echo ✅ Installation complete!
