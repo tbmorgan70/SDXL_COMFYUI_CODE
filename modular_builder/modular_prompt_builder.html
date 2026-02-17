@@ -3,165 +3,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Nova Skyrift's Adventures through Space & Time</title>
+  <title>Modular Prompt Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* Punk Static Effects */
-    #disco-static {
-      pointer-events: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(0,255,65,0.12) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.08) 0%, transparent 50%);
-      animation: punkFlicker 0.08s steps(4) infinite;
-      z-index: 1000;
+    :root {
+      --bg: #0a0b10;
+      --bg2: #0e1020;
+      --card: #0f1224;
+      --stroke: #1f2444;
+      --text: #e9ecff;
+      --muted: #a7b0de;
+      --accent: #6ef3ff;
+      --accent2: #c46bff;
+      --shadow: 0 12px 50px rgba(0,0,0,.55);
+      --radius: 18px;
+      --radius2: 28px;
     }
 
-    @keyframes punkFlicker {
-      0% { opacity: 0.1; transform: scale(1) rotate(0deg); }
-      25% { opacity: 0.25; transform: scale(1.02) rotate(0.5deg); }
-      50% { opacity: 0.05; transform: scale(0.98) rotate(-0.3deg); }
-      75% { opacity: 0.18; transform: scale(1.01) rotate(0.2deg); }
-      100% { opacity: 0.15; transform: scale(1) rotate(0deg); }
-    }
-
-    #disco-scanlines {
-      pointer-events: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: 
-        linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(255,0,64,0.05) 25%,
-          transparent 50%,
-          rgba(0,255,65,0.04) 75%,
-          transparent 100%
-        ),
-        linear-gradient(
-          rgba(255,255,255,0.02) 50%, 
-          transparent 50%
-        ) 0 0 / 100% 1px;
-      animation: punkScanlines 2s linear infinite;
-      z-index: 999;
-    }
-
-    @keyframes punkScanlines {
-      0% { transform: translateX(0) skew(0deg); }
-      100% { transform: translateX(30px) skew(0.5deg); }
-    }
-
-    /* Disco Ball Sparkles */
-    #disco-sparkles {
-      pointer-events: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: 
-        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.8) 1px, transparent 2px),
-        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 1px, transparent 2px),
-        radial-gradient(circle at 70% 10%, rgba(255,255,255,0.7) 1px, transparent 2px),
-        radial-gradient(circle at 30% 90%, rgba(255,255,255,0.5) 1px, transparent 2px);
-      background-size: 100px 100px, 150px 150px, 200px 200px, 120px 120px;
-      animation: sparkleRotate 8s linear infinite;
-      z-index: 998;
-    }
-
-    @keyframes sparkleRotate {
-      0% { transform: rotate(0deg); opacity: 0.3; }
-      50% { opacity: 0.7; }
-      100% { transform: rotate(360deg); opacity: 0.3; }
-    }
+    * { box-sizing: border-box; }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: "Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       margin: 0;
       padding: 20px;
       padding-bottom: 130px;
       background: 
-        linear-gradient(45deg, #000000 0%, #1a0000 25%, #000000 50%, #001a00 75%, #000000 100%),
-        radial-gradient(circle at 30% 70%, #ff0040 0%, transparent 40%),
-        radial-gradient(circle at 70% 30%, #00ff41 0%, transparent 30%);
-      background-size: 100% 100%, 300px 300px, 200px 200px;
-      color: #ffffff;
+        radial-gradient(1200px 800px at 10% 0%, rgba(110,243,255,.12), transparent 55%),
+        radial-gradient(900px 700px at 90% 10%, rgba(196,107,255,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg), #070812 70%);
+      color: var(--text);
       text-align: center;
       position: relative;
       overflow-x: hidden;
     }
 
     h1 {
-      font-size: 2.2em;
-      margin-bottom: 20px;
-      background: linear-gradient(45deg, #ff0040, #ffffff, #00ff41, #ff0040);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: punkTitle 2s ease-in-out infinite, titleGlitch 0.15s infinite;
-      position: relative;
-      text-shadow: 0 0 20px rgba(255,0,64,0.8);
-      font-weight: 900;
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.1;
+      margin: 0 0 20px;
+      letter-spacing: -.02em;
+      font-weight: 700;
+      color: var(--text);
     }
 
-    @keyframes punkTitle {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-
-    @keyframes titleGlitch {
-      0%, 85%, 100% { transform: translate(0); }
-      90% { transform: translate(-3px, 2px) skew(-1deg); }
-      95% { transform: translate(2px, -1px) skew(0.5deg); }
-    }
-
-    .glitch-text {
-      position: relative;
-      display: inline-block;
-    }
-
-    .glitch-text::before,
-    .glitch-text::after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: inherit;
-      overflow: hidden;
-    }
-
-    .glitch-text::before {
-      left: 2px;
-      text-shadow: -2px 0 #ff0040;
-      animation: glitchTop 1.5s infinite linear alternate-reverse;
-      clip: rect(0, 900px, 0, 0);
-    }
-
-    .glitch-text::after {
-      left: -2px;
-      text-shadow: 2px 0 #00ff41;
-      animation: glitchBottom 1.8s infinite linear alternate-reverse;
-      clip: rect(0, 900px, 0, 0);
-    }
-
-    @keyframes glitchTop {
-      0%, 100% { clip: rect(2px, 9999px, 8px, 0); }
-      10% { clip: rect(8px, 9999px, 16px, 0); }
-      20% { clip: rect(4px, 9999px, 12px, 0); }
-      30% { clip: rect(12px, 9999px, 20px, 0); }
-      40% { clip: rect(6px, 9999px, 14px, 0); }
-    }
-
-    @keyframes glitchBottom {
-      0%, 100% { clip: rect(15px, 9999px, 23px, 0); }
-      10% { clip: rect(20px, 9999px, 28px, 0); }
-      20% { clip: rect(18px, 9999px, 26px, 0); }
-      30% { clip: rect(22px, 9999px, 30px, 0); }
-      40% { clip: rect(16px, 9999px, 24px, 0); }
+    .project-info {
+      color: var(--muted);
+      font-size: 16px;
+      margin: 10px 0 24px;
     }
 
     #sections {
@@ -173,110 +63,107 @@
       margin-left: auto;
       margin-right: auto;
       position: relative;
-      z-index: 10;
+      gap: 14px;
     }
 
     .section {
-      flex: 0 0 calc(24% - 10px);
-      margin: 5px;
+      flex: 0 0 calc(24% - 14px);
       max-height: 170px;
       overflow-y: auto;
-      background: 
-        linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(20,0,0,0.9) 50%, rgba(0,20,0,0.8) 100%),
-        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.1) 0%, transparent 70%);
-      padding: 10px;
+      background: rgba(15,18,36,.40);
+      padding: 14px;
       box-sizing: border-box;
-      border-radius: 3px;
-      border: 2px solid #333;
-      border-left: 4px solid #ff0040;
+      border-radius: var(--radius);
+      border: 1px solid rgba(31,36,68,.9);
+      box-shadow: 0 18px 60px rgba(0,0,0,.22);
       position: relative;
-      animation: punkSectionPulse 3s ease-in-out infinite;
-      transform: skew(-1deg);
     }
 
-    @keyframes punkSectionPulse {
-      0%, 100% { 
-        box-shadow: 
-          0 0 8px rgba(255,0,64,0.4),
-          inset 0 0 20px rgba(0,0,0,0.5);
-        border-left-color: #ff0040;
-        transform: skew(-1deg);
-      }
-      50% { 
-        box-shadow: 
-          0 0 20px rgba(0,255,65,0.5),
-          inset 0 0 30px rgba(0,0,0,0.7);
-        border-left-color: #00ff41;
-        transform: skew(-0.5deg);
-      }
+    .section::-webkit-scrollbar {
+      width: 8px;
     }
 
-    .section:nth-child(even) {
-      animation-delay: 2s;
+    .section::-webkit-scrollbar-track {
+      background: rgba(10,11,16,.3);
+      border-radius: 4px;
+    }
+
+    .section::-webkit-scrollbar-thumb {
+      background: rgba(110,243,255,.35);
+      border-radius: 4px;
+    }
+
+    .section::-webkit-scrollbar-thumb:hover {
+      background: rgba(110,243,255,.55);
     }
 
     .section h3 { 
-      margin-top: 0; 
-      font-size: 14px;
-      position: relative;
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
     }
+
     .cat-toggle {
       display: block;
       text-align: left;
-      margin-bottom: 4px;
-      font-size: 12px;
-    }
-    .section input {
-      width: 100%;
       margin-bottom: 6px;
-      padding: 4px;
-      background: #333;
-      color: #fff;
-      border: 1px solid #555;
-      border-radius: 4px;
+      font-size: 13px;
+      color: var(--muted);
     }
-    ul { list-style: none; padding: 0; }
-    li {
-      background: linear-gradient(90deg, #1a1a1a 0%, #222 100%);
-      margin: 4px 0;
-      padding: 6px;
+
+    .cat-toggle input[type="checkbox"] {
+      margin-right: 6px;
       cursor: pointer;
-      border-radius: 2px;
-      border-left: 2px solid #333;
-      transition: all 0.15s ease;
-      position: relative;
     }
+
+    .section input[type="text"] {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      background: rgba(10,11,16,.35);
+      color: var(--text);
+      border: 1px solid rgba(31,36,68,.8);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    .section input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(110,243,255,.15);
+    }
+
+    ul { 
+      list-style: none; 
+      padding: 0; 
+      margin: 0;
+    }
+
+    li {
+      background: rgba(10,11,16,.25);
+      margin: 6px 0;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: 10px;
+      border: 1px solid rgba(31,36,68,.6);
+      transition: all 0.2s ease;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
     li:hover { 
-      background: linear-gradient(90deg, #333 0%, #444 100%);
-      transform: translateX(3px) skew(-0.5deg);
-      border-left-color: #ff0040;
-      box-shadow: 
-        0 0 12px rgba(255,0,64,0.6),
-        inset 0 0 10px rgba(255,0,64,0.1);
-      transition: all 0.15s ease;
+      background: rgba(15,18,36,.45);
+      border-color: rgba(110,243,255,.4);
+      transform: translateX(2px);
     }
     
     li.selected {
-      background: linear-gradient(90deg, rgba(255,0,64,0.2) 0%, rgba(0,255,65,0.2) 100%);
-      border-left: 3px solid #00ff41;
-      box-shadow: 
-        0 0 15px rgba(0,255,65,0.8),
-        inset 0 0 15px rgba(0,255,65,0.2);
-      animation: selectedPunkPulse 2s ease-in-out infinite;
-      transform: translateX(2px) skew(-0.3deg);
-    }
-
-    @keyframes selectedPunkPulse {
-      0%, 100% { 
-        box-shadow: 
-          0 0 15px rgba(0,255,65,0.8),
-          inset 0 0 15px rgba(0,255,65,0.2);
-      }
-      50% { 
-        box-shadow: 
-          0 0 25px rgba(255,0,64,0.9),
-          inset 0 0 20px rgba(255,0,64,0.3);
-      }
+      background: linear-gradient(90deg, rgba(110,243,255,.15), rgba(196,107,255,.10));
+      border: 1px solid rgba(110,243,255,.5);
+      color: var(--text);
+      font-weight: 500;
     }
 
     .footer {
@@ -284,62 +171,44 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      background: 
-        linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(20,0,0,0.95) 100%),
-        radial-gradient(circle at 50% 0%, rgba(255,0,64,0.1) 0%, transparent 70%);
+      background: rgba(10,11,16,.75);
+      backdrop-filter: blur(14px);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      padding: 10px 0;
-      border-top: 3px solid #333;
-      border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
-      animation: punkFooterGlow 2.5s ease-in-out infinite;
+      padding: 14px 0;
+      border-top: 1px solid rgba(31,36,68,.65);
       z-index: 1001;
-    }
-
-    @keyframes punkFooterGlow {
-      0%, 100% { 
-        border-image: linear-gradient(90deg, #ff0040, #00ff41, #ff0040) 1;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
-      }
-      50% { 
-        border-image: linear-gradient(90deg, #00ff41, #ff0040, #00ff41) 1;
-        box-shadow: 0 -5px 30px rgba(255,0,64,0.3);
-      }
+      box-shadow: 0 -10px 40px rgba(0,0,0,.35);
     }
 
     #promptBox {
       width: 90%;
       height: 80px;
       margin: 0;
-      background: 
-        linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,0,0,0.9) 100%),
-        radial-gradient(circle at 20% 80%, rgba(255,0,64,0.1) 0%, transparent 60%);
-      border: 2px solid #333;
-      border-left: 4px solid #ff0040;
-      color: #ffffff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      position: relative;
-      animation: punkPromptGlitch 0.3s infinite;
-      padding: 8px;
-      box-shadow: 
-        0 0 15px rgba(255,0,64,0.3),
-        inset 0 0 20px rgba(0,0,0,0.7);
+      background: rgba(15,18,36,.5);
+      border: 1px solid rgba(31,36,68,.85);
+      border-radius: 14px;
+      color: var(--text);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,.25);
+      resize: none;
     }
 
-    @keyframes punkPromptGlitch {
-      0%, 92%, 100% { transform: translate(0) skew(0deg); }
-      94% { transform: translate(-1px, 1px) skew(-0.2deg); }
-      96% { transform: translate(1px, -1px) skew(0.1deg); }
+    #promptBox:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(110,243,255,.15), inset 0 2px 8px rgba(0,0,0,.25);
     }
 
     .toggles { 
-      margin-bottom: 20px; 
+      margin-bottom: 24px; 
       position: relative;
-      z-index: 10;
       display: flex;
-      gap: 30px;
+      gap: 20px;
       justify-content: center;
     }
     
@@ -350,153 +219,227 @@
     .toggle-switch {
       width: 140px;
       height: 40px;
-      background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%);
-      border: 2px solid #ff0040;
-      border-radius: 25px;
+      background: rgba(15,18,36,.45);
+      border: 1px solid rgba(31,36,68,.9);
+      border-radius: 999px;
       position: relative;
       cursor: pointer;
       overflow: hidden;
       transition: all 0.3s ease;
-      box-shadow: 
-        0 0 15px rgba(255,0,64,0.3),
-        inset 0 0 10px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
     }
     
     .toggle-switch:hover {
-      box-shadow: 
-        0 0 25px rgba(255,0,64,0.5),
-        inset 0 0 15px rgba(0,0,0,0.7);
-      transform: scale(1.02);
+      border-color: rgba(110,243,255,.45);
+      box-shadow: 0 6px 16px rgba(0,0,0,.25);
     }
     
     .toggle-slider {
       width: 60px;
       height: 32px;
-      background: linear-gradient(135deg, #ff0040 0%, #ff6eb7 50%, #ff0040 100%);
-      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(110,243,255,.5), rgba(196,107,255,.4));
+      border-radius: 999px;
       position: absolute;
-      top: 2px;
+      top: 3px;
       left: 4px;
       transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      box-shadow: 
-        0 0 10px rgba(255,0,64,0.8),
-        inset 0 0 5px rgba(255,255,255,0.3);
-      animation: toggleGlow 2s ease-in-out infinite alternate;
+      box-shadow: 0 4px 12px rgba(110,243,255,.35);
     }
     
     .toggle-switch.active .toggle-slider {
       left: 72px;
-      background: linear-gradient(135deg, #00ff41 0%, #41ff00 50%, #00ff41 100%);
-      box-shadow: 
-        0 0 10px rgba(0,255,65,0.8),
-        inset 0 0 5px rgba(255,255,255,0.3);
+      background: linear-gradient(135deg, rgba(196,107,255,.5), rgba(110,243,255,.4));
+      box-shadow: 0 4px 12px rgba(196,107,255,.35);
     }
     
     .toggle-label-left, .toggle-label-right {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      font-weight: bold;
+      font-weight: 600;
       font-size: 12px;
       transition: all 0.3s ease;
       pointer-events: none;
-      text-shadow: 0 0 5px rgba(0,0,0,0.8);
     }
     
     .toggle-label-left {
       left: 12px;
-      color: #ffffff;
+      color: var(--text);
     }
     
     .toggle-label-right {
       right: 12px;
-      color: #888;
+      color: var(--muted);
     }
     
     .toggle-switch.active .toggle-label-left {
-      color: #888;
+      color: var(--muted);
     }
     
     .toggle-switch.active .toggle-label-right {
-      color: #ffffff;
-    }
-    
-    @keyframes toggleGlow {
-      0% { 
-        box-shadow: 
-          0 0 10px rgba(255,0,64,0.8),
-          inset 0 0 5px rgba(255,255,255,0.3);
-      }
-      100% { 
-        box-shadow: 
-          0 0 20px rgba(255,0,64,1),
-          inset 0 0 8px rgba(255,255,255,0.5);
-      }
+      color: var(--text);
     }
 
     button {
-      margin: 0 5px;
-      padding: 10px 18px;
+      margin: 0 6px;
+      padding: 10px 16px;
       font-size: 14px;
-      font-weight: bold;
-      background: 
-        linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%),
-        radial-gradient(circle at 30% 30%, rgba(255,0,64,0.2) 0%, transparent 70%);
-      color: #ffffff;
-      border: 2px solid #333;
-      border-left: 3px solid #ff0040;
-      border-radius: 3px;
+      font-weight: 600;
+      background: linear-gradient(90deg, rgba(110,243,255,.20), rgba(196,107,255,.14));
+      color: var(--text);
+      border: 1px solid rgba(110,243,255,.38);
+      border-radius: 999px;
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: all 0.15s ease;
-      box-shadow: 
-        0 0 10px rgba(255,0,64,0.3),
-        inset 0 0 15px rgba(0,0,0,0.5);
-      transform: skew(-2deg);
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+      font-family: inherit;
     }
+
     button:hover { 
-      background: 
-        linear-gradient(135deg, #333 0%, #555 50%, #333 100%),
-        radial-gradient(circle at 30% 30%, rgba(0,255,65,0.3) 0%, transparent 70%);
-      border-left-color: #00ff41;
-      box-shadow: 
-        0 0 20px rgba(0,255,65,0.6),
-        inset 0 0 20px rgba(0,255,65,0.1);
-      transform: translateY(-2px) skew(-1deg);
-      text-shadow: 0 0 8px rgba(0,255,65,0.8);
+      background: linear-gradient(90deg, rgba(110,243,255,.30), rgba(196,107,255,.24));
+      border-color: rgba(110,243,255,.55);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 35px rgba(0,0,0,.3);
     }
 
     button:active {
-      transform: translateY(0) skew(-2deg);
-      box-shadow: 
-        0 0 10px rgba(255,0,64,0.8),
-        inset 0 0 25px rgba(0,0,0,0.8);
+      transform: translateY(0);
+      box-shadow: 0 8px 25px rgba(0,0,0,.25);
     }
 
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
+    button.btn--ghost {
+      background: rgba(15,18,36,.35);
+      border: 1px solid rgba(31,36,68,.9);
+      box-shadow: none;
+    }
+
+    button.btn--ghost:hover {
+      background: rgba(15,18,36,.55);
+      border-color: rgba(31,36,68,1);
+    }
+
+    button.btn--danger {
+      background: linear-gradient(90deg, rgba(255,64,128,.25), rgba(255,0,64,.20));
+      border-color: rgba(255,64,128,.5);
+    }
+
+    button.btn--danger:hover {
+      background: linear-gradient(90deg, rgba(255,64,128,.35), rgba(255,0,64,.30));
+      border-color: rgba(255,64,128,.7);
+    }
+
+    .footer-input-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .footer-input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .footer-input-group input[type="text"] {
       width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,0,64,0.3), transparent);
-      transition: left 0.3s;
+      padding: 10px 12px;
+      background: rgba(15,18,36,.5);
+      color: var(--text);
+      border: 1px solid rgba(31,36,68,.85);
+      border-radius: 12px;
+      box-sizing: border-box;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 13px;
     }
 
-    button:hover::before {
-      left: 100%;
+    .footer-input-group input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(110,243,255,.15);
     }
 
-    /* Enhanced Category Dropdown Styling */
+    .combinations-display {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: linear-gradient(90deg, rgba(110,243,255,.08), rgba(196,107,255,.06));
+      border: 1px solid rgba(110,243,255,.25);
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .combinations-display .label {
+      font-weight: 600;
+      color: var(--accent);
+      margin-right: 8px;
+    }
+
+    .combinations-display .count {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: var(--text);
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .preset-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 14px;
+      background: rgba(10,11,16,.35);
+      border: 1px solid rgba(31,36,68,.7);
+      border-radius: 14px;
+    }
+
+    .preset-controls label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin: 0 6px 0 12px;
+    }
+
+    .preset-controls select {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      background: rgba(15,18,36,.5);
+      color: var(--text);
+      border: 1px solid rgba(31,36,68,.85);
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .preset-controls select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(110,243,255,.15);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    @media (max-width: 920px) {
     select[id^="category-"] {
       width: 100% !important;
       margin-bottom: 8px !important;
-      background: #333 !important;
-      color: #fff !important;
-      border: 1px solid #555 !important;
-      border-radius: 6px !important;
+      background: rgba(10,11,16,.35) !important;
+      color: var(--text) !important;
+      border: 1px solid rgba(31,36,68,.8) !important;
+      border-radius: 12px !important;
       padding: 8px 12px !important;
       font-size: 13px !important;
       font-weight: 500 !important;
@@ -504,38 +447,56 @@
       box-sizing: border-box !important;
       cursor: pointer !important;
       transition: all 0.2s ease !important;
+      font-family: inherit !important;
     }
 
     select[id^="category-"]:hover {
-      background: #444 !important;
-      border-color: #00ff41 !important;
-      box-shadow: 0 0 8px rgba(0, 255, 65, 0.3) !important;
+      background: rgba(15,18,36,.45) !important;
+      border-color: rgba(110,243,255,.4) !important;
     }
 
     select[id^="category-"]:focus {
       outline: none !important;
-      background: #444 !important;
-      border-color: #00ff41 !important;
-      box-shadow: 0 0 12px rgba(0, 255, 65, 0.5) !important;
+      background: rgba(15,18,36,.45) !important;
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 2px rgba(110,243,255,.15) !important;
     }
 
     /* Make dropdown options more readable */
     select[id^="category-"] option {
-      background: #333 !important;
-      color: #fff !important;
-      padding: 6px 8px !important;
+      background: var(--card) !important;
+      color: var(--text) !important;
+      padding: 8px !important;
       font-size: 13px !important;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    @media (max-width: 920px) {
+      .section {
+        flex: 0 0 calc(50% - 14px);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .section {
+        flex: 0 0 100%;
+      }
+      
+      .toggles {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
-<div id="disco-static"></div>
-<div id="disco-scanlines"></div>
-  <div id="disco-sparkles"></div>
 
-<h1 class="glitch-text" data-text="Modular Prompt Generator">Modular Prompt Generator</h1>
+<h1>Modular Prompt Generator</h1>
 <div class="project-info">
-  <p style="color: #00ff41; font-size: 16px; margin: 10px 0;">🔧 Modular CSV-Based Categories | 🔒 Lock System | 📦 Batch Generation</p>
+  <p>🔧 Modular CSV-Based Categories | 🔒 Lock System | 📦 Batch Generation</p>
 </div>
 <div id="sections">
 
@@ -544,7 +505,7 @@
   <h3 id="label-bodytype">Body Type</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-bodytype" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-bodytype"> 🔒 lock</label>
-  <select id="category-bodytype" onchange="loadCategory('bodytype', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Default)</option></select>
+  <select id="category-bodytype" onchange="loadCategory('bodytype', this.value)"><option value="default">Current (Default)</option></select>
   <input type="text" value="Body Type" oninput="updateLabel('bodytype', this.value)">
 <ul>
     <li onclick="pick('bodytype', this)">petite frame and delicate features, small breasts</li>
@@ -591,7 +552,7 @@
   <h3 id="label-scene">Scene</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-scene" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-scene"> 🔒 lock</label>
-  <select id="category-scene" onchange="loadCategory('scene', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Default)</option></select>
+  <select id="category-scene" onchange="loadCategory('scene', this.value)"><option value="default">Current (Default)</option></select>
   <input type="text" value="Scene" oninput="updateLabel('scene', this.value)">
 <ul>
   <li onclick="pick('scene', this)">leaning against rusted doorway, pistol hanging loose, rain dripping off chin</li>
@@ -625,7 +586,7 @@
   <h3 id="label-outfit">Outfit</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-outfit" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-outfit"> 🔒 lock</label>
-  <select id="category-outfit" onchange="loadCategory('outfit', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-outfit" onchange="loadCategory('outfit', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Outfit" oninput="updateLabel('outfit', this.value)">
 <ul>
   <li onclick="pick('outfit', this)">black synth-leather bodysuit, high collar, zippers frayed, faint blood spray on sleeve</li>
@@ -660,7 +621,7 @@
   <h3 id="label-visualfx">Visual FX</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-visualfx" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-visualfx"> 🔒 lock</label>
-  <select id="category-visualfx" onchange="loadCategory('visualfx', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-visualfx" onchange="loadCategory('visualfx', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Visual FX" oninput="updateLabel('visualfx', this.value)">
 <ul>
   <li onclick="pick('visualfx', this)">rain streaking across lens, neon reflections breaking through smoke</li>
@@ -697,7 +658,7 @@
   <h3 id="label-artreference">Art/Esthetic/Artist Reference</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-artreference" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-artreference"> 🔒 lock</label>
-  <select id="category-artreference" onchange="loadCategory('artreference', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Mixed Artists)</option></select>
+  <select id="category-artreference" onchange="loadCategory('artreference', this.value)"><option value="default">Current (Mixed Artists)</option></select>
   <input type="text" value="Art Reference" oninput="updateLabel('artreference', this.value)">
 <ul>
   <li onclick="pick('artreference', this)">inspired by Ridley Scott's Blade Runner cinematography, wet neon realism</li>
@@ -735,7 +696,7 @@
   <h3 id="label-setting">Setting</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-setting" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-setting"> 🔒 lock</label>
-  <select id="category-setting" onchange="loadCategory('setting', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-setting" onchange="loadCategory('setting', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Setting" oninput="updateLabel('setting', this.value)">
 <ul>
   <li onclick="pick('setting', this)">abandoned megacity street flooded waist-deep, neon signs reflected in chemical rain</li>
@@ -772,7 +733,7 @@
   <h3 id="label-mood">Mood</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-mood" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-mood"> 🔒 lock</label>
-  <select id="category-mood" onchange="loadCategory('mood', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-mood" onchange="loadCategory('mood', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Mood" oninput="updateLabel('mood', this.value)">
 <ul>
   <li onclick="pick('mood', this)">permanent midnight sky, electric fog drifting between monoliths</li>
@@ -808,7 +769,7 @@
   <h3 id="label-accessories">Accessories</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-accessories" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-accessories"> 🔒 lock</label>
-  <select id="category-accessories" onchange="loadCategory('accessories', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-accessories" onchange="loadCategory('accessories', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Accessories" oninput="updateLabel('accessories', this.value)">
 <ul>
   <li onclick="pick('accessories', this)">rusted cybernetic arm grafted with surgical staples, flickering LEDs under skin</li>
@@ -844,7 +805,7 @@
   <h3 id="label-hairmakeup">Hair & Makeup</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-hairmakeup" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-hairmakeup"> 🔒 lock</label>
-  <select id="category-hairmakeup" onchange="loadCategory('hairmakeup', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-hairmakeup" onchange="loadCategory('hairmakeup', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Hair & Makeup" oninput="updateLabel('hairmakeup', this.value)">
 <ul>
   <li onclick="pick('hairmakeup', this)">platinum buzzcut with black roots showing, oil sheen and streak of blood near temple</li>
@@ -881,7 +842,7 @@
   <h3 id="label-emotion">Emotion</h3>
   <label class="cat-toggle"><input type="checkbox" id="enable-emotion" checked onchange="updateCombinationsCount()"> include</label>
   <label class="cat-toggle"><input type="checkbox" id="lock-emotion"> 🔒 lock</label>
-  <select id="category-emotion" onchange="loadCategory('emotion', this.value)" style="width: 100%; margin-bottom: 6px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 4px;"><option value="default">Current (Cyberpunk)</option></select>
+  <select id="category-emotion" onchange="loadCategory('emotion', this.value)"><option value="default">Current (Cyberpunk)</option></select>
   <input type="text" value="Emotion" oninput="updateLabel('emotion', this.value)">
 <ul>
   <li onclick="pick('emotion', this)">cold defiance, lips parted slightly, eyes fixed like a blade</li>
@@ -912,17 +873,17 @@
 </div>
 </div>
 <div class="footer">
-  <div style="margin-bottom: 10px; text-align: left;">
-    <label for="basePrompt" style="display: block; margin-bottom: 4px; font-weight: bold;">Base Prompt:</label>
-    <input type="text" id="basePrompt" value="1girl, solo" oninput="update()" style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; box-sizing: border-box;">
+  <div class="footer-input-group">
+    <label for="basePrompt">Base Prompt:</label>
+    <input type="text" id="basePrompt" value="1girl, solo" oninput="update()">
   </div>
-  <div style="margin-bottom: 10px; text-align: left;">
-    <label for="qualityTags" style="display: block; margin-bottom: 4px; font-weight: bold;">Quality Tags:</label>
-    <input type="text" id="qualityTags" value="8K, ultra-textural, highly detailed, cinematic lighting, masterpiece" oninput="update()" style="width: 100%; padding: 8px; background: #333; color: #fff; border: 1px solid #555; border-radius: 4px; box-sizing: border-box;">
+  <div class="footer-input-group">
+    <label for="qualityTags">Quality Tags:</label>
+    <input type="text" id="qualityTags" value="8K, ultra-textural, highly detailed, cinematic lighting, masterpiece" oninput="update()">
   </div>
-  <div style="margin-bottom: 10px; padding: 10px; background: rgba(255, 0, 64, 0.1); border: 1px solid rgba(255, 0, 64, 0.3); border-radius: 4px; text-align: center;">
-    <span style="font-weight: bold; color: #ff0040;">🎰 Possible Combinations: </span>
-    <span id="combinationsCount" style="font-size: 1.2em; font-weight: bold; color: #00ff41;">0</span>
+  <div class="combinations-display">
+    <span class="label">🎰 Possible Combinations:</span>
+    <span class="count" id="combinationsCount">0</span>
   </div>
   
   <!-- Preset Management Controls -->
@@ -934,11 +895,11 @@
     <select id="presetSelector" onchange="loadSelectedPreset()">
       <option value="">-- Select Preset --</option>
     </select>
-    <button onclick="deleteSelectedPreset()" style="background: #ff0040; min-width: 100px;">🗑️ Delete</button>
+    <button class="btn--danger" onclick="deleteSelectedPreset()">🗑️ Delete</button>
   </div>
   
   <textarea id="promptBox" placeholder="Your prompt will appear here..." readonly></textarea>
-  <div>
+  <div class="button-group">
     <button id="randBtn" onclick="randomize()">🎲 Randomize</button>
     <button id="copyBtn" onclick="copyPrompt()">📋 Copy Prompt</button>
     <button id="batchBtn" onclick="showBatchDialog()">📦 Batch Generate</button>
@@ -1069,7 +1030,6 @@
       // Clear current selection for this category
       sel[categoryId] = '';
       document.querySelectorAll('#'+categoryId+' li').forEach(li => {
-        li.style.background='#222';
         li.classList.remove('selected');
       });
       update();
@@ -1135,10 +1095,8 @@
 
   function pick(sec, el) {
     document.querySelectorAll('#'+sec+' li').forEach(li => {
-      li.style.background='#222';
       li.classList.remove('selected');
     });
-    el.style.background='#555';
     el.classList.add('selected');
     sel[sec] = el.textContent.trim();
     update();
@@ -1302,7 +1260,6 @@
       if (!document.getElementById('enable-' + sec).checked) {
         sel[sec] = '';
         document.querySelectorAll('#'+sec+' li').forEach(li => {
-          li.style.background='#222';
           li.classList.remove('selected');
         });
         return;
@@ -1324,7 +1281,6 @@
       } else {
         sel[sec] = '';
         document.querySelectorAll('#'+sec+' li').forEach(li => {
-          li.style.background='#222';
           li.classList.remove('selected');
         });
       }
@@ -1410,10 +1366,8 @@
           const items = document.querySelectorAll(`#${sec} li`);
           items.forEach(li => {
             if (li.textContent.trim() === sel[sec]) {
-              li.style.background = '#555';
               li.classList.add('selected');
             } else {
-              li.style.background = '#222';
               li.classList.remove('selected');
             }
           });
