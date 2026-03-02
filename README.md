@@ -1,18 +1,20 @@
 # 🎯 SDXL ComfyUI Code - Complete Toolkit
 **The ultimate collection of tools for managing, sorting, and optimizing AI image generation workflows.**
 
-> 🆕 **Now Unified!** All tools consolidated into one clean, powerful repository. Previously scattered across multiple repos, now everything you need is here in one organized place.
+> 🆕 **Version 3.0 - Unified & Organized!** All tools consolidated into one clean, powerful repository. Previously scattered across multiple repos, now everything you need is here in one organized place.
+
+📚 **[Knowledge Index](KNOWLEDGE_INDEX.md)** | 📋 **[Version Info](VERSION.md)** | 🔀 **[Git Workflow](GIT_WORKFLOW.md)** | 🗺️ **[Roadmap](ROADMAP.md)**
 
 ## 🛠️ Complete Toolkit Overview
 
 This unified repository contains four powerful tools:
 
-### 1. **🎯 Main Sorter 2.4** (`sorter/`) - *Production Ready*
+### 1. **🎯 Main Sorter v2.4** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
-- **v2.3** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
-- **v2.3** 📄 Generate Metadata Only - Extract metadata without moving files  
-- **v2.3** 📁 Auto-Open Output Folder - Instant access to results
+- **v2.3+** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
+- **v2.3+** 📄 Generate Metadata Only - Extract metadata without moving files  
+- **v2.3+** 📁 Auto-Open Output Folder - Instant access to results
 - **v2.4** 🗂️ Automatic Metadata Preservation - PNG images move with their .txt files
 - Search & Sort by Metadata (LoRAs, prompts, settings)
 - Color-based sorting with visual previews
