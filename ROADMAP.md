@@ -91,6 +91,8 @@
 4. **Share feedback** - Tell us what works and what doesn't
 
 ### **Development Setup**
+See [Development Guide](docs/DEVELOPMENT_GUIDE.md) for complete setup instructions.
+
 ```bash
 # Clone and set up development environment
 git clone https://github.com/tbmorgan70/SDXL_COMFYUI_CODE.git

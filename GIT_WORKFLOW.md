@@ -287,7 +287,16 @@ venv/
 
 ---
 
-## 📚 Additional Resources
+## � Related Documentation
+
+- [CONVERSATION_LOG.md](CONVERSATION_LOG.md) - Development session tracking
+- [CURATION_PLAN.md](CURATION_PLAN.md) - Repository organization plan
+- [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) - Contributing guidelines
+- [VERSION.md](VERSION.md) - Version tracking system
+
+---
+
+## �📚 Additional Resources
 
 ### Git Commands Reference
 ```powershell

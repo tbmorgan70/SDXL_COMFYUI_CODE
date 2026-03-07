@@ -192,8 +192,8 @@ test_images/
 test_output/
 sort_logs/
 
-# Archive folder for old versions
-archive/
+# Archive folder should be version controlled (contains historical reference)
+# archive/  <-- DO NOT IGNORE - contains important historical versions
 
 # Debug and metadata files
 debug_metadata*.json

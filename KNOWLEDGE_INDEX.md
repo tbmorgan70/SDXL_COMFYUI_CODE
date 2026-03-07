@@ -1,6 +1,6 @@
 # 📚 Knowledge Index - SDXL ComfyUI Code Repository
 
-**Last Updated:** March 1, 2026  
+**Last Updated:** March 6, 2026  
 **Purpose:** Central index of all documentation, conversations, and knowledge in this repository
 
 ---
@@ -19,6 +19,10 @@
 ### 🔧 **Technical Documentation**
 | Document | Topic | Status |
 |----------|-------|--------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design and component architecture | ✨ New (v3.0) |
+| [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) | Contributing and development setup | ✨ New (v3.0) |
+| [docs/INTEGRATION_PLAN.md](docs/INTEGRATION_PLAN.md) | Tool integration and unified architecture | ✨ New (Phase 4) |
+| [docs/TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md) | Testing approach and coverage goals | ✨ New (Phase 4) |
 | [SORTER_CODE_STATS.md](SORTER_CODE_STATS.md) | Code statistics and metrics | ⚠️ Needs Update |
 
 ### 📦 **Archived Documentation** 
@@ -44,10 +48,16 @@
 **Location:** `archive/`  
 **Documentation:** [archive/README.md](archive/README.md)
 
+✅ **Phase 2 Complete (March 6, 2026):** Archive structure consolidated
+
 - **Legacy Scripts:** `archive/legacy_scripts/` - Original Python tools
-- **Old Sorter Versions:** `archive/sorter/`, `archive/sorter_v2/`, `archive/sorter_v2_dev_only/`
+- **Sorter Versions:** `archive/sorter_versions/` - Consolidated history
+  - `v1_original/` - First consolidated version
+  - `v2_iteration/` - Second generation
+  - `v2_dev/` - Development workspace
+  - `logs/` - Development logs
 - **Historical Docs:** `archive/docs/` - Superseded documentation
-- **Development Logs:** `archive/gui_standard_log.txt`
+
 
 ### 🎯 Sorter (Main Tool)
 **Location:** `sorter/`  
@@ -69,14 +79,16 @@
 | [civitai_converter/COMFYUI_TO_CIVITAI_README.md](civitai_converter/COMFYUI_TO_CIVITAI_README.md) | Converter tool documentation |
 
 ### 🌐 Builder Suite
-**Location:** `builder/`
+**Location:** `builder/`  
+**Version:** 1.5 | **Builders:** 13 (7 Ultra, 3 Legacy, 3 Specialized)
 
 | Document | Purpose |
 |----------|---------|
-| [builder/README.md](builder/README.md) | HTML builder overview |
-| [builder/changelog.md](builder/changelog.md) | Builder version history |
-| [builder/usage_guide.md](builder/usage_guide.md) | How to use HTML builders |
+| [builder/README.md](builder/README.md) | HTML builder overview and quick navigation |
+| [builder/BUILDERS.md](builder/BUILDERS.md) | **✨ Comprehensive catalog of all 13 builders** |
+| [builder/usage_guide.md](builder/usage_guide.md) | Step-by-step usage tutorials |
 | [builder/technical_reference.md](builder/technical_reference.md) | Technical implementation details |
+| [builder/changelog.md](builder/changelog.md) | Builder version history |
 | [builder/readme_ultra_disco_dollz.md](builder/readme_ultra_disco_dollz.md) | Specific builder documentation |
 | [builder/readme_ultra_generic_dualtoggle.md](builder/readme_ultra_generic_dualtoggle.md) | Generic builder documentation |
 
@@ -97,30 +109,41 @@
 ## 🗃️ Historical Knowledge
 
 ### Archive Contents
-**Location:** `archive/`
+**Location:** `archive/`  
+**Documentation:** [archive/README.md](archive/README.md)
+
+✅ **Phase 2 Complete (March 6, 2026):** Archive structure consolidated
 
 - **Legacy Scripts:** `archive/legacy_scripts/` - Original Python tools
-- **Old Sorter Versions:** `archive/sorter/`, `archive/sorter_v2/`, `archive/sorter_v2_dev_only/`
-- **Development Logs:** `archive/gui_standard_log.txt`
+- **Sorter Versions:** `archive/sorter_versions/` - Consolidated history
+  - `v1_original/` - First consolidated version  
+  - `v2_iteration/` - Second generation
+  - `v2_dev/` - Development workspace
+  - `logs/` - Development logs
+- **Historical Docs:** `archive/docs/` - Superseded documentation
 
 ---
 
 ## 🔍 Quick Search Reference
 
 ### Development Workflows
-- **Git Workflow:** See [git_advice.md](git_advice.md) and [development_notes.md](development_notes.md)
-- **Project Structure:** See [README.md](README.md#-repository-structure)
+- **Git Workflow:** See [GIT_WORKFLOW.md](GIT_WORKFLOW.md) (consolidated in Phase 1)
+- **Architecture:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **Development Guide:** See [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md)
+- **Project Structure:** See [README.md](README.md) - Repository Structure section
 - **Migration Info:** See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
 
 ### Feature Information
 - **Sorter Features:** See [sorter/FEATURE_SHOWCASE.md](sorter/FEATURE_SHOWCASE.md)
 - **Metadata Handling:** See [sorter/FEATURE_METADATA_PRESERVATION.md](sorter/FEATURE_METADATA_PRESERVATION.md)
+- **Builder Catalog:** See [builder/BUILDERS.md](builder/BUILDERS.md) (✨ new in Phase 3)
 - **Version History:** See respective `CHANGELOG.md` files
 
 ### Getting Started
-- **Quick Start:** See [README.md#-quick-start-guide](README.md#-quick-start-guide)
-- **Installation:** See [README.md#prerequisites](README.md#prerequisites)
-- **Which Tool:** See [README.md#-which-tool-should-i-use](README.md#-which-tool-should-i-use)
+- **Quick Start:** See [README.md](README.md) - Quick Start section
+- **Installation:** See [README.md](README.md) - Prerequisites
+- **Which Tool:** See [README.md](README.md) - Tool Selection
+- **Builder Guide:** See [builder/BUILDERS.md](builder/BUILDERS.md) - Choosing the Right Builder
 
 ---
 
@@ -142,11 +165,33 @@ For detailed conversation logs and context across development sessions, see:
 | 📦 Archived | 3 | Reference only |
 | 🗃️ Archive Versions | Multiple | Preserved history |
 
-### Last Major Update: March 1, 2026 (v3.0)
+### Last Major Update: March 6, 2026 (v3.0 - Phase 3)
+**Phase 1 (March 1, 2026):**
 - Consolidated git documentation
 - Archived superseded docs
 - Resolved duplicate structures
 - Created VERSION.md tracking
+
+**Phase 2 (March 6, 2026):**
+- Created comprehensive ARCHITECTURE.md and DEVELOPMENT_GUIDE.md
+- Consolidated archive into sorter_versions/ structure
+- Added extensive cross-linking throughout documentation
+- Enhanced README with Documentation Navigator
+
+**Phase 3 (March 6, 2026):**
+- Created BUILDERS.md catalog (13 builders documented)
+- Enhanced all tool READMEs with cross-references
+- Added "Related Documentation" sections to all tools
+- Updated version information across all READMEs
+
+**Phase 4 (March 7, 2026):**
+- Created comprehensive INTEGRATION_PLAN.md (~15,000 words)
+- Documented all current tool interfaces (inputs/outputs/data formats)
+- Designed unified configuration system (YAML-based)
+- Planned shared metadata format for cross-tool compatibility
+- Created TESTING_STRATEGY.md with coverage goals and implementation plan
+- Audited existing test suite (6 files, mostly empty, ~5% coverage)
+- Defined path to 90% test coverage
 
 ### Next Review: Quarterly (Q2 2026)
 

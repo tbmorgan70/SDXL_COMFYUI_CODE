@@ -1,8 +1,8 @@
-# 🚀 Sorter 2.3 - Workflow Enhancement Release
+# 🚀 Sorter 2.4 - Production Release
 
 **Advanced ComfyUI Image Organizer - Clean, Fast, Reliable**
 
-> ⭐ **Now part of the unified SDXL_COMFYUI_CODE repository!**  
+> ⭐ **Part of SDXL_COMFYUI_CODE v3.0**  
 > This is the main production sorter tool. For other tools, see the [main repository README](../README.md).
 
 ## Quick Start
@@ -111,9 +111,22 @@ Every operation now ends with the **"📁 Open Output Folder"** button:
 
 ## 📚 Documentation
 
-- **✨ [Feature Showcase](FEATURE_SHOWCASE.md)** - Comprehensive guide to all features with examples
-- **📋 [Changelog](CHANGELOG.md)** - Complete version history and new features
-- **🔧 [Technical Reference](../README.md)** - Main repository documentation
+### Sorter-Specific Documentation
+- **✨ [FEATURE_SHOWCASE.md](FEATURE_SHOWCASE.md)** - Comprehensive guide to all features with examples
+- **📋 [CHANGELOG.md](CHANGELOG.md)** - Complete version history and new features
+- **🔧 [UPDATE_NOTES.md](UPDATE_NOTES.md)** - Update and migration information
+- **🧪 [FEATURE_METADATA_PRESERVATION.md](FEATURE_METADATA_PRESERVATION.md)** - Metadata handling details
+
+### Repository Documentation
+- **[Main README](../README.md)** - Repository overview with documentation navigator
+- **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - System design and sorter architecture
+- **[DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md)** - Setup, coding standards, testing patterns
+- **[KNOWLEDGE_INDEX.md](../KNOWLEDGE_INDEX.md)** - Complete documentation index
+
+### Other Tools in This Repository
+- **[Builder Suite](../builder/README.md)** - Prompt generation tools (13 HTML builders)
+- **[Modular Builder](../modular_builder/README.md)** - CSV-based category management
+- **[CivitAI Converter](../civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - Workflow format converter
 
 ## GUI Features
 
@@ -154,5 +167,8 @@ All operations are logged to `sort_logs/` directory:
 ---
 
 **Built for Production Use - Reliable, Fast, User-Friendly**
+
+**Last Updated:** March 6, 2026 (v2.4.0)  
+**Part of:** SDXL_COMFYUI_CODE v3.0 - Unified Overhaul
 
 *Clean codebase extracted from development version - ready for deployment*

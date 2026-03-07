@@ -1,94 +1,24 @@
-# SD_COMFYUI_HACKS
-This repo is a curated collection of tools for managing, sorting, and optimizing AI image generation workflows. Built to evolve as your projects grow.
-
-## 🎨 Unified Sorter - Now with Color Sorting!
-
-The **Unified Sorter** is a comprehensive tool featuring three powerful modes:
-
-### 1. **Text File Sorter** 📝
-- Organizes text files using customizable placeholders
-- Supports move or copy operations
-- Perfect for organizing prompts, logs, and documentation
-
-### 2. **ComfyUI Batch Sorter** 🖼️
-- Renames images by Base+LoRA-sorted GEN format
-- Generates detailed metadata files
-- Sorts images into folders by checkpoint filenames
-- Handles non-PNG files automatically
-
-### 3. **🌈 Color Sorter** ✨ *NEW!*
-- **Dominant Color Analysis**: Automatically detects each image's primary color
-- **Smart Classification**: Sorts into 11 color categories (Red, Blue, Green, Yellow, Purple, Orange, Pink, Brown, Black, White, Gray)
-- **Custom Renaming**: Optional color-based file prefixes (e.g., `[MySet_RED] image.png`)
-- **Visual Preview**: Creates color distribution bar showing your collection breakdown
-- **Perfect Final Step**: Ideal for final organization after other sorting methods
-
-## 🚀 Getting Started
-
-### Prerequisites
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd SD_COMFYUI_HACKS
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Quick Start
-```bash
-# Launch the main unified sorter
-python unified_sorter.py
-
-# Or try the color sorting demo
-python demo_color_sorter.py
-```
-
-### File Structure
-```
-SD_COMFYUI_HACKS/
-├── unified_sorter.py          # 🎯 Main application (start here!)
-├── color_sorter.py            # 🌈 Color sorting engine
-├── text_file_sorter.py        # 📝 Text file organizer
-├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor
-├── demo_color_sorter.py       # 🧪 Color sorting demo
-├── requirements.txt           # 📦 Dependencies
-└── README.md                  # 📖 Documentation
-```
-
-## 🎯 Color Sorter Features
-
-- **HSV-based Analysis**: Uses HSV color space for accurate classification
-- **Handles Any Image Format**: PNG, JPG, JPEG, BMP, TIFF, WebP
-- **Noise Reduction**: Groups similar colors to avoid over-categorization
-- **Batch Processing**: Handles hundreds of images efficiently
-- **Move or Copy**: Choose whether to move files or create copies
-- **Preview Generation**: Visual color distribution chart for your collection
-
-## 📁 Example Output Structure
-```
-color_sorted/
-├── Red/
-│   ├── [MySet_RED] sunset.png
-│   └── [MySet_RED] roses.png
-├── Blue/
-│   ├── [MySet_BLUE] ocean.png
-│   └── [MySet_BLUE] sky.png
-├── Green/
-│   └── [MySet_GREEN] forest.png
-└── color_distribution_preview.png
-```
-
-Perfect for organizing AI-generated images by color themes, mood boards, or final collection curation!
-
-
 # SDXL ComfyUI Prompt Builders Collection
+
+Part of **SDXL_COMFYUI_CODE v3.0** - Comprehensive AI Image Generation Toolkit
 
 A comprehensive collection of interactive HTML-based prompt builders designed for generating high-quality AI image prompts, specifically optimized for SDXL and ComfyUI workflows.
 
 ## 🎯 Overview
 
-This collection contains specialized prompt builders for various artistic styles and subjects. Each builder provides an intuitive interface for assembling complex prompts by selecting from curated categories of elements.
+This collection contains **13 specialized prompt builders** for various artistic styles and subjects. Each builder provides an intuitive interface for assembling complex prompts by selecting from curated categories of elements.
+
+**📚 See [BUILDERS.md](BUILDERS.md) for comprehensive catalog with comparison table and choosing guide.**
+
+### What's Available?
+- **7 Ultra Series Builders** - Advanced features, dual-toggle systems, extensive categories
+- **3 Legacy Builders** - Proven, reliable, simpler interfaces  
+- **3 Specialized Builders** - Unique themes (Pink Gunz, Nova Skyrift crossover, dashboard)
+
+### Quick Navigation
+- **First Time Here?** See [usage_guide.md](usage_guide.md) for step-by-step tutorials
+- **Want to Customize?** See [technical_reference.md](technical_reference.md) for implementation details  
+- **Looking for Specific Builder?** See [BUILDERS.md](BUILDERS.md) for full catalog with use cases
 
 ## 📁 Available Builders
 
@@ -233,20 +163,38 @@ To add new prompt elements or create new builders:
 3. Include appropriate content warnings
 4. Test across different browsers
 
+See also:
+- [DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md) - Complete contributor guide with coding standards
+- [ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Builder architecture and design patterns
+- [technical_reference.md](technical_reference.md) - Builder implementation details
+
+## 📚 Related Documentation
+
+### Builder-Specific Documentation
+- [BUILDERS.md](BUILDERS.md) - **Comprehensive catalog of all 13 builders**
+- [usage_guide.md](usage_guide.md) - Step-by-step usage tutorials
+- [technical_reference.md](technical_reference.md) - Implementation and customization details
+- [changelog.md](changelog.md) - Version history and updates
+
+### Repository Documentation  
+- [Main README](../README.md) - Repository overview and quick start
+- [ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Full system architecture
+- [DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md) - Setup and contribution guide
+- [KNOWLEDGE_INDEX.md](../KNOWLEDGE_INDEX.md) - Complete documentation index
+
+### Other Tools in This Repository
+- [Sorter](../sorter/README.md) - Image organization tool for ComfyUI outputs
+- [Modular Builder](../modular_builder/README.md) - CSV-based category management system
+- [CivitAI Converter](../civitai_converter/COMFYUI_TO_CIVITAI_README.md) - Workflow format converter
+
 ## 📄 License
 
 These prompt builders are provided for creative and educational use. Please respect content guidelines and age restrictions where applicable.
 
 ---
 
-*Last updated: July 2025*
-*Compatible with: SDXL, ComfyUI, and most AI image generation platforms*
-
-
-
-
-
-
+**Last Updated:** March 6, 2026 (v3.0.0)  
+**Compatible with:** SDXL, ComfyUI, and most AI image generation platforms
 
 ## 📄 License
 

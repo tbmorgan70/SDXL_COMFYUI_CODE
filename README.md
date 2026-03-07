@@ -65,13 +65,15 @@ python comfyui_to_civitai_converter.py
 ```
 
 ### **Prerequisites**
+- Python 3.7 or higher
+- pip (Python package manager)
+
 ```bash
 # Install all dependencies
 pip install -r requirements.txt
 
-# Or install for specific tools only:
+# Or install for specific tools:
 pip install -r sorter/requirements.txt        # For Sorter 2.4
-pip install -r civitai_converter/requirements.txt  # For converter (if exists)
 ```
 
 ### **📁 Repository Structure**
@@ -328,14 +330,28 @@ These prompt builders are provided for creative and educational use. Please resp
 
 ---
 
-*Last updated: July 2025*
-*Compatible with: SDXL, ComfyUI, and most AI image generation platforms*
+## 📚 Documentation Navigator
 
+### Quick Links
+- 📖 [Knowledge Index](KNOWLEDGE_INDEX.md) - Find any documentation instantly
+- 📌 [Version Information](VERSION.md) - Current versions and history
+- 🔀 [Git Workflow](GIT_WORKFLOW.md) - Development best practices
+- 🗺️ [Roadmap](ROADMAP.md) - Future development plans
+- 📋 [Conversation Log](CONVERSATION_LOG.md) - Development session history
 
+### Deep Dive
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - System design and structure
+- 🛠️ [Development Guide](docs/DEVELOPMENT_GUIDE.md) - Contributing guidelines
+- 🔄 [Migration Guide](MIGRATION_GUIDE.md) - Upgrading from old versions
+- 📦 [Archive](archive/README.md) - Historical versions reference
 
+### Tool-Specific Docs
+- [Sorter Documentation](sorter/README.md)
+- [Builder Suite](builder/README.md)
+- [CivitAI Converter](civitai_converter/COMFYUI_TO_CIVITAI_README.md)
+- [Modular Builder](modular_builder/README.md)
 
-
-
+---
 
 ## 📄 License
 

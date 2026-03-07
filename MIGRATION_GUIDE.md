@@ -71,9 +71,18 @@ This repository has been consolidated from multiple separate repos into one unif
 ## 🆘 Need Help?
 
 If you encounter issues during migration:
-1. Check the `archive/` folder for reference files
+1. Check the [archive/](archive/README.md) folder for reference files
 2. Review the new documentation in each tool folder
-3. Open an issue on this repo with migration questions
+3. Check [KNOWLEDGE_INDEX.md](KNOWLEDGE_INDEX.md) for doc navigation
+4. See [VERSION.md](VERSION.md) for version information
+5. Open an issue on this repo with migration questions
+
+## 🔗 Related Documentation
+
+- [README.md](README.md) - Project overview
+- [VERSION.md](VERSION.md) - Version tracking
+- [KNOWLEDGE_INDEX.md](KNOWLEDGE_INDEX.md) - Documentation navigator
+- [archive/README.md](archive/README.md) - Historical versions
 
 ## ✨ Benefits of Consolidation
 

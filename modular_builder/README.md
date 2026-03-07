@@ -230,3 +230,29 @@ Browsers block loading local CSV files when opening HTML files directly (`file:/
 ---
 
 This system transforms your generator into a universal prompt-building platform! 🎉
+
+---
+
+## 📚 Related Documentation
+
+### Modular Builder Documentation
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Step-by-step setup and first prompts
+- **[TECHNICAL.md](TECHNICAL.md)** - Implementation details and customization guide
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and feature updates
+- **[categories/](categories/)** - 168+ pre-built CSV category files
+
+### Repository Documentation
+- **[Main README](../README.md)** - Repository overview with documentation navigator
+- **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - System design and builder architecture
+- **[DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md)** - Setup, coding standards, and contribution guide
+- **[KNOWLEDGE_INDEX.md](../KNOWLEDGE_INDEX.md)** - Complete documentation index
+
+### Other Tools in This Repository
+- **[Builder Suite](../builder/README.md)** - 13 standalone HTML prompt builders
+- **[Sorter](../sorter/README.md)** - ComfyUI image organization tool
+- **[CivitAI Converter](../civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - Workflow format converter
+
+---
+
+**Last Updated:** March 6, 2026 (v1.0.0)  
+**Part of:** SDXL_COMFYUI_CODE v3.0 - Unified Overhaul

@@ -183,6 +183,28 @@ Found a bug or want to add support for more ComfyUI nodes? The main areas to ext
 2. **Resource Types**: Extend the resource scanning in `_scan_directory()`
 3. **Metadata Formats**: Handle different ComfyUI metadata structures
 
+See also:
+- **[DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md)** - Coding standards and contribution workflow
+- **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - System design and converter architecture
+
+## 📚 Related Documentation
+
+### Repository Documentation
+- **[Main README](../README.md)** - Repository overview with documentation navigator
+- **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - System design and tool architecture
+- **[DEVELOPMENT_GUIDE.md](../docs/DEVELOPMENT_GUIDE.md)** - Setup, coding standards, and contribution guide
+- **[KNOWLEDGE_INDEX.md](../KNOWLEDGE_INDEX.md)** - Complete documentation index
+
+### Other Tools in This Repository
+- **[Sorter](../sorter/README.md)** - ComfyUI image organization and metadata extraction
+- **[Builder Suite](../builder/README.md)** - 13 standalone HTML prompt builders
+- **[Modular Builder](../modular_builder/README.md)** - CSV-based category management system
+
+---
+
+**Last Updated:** March 6, 2026 (v1.0.0)  
+**Part of:** SDXL_COMFYUI_CODE v3.0 - Unified Overhaul
+
 ## License
 
 This tool is provided as-is to help bridge ComfyUI and Civitai workflows. Use at your own risk and always backup your original files.

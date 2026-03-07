@@ -9,6 +9,12 @@ import sys
 import threading
 import shutil
 
+# Add archive/legacy_scripts to path for legacy imports
+script_dir = os.path.dirname(os.path.abspath(__file__))
+legacy_dir = os.path.join(script_dir, 'archive', 'legacy_scripts')
+if legacy_dir not in sys.path:
+    sys.path.insert(0, legacy_dir)
+
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 
