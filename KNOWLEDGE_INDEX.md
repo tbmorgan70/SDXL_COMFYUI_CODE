@@ -1,6 +1,6 @@
 # 📚 Knowledge Index - SDXL ComfyUI Code Repository
 
-**Last Updated:** March 6, 2026  
+**Last Updated:** March 7, 2026  
 **Purpose:** Central index of all documentation, conversations, and knowledge in this repository
 
 ---
@@ -23,7 +23,8 @@
 | [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) | Contributing and development setup | ✨ New (v3.0) |
 | [docs/INTEGRATION_PLAN.md](docs/INTEGRATION_PLAN.md) | Tool integration and unified architecture | ✨ New (Phase 4) |
 | [docs/TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md) | Testing approach and coverage goals | ✨ New (Phase 4) |
-| [SORTER_CODE_STATS.md](SORTER_CODE_STATS.md) | Code statistics and metrics | ⚠️ Needs Update |
+| [REPOSITORY_CODE_STATS.md](REPOSITORY_CODE_STATS.md) | Complete repository statistics (~30,600+ lines) | ✨ New (Phase 5) |
+| [SORTER_CODE_STATS.md](SORTER_CODE_STATS.md) | Sorter-specific code statistics | ⚠️ Needs Update (v2.3→v2.4) |
 
 ### 📦 **Archived Documentation** 
 | Document | Original Purpose | Status |
@@ -38,8 +39,7 @@
 | [VERSION.md](VERSION.md) | Version tracking and component status | Current (v3.0) |
 | [CONVERSATION_LOG.md](CONVERSATION_LOG.md) | Development session tracking | March 2026 - Present |
 | [RECOVERED_KNOWLEDGE.md](RECOVERED_KNOWLEDGE.md) | Preserved Copilot conversations | 7-10 months ago |
-| [CURATION_PLAN.md](CURATION_PLAN.md) | Repository overhaul planning | Active |
-
+| [CURATION_PLAN.md](CURATION_PLAN.md) | Repository overhaul planning | Active || [SOCIAL_MEDIA_OVERVIEW.md](SOCIAL_MEDIA_OVERVIEW.md) | Non-technical project summary | v3.0 Release |
 ---
 
 ## 🗃️ Historical Knowledge
