@@ -38,6 +38,7 @@ from sorters.checkpoint_sorter import CheckpointSorter
 from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
+from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
 
 class SorterV2:
     """Main interface for Sorter 2.0"""
@@ -55,11 +56,12 @@ class SorterV2:
             print("2. 🔍 Search & Sort by Metadata")
             print("3. 🌈 Sort by Color")
             print("4. 📂 Flatten Image Folders")
-            print("5. 📊 View Previous Session Logs")
+            print("5. 📦 Extract Images from Files (PDF/EPUB/CBZ…)")
+            print("6. 📊 View Previous Session Logs")
             print("0. ❌ Exit")
-            
-            choice = input("\nChoose option (0-5): ").strip()
-            
+
+            choice = input("\nChoose option (0-6): ").strip()
+
             if choice == "1":
                 self.sort_by_checkpoint()
             elif choice == "2":
@@ -69,6 +71,8 @@ class SorterV2:
             elif choice == "4":
                 self.flatten_images()
             elif choice == "5":
+                self.extract_images()
+            elif choice == "6":
                 self.view_session_logs()
             elif choice == "0":
                 print("👋 Goodbye!")
@@ -469,6 +473,139 @@ class SorterV2:
         else:
             print("❌ Image flattening failed")
     
+    def extract_images(self):
+        """Extract images from PDF/EPUB/MOBI/CBZ/CBR files with optional crop."""
+        print("\n📦 EXTRACT IMAGES FROM FILES")
+        print("-" * 40)
+        print(f"Supported formats: {', '.join(sorted(SUPPORTED_EXTENSIONS))}")
+
+        # --- Input: file(s) or directory ---
+        print("\nInput options:")
+        print("  1. Single file")
+        print("  2. Directory (all supported files inside)")
+        input_choice = input("Choose (1-2, default=1): ").strip() or "1"
+
+        input_paths = []
+        if input_choice == "2":
+            src = self._get_directory_input("Enter source directory")
+            if not src:
+                return
+            input_paths = [src]
+        else:
+            filepath = input("Enter file path: ").strip().strip('"\'')
+            if not filepath or not os.path.isfile(filepath):
+                print("❌ File not found")
+                return
+            input_paths = [filepath]
+
+        # --- Output directory ---
+        output_dir = input("Enter output directory (or press Enter for 'extracted_images'): ").strip().strip('"\'')
+        if not output_dir:
+            output_dir = "extracted_images"
+
+        folder_prefix = input("Folder prefix for subfolders (optional): ").strip()
+
+        # --- Minimum dimensions ---
+        try:
+            min_w = int(input("Minimum width  (default 512): ").strip() or 512)
+            min_h = int(input("Minimum height (default 512): ").strip() or 512)
+        except ValueError:
+            min_w = min_h = 512
+
+        # --- Crop preset ---
+        preset_keys = list(CROP_PRESETS.keys())
+        print("\n📐 CROP SIZE PRESETS:")
+        for i, key in enumerate(preset_keys):
+            print(f"  {i:2d}. {key}")
+        try:
+            preset_idx = int(input(f"Choose preset (0-{len(preset_keys)-1}, default=0 None): ").strip() or 0)
+            preset_idx = max(0, min(preset_idx, len(preset_keys) - 1))
+        except ValueError:
+            preset_idx = 0
+
+        preset_label = preset_keys[preset_idx]
+        crop_size = CROP_PRESETS[preset_label]
+
+        if crop_size == "custom":
+            try:
+                cw = int(input("  Custom width  (px): ").strip())
+                ch = int(input("  Custom height (px): ").strip())
+                crop_size = (cw, ch)
+            except ValueError:
+                print("  Invalid dimensions — no crop applied")
+                crop_size = None
+
+        # --- Crop mode ---
+        crop_mode = "none"
+        if crop_size:
+            print("\n✂️  CROP MODE:")
+            print("  1. Center fill (default)")
+            print("  2. Face-centered (requires mediapipe; falls back to center)")
+            mode_choice = input("Choose (1-2, default=1): ").strip() or "1"
+            crop_mode = "face" if mode_choice == "2" else "center"
+
+        # --- Confirm ---
+        print(f"\n📋 CONFIRMATION:")
+        print(f"   Input:      {input_paths}")
+        print(f"   Output:     {output_dir}")
+        print(f"   Min size:   {min_w}×{min_h}")
+        print(f"   Crop:       {preset_label}  mode={crop_mode}")
+
+        if input("\nProceed? (y/n): ").strip().lower() != 'y':
+            print("❌ Cancelled")
+            return
+
+        # --- Run extraction ---
+        try:
+            extractor = ImageExtractorSorter(
+                logger=self.logger,
+                min_width=min_w,
+                min_height=min_h,
+                output_dir=output_dir,
+                folder_prefix=folder_prefix,
+                crop_size=crop_size,
+                crop_mode=crop_mode,
+            )
+            results = extractor.process_paths(input_paths)
+
+            print(f"\n✅ EXTRACTION COMPLETE!")
+            print(f"   Files processed:  {results['total_files']}")
+            print(f"   Images extracted: {results['total_extracted']}")
+            print(f"   Output:           {results['output_dir']}")
+
+        except Exception as e:
+            print(f"❌ Extraction failed: {e}")
+            self.logger.log_error(f"Image extraction failed: {e}", str(input_paths), "Extraction Error")
+            return
+
+        # --- Optional chain to sort ---
+        if results['total_extracted'] == 0:
+            return
+
+        print("\n🔗 CHAIN TO SORTING (optional)")
+        print("   Sort the extracted images now?")
+        print("   1. Sort by Checkpoint")
+        print("   2. Sort by Color")
+        print("   3. Flatten into single folder")
+        print("   0. No — done")
+
+        chain_choice = input("Choose (0-3, default=0): ").strip() or "0"
+
+        extracted_dir = results['output_dir']
+
+        if chain_choice == "1":
+            self.source_dir = extracted_dir  # pre-fill for sort method
+            # Temporarily override source so sort_by_checkpoint picks it up
+            orig = input
+            print(f"\n→ Running checkpoint sort on: {extracted_dir}")
+            self.sort_by_checkpoint()
+        elif chain_choice == "2":
+            print(f"\n→ Running color sort on: {extracted_dir}")
+            self.sort_by_color()
+        elif chain_choice == "3":
+            print(f"\n→ Running flatten on: {extracted_dir}")
+            self.flatten_images()
+
     def view_session_logs(self):
         """View previous session logs"""
         print("\n📊 SESSION LOGS")

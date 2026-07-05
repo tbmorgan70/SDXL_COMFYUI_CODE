@@ -1,4 +1,11 @@
-# Image Extractor
+# Image Extractor — DEPRECATED
+
+> **This standalone tool has been superseded by the integrated Extract Images feature in Sorter 2.0.**
+> Use `sorter/gui.py` or `sorter/main.py` instead — it includes everything here plus auto-crop presets,
+> face-centered cropping, and optional chaining directly into the sort pipeline.
+> This folder is kept for reference only and will not receive further updates.
+
+---
 
 Extract images from PDF, EPUB, MOBI, and comic archive (CBR/CBZ) files with automatic size filtering.
 

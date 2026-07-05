@@ -1,10 +1,19 @@
 # Sorter 2.0 Requirements
-# Core dependencies (required)
+
+# Core (required)
 pillow>=9.0.0
 
-# GUI dependencies (optional - for enhanced UI)
+# GUI (required for gui.py)
 customtkinter>=5.0.0
 
-# Development dependencies (optional)
+# Image extraction from PDF/EPUB/MOBI/CBZ/CBR (required for Extract Images mode)
+PyMuPDF>=1.23.0        # PDF support
+rarfile>=4.0           # CBR support
+
+# Face-centered crop (optional — falls back to center crop if absent)
+mediapipe>=0.10.0
+numpy>=1.24.0
+
+# Development
 pytest>=7.0.0
 black>=22.0.0

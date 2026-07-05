@@ -30,6 +30,9 @@ from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
 from sorters.metadata_generator import MetadataGenerator
+from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
+from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
+from PIL import Image
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -259,6 +262,362 @@ class ProgressWindow(ctk.CTkToplevel):
         self.cancelled = True
         self.destroy()
 
+class TriageWindow(ctk.CTkToplevel):
+    """Visual triage: thumbnail gallery + full-size viewer with keyboard-driven
+    bucket assignment. Executes moves into bucket subfolders on demand."""
+
+    PAGE_SIZE = 60
+    COLS = 6
+    THUMB = 150
+    BUCKET_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"]
+    TRASH_COLOR = "#F44336"
+
+    def __init__(self, parent, sorter: ManualSorter, log_fn):
+        super().__init__(parent)
+        self.sorter = sorter
+        self.log_fn = log_fn
+
+        self.title(f"🖼️ Manual Sort — {sorter.source_dir.name}  ({len(sorter.images)} images)")
+        self.geometry("1240x880")
+
+        self.page = 0
+        self.current_index = None          # index into sorter.images when in viewer
+        self.thumb_cache = {}              # Path -> CTkImage (created in main thread only)
+        self.thumb_widgets = {}            # Path -> (cell frame, image label), current page only
+        self._viewer_img = None            # keep reference so it isn't GC'd
+        self._closing = False
+        self._page_token = 0               # invalidates in-flight thumbnail loads on page change
+        self._load_queue = queue.Queue()   # worker thread -> main thread handoff
+
+        # Bucket colors: trash always red, others from palette
+        self.bucket_colors = {}
+        ci = 0
+        for b in self.sorter.buckets:
+            if b == TRASH_BUCKET:
+                self.bucket_colors[b] = self.TRASH_COLOR
+            else:
+                self.bucket_colors[b] = self.BUCKET_COLORS[ci % len(self.BUCKET_COLORS)]
+                ci += 1
+
+        self._build_ui()
+        self._show_gallery()
+        self._render_page()
+
+        # Keyboard bindings
+        self.bind("<Right>", lambda e: self._nav(1))
+        self.bind("<Left>", lambda e: self._nav(-1))
+        self.bind("<Escape>", lambda e: self._show_gallery())
+        self.bind("<Delete>", lambda e: self._assign_key(len(self.sorter.buckets)))
+        self.bind("<Key-0>", lambda e: self._assign_key(0))
+        for i in range(1, len(self.sorter.buckets) + 1):
+            self.bind(f"<Key-{i}>", lambda e, n=i: self._assign_key(n))
+        self.bind("<Prior>", lambda e: self._change_page(-1))   # PgUp
+        self.bind("<Next>", lambda e: self._change_page(1))     # PgDn
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.after(200, self.focus_force)
+
+    # ------------------------------------------------------------------ UI
+
+    def _build_ui(self):
+        # --- Top bar: bucket buttons + counts ---
+        top = ctk.CTkFrame(self)
+        top.pack(fill="x", padx=10, pady=(10, 5))
+
+        self.bucket_buttons = {}
+        for i, bucket in enumerate(self.sorter.buckets):
+            btn = ctk.CTkButton(
+                top,
+                text=f"[{i+1}] {bucket} (0)",
+                fg_color=self.bucket_colors[bucket],
+                hover_color=self.bucket_colors[bucket],
+                width=140,
+                command=lambda b=bucket: self._assign_current(b),
+            )
+            btn.pack(side="left", padx=4, pady=8)
+            self.bucket_buttons[bucket] = btn
+
+        ctk.CTkButton(top, text="[0] Clear", fg_color="#555", width=80,
+                      command=lambda: self._assign_current(None)).pack(side="left", padx=4)
+
+        self.execute_btn = ctk.CTkButton(
+            top, text="🚀 Execute Sort", fg_color="green", hover_color="darkgreen",
+            width=130, command=self._execute)
+        self.execute_btn.pack(side="right", padx=8)
+
+        self.status_label = ctk.CTkLabel(top, text="", font=ctk.CTkFont(size=12))
+        self.status_label.pack(side="right", padx=10)
+
+        # --- Page bar (gallery mode) ---
+        self.page_bar = ctk.CTkFrame(self)
+        self.page_bar.pack(fill="x", padx=10, pady=(0, 5))
+        ctk.CTkButton(self.page_bar, text="◀ Prev", width=70,
+                      command=lambda: self._change_page(-1)).pack(side="left", padx=4, pady=4)
+        self.page_label = ctk.CTkLabel(self.page_bar, text="Page 1")
+        self.page_label.pack(side="left", padx=10)
+        ctk.CTkButton(self.page_bar, text="Next ▶", width=70,
+                      command=lambda: self._change_page(1)).pack(side="left", padx=4)
+        ctk.CTkLabel(self.page_bar,
+                     text="Click a thumbnail to view • ←/→ navigate • 1-4 assign • 0 clear • Del = Trash • Esc = gallery",
+                     text_color="#888", font=ctk.CTkFont(size=11)).pack(side="right", padx=10)
+
+        # --- Body: gallery + viewer (swapped) ---
+        self.body = ctk.CTkFrame(self)
+        self.body.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        self.gallery = ctk.CTkScrollableFrame(self.body)
+
+        self.viewer = ctk.CTkFrame(self.body)
+        self.viewer_label = ctk.CTkLabel(self.viewer, text="")
+        self.viewer_label.pack(fill="both", expand=True, pady=(5, 0))
+        self.viewer_info = ctk.CTkLabel(self.viewer, text="", font=ctk.CTkFont(size=13, weight="bold"))
+        self.viewer_info.pack(pady=6)
+
+        self._update_counts()
+
+    # ------------------------------------------------------------------ gallery
+
+    def _show_gallery(self):
+        self.current_index = None
+        self.viewer.pack_forget()
+        self.gallery.pack(fill="both", expand=True)
+        self.page_bar.pack(fill="x", padx=10, pady=(0, 5), before=self.body)
+
+    def _page_count(self):
+        return max(1, (len(self.sorter.images) + self.PAGE_SIZE - 1) // self.PAGE_SIZE)
+
+    def _change_page(self, delta):
+        if self.current_index is not None:
+            return  # viewer mode: pages don't apply
+        new_page = max(0, min(self.page + delta, self._page_count() - 1))
+        if new_page != self.page:
+            self.page = new_page
+            self._render_page()
+
+    def _render_page(self):
+        for w in self.gallery.winfo_children():
+            w.destroy()
+        self.thumb_widgets = {}
+
+        start = self.page * self.PAGE_SIZE
+        page_paths = self.sorter.images[start:start + self.PAGE_SIZE]
+        self.page_label.configure(text=f"Page {self.page + 1} / {self._page_count()}")
+
+        for i, path in enumerate(page_paths):
+            # Outer frame acts as the colored "assignment border"
+            cell = ctk.CTkFrame(self.gallery, fg_color=self._border_for(path), corner_radius=6)
+            cell.grid(row=i // self.COLS, column=i % self.COLS, padx=5, pady=5)
+
+            lbl = ctk.CTkLabel(cell, text="…", width=self.THUMB, height=self.THUMB,
+                               fg_color="#333", corner_radius=4)
+            lbl.pack(padx=3, pady=3)
+
+            for w in (cell, lbl):
+                w.bind("<Button-1>", lambda e, idx=start + i: self._open_viewer(idx))
+
+            self.thumb_widgets[path] = (cell, lbl)
+
+        # Load PIL thumbnails in a worker thread; a main-thread poller creates
+        # the CTkImages (Tk image objects must be touched from the main thread only).
+        self._page_token += 1
+        token = self._page_token
+        self._pending_thumbs = len(page_paths)
+        Thread(target=self._load_thumbs, args=(list(page_paths), token), daemon=True).start()
+        self.after(50, self._poll_thumbs, token)
+
+    def _border_for(self, path):
+        bucket = self.sorter.get_assignment(path)
+        return self.bucket_colors[bucket] if bucket else "#333"
+
+    def _load_thumbs(self, paths, token):
+        """Worker thread: decode images to PIL thumbnails, hand off via queue."""
+        for path in paths:
+            if self._closing or token != self._page_token:
+                return
+            if path in self.thumb_cache:
+                self._load_queue.put((token, path, "CACHED"))
+                continue
+            try:
+                img = Image.open(path)
+                img.thumbnail((self.THUMB, self.THUMB))
+                self._load_queue.put((token, path, img.convert("RGB")))
+            except Exception:
+                self._load_queue.put((token, path, None))
+
+    def _poll_thumbs(self, token):
+        """Main thread: drain the queue, create CTkImages, update labels."""
+        if self._closing or token != self._page_token:
+            return
+        try:
+            while True:
+                item_token, path, pil = self._load_queue.get_nowait()
+                if item_token != token:
+                    continue  # stale page
+                self._pending_thumbs -= 1
+
+                pair = self.thumb_widgets.get(path)
+                if pair is None:
+                    continue
+                cell, lbl = pair
+                if not lbl.winfo_exists():
+                    continue
+
+                if pil is None:
+                    lbl.configure(text="⚠️")
+                    continue
+
+                if pil == "CACHED":
+                    img = self.thumb_cache[path]
+                else:
+                    img = ctk.CTkImage(light_image=pil, size=pil.size)
+                    self.thumb_cache[path] = img
+                lbl.configure(image=img, text="")
+        except queue.Empty:
+            pass
+
+        if self._pending_thumbs > 0:
+            self.after(50, self._poll_thumbs, token)
+
+    # ------------------------------------------------------------------ viewer
+
+    def _open_viewer(self, index):
+        self.current_index = index
+        self.gallery.pack_forget()
+        self.page_bar.pack_forget()
+        self.viewer.pack(fill="both", expand=True)
+        self._show_current()
+
+    def _show_current(self):
+        if self.current_index is None or not self.sorter.images:
+            return
+        path = self.sorter.images[self.current_index]
+
+        try:
+            img = Image.open(path).convert("RGB")
+        except Exception as e:
+            self.viewer_info.configure(text=f"⚠️ Cannot open {path.name}: {e}")
+            return
+
+        # Fit to available area
+        max_w = max(400, self.winfo_width() - 60)
+        max_h = max(300, self.winfo_height() - 220)
+        scale = min(max_w / img.width, max_h / img.height, 1.0)
+        size = (int(img.width * scale), int(img.height * scale))
+
+        self._viewer_img = ctk.CTkImage(light_image=img, size=size)
+        self.viewer_label.configure(image=self._viewer_img, text="")
+
+        bucket = self.sorter.get_assignment(path)
+        tag = f"  →  {bucket}" if bucket else "  →  (unassigned)"
+        color = self.bucket_colors.get(bucket, "#aaa") if bucket else "#aaa"
+        self.viewer_info.configure(
+            text=f"{self.current_index + 1} / {len(self.sorter.images)}   {path.name}{tag}",
+            text_color=color,
+        )
+
+    def _nav(self, delta):
+        if self.current_index is None:
+            return
+        n = len(self.sorter.images)
+        if n == 0:
+            return
+        self.current_index = (self.current_index + delta) % n
+        self._show_current()
+
+    # ------------------------------------------------------------------ assignment
+
+    def _assign_key(self, num):
+        """Handle number key: 0 clears, 1..N assigns bucket by index."""
+        if self.current_index is None:
+            return
+        if num == 0:
+            self._assign_current(None)
+        elif 1 <= num <= len(self.sorter.buckets):
+            self._assign_current(self.sorter.buckets[num - 1])
+
+    def _assign_current(self, bucket):
+        if self.current_index is None:
+            return
+        path = self.sorter.images[self.current_index]
+        self.sorter.assign(path, bucket)
+        self._update_counts()
+
+        # Refresh thumbnail border if it's on the current page
+        pair = self.thumb_widgets.get(path)
+        if pair is not None and pair[0].winfo_exists():
+            pair[0].configure(fg_color=self._border_for(path))
+
+        if bucket is not None:
+            self._nav(1)  # auto-advance after assignment
+        else:
+            self._show_current()
+
+    def _update_counts(self):
+        counts = self.sorter.counts()
+        for i, bucket in enumerate(self.sorter.buckets):
+            self.bucket_buttons[bucket].configure(text=f"[{i+1}] {bucket} ({counts[bucket]})")
+        assigned = len(self.sorter.assignments)
+        self.status_label.configure(
+            text=f"{assigned} assigned / {counts['unassigned']} remaining")
+
+    # ------------------------------------------------------------------ execute
+
+    def _execute(self):
+        if not self.sorter.assignments:
+            messagebox.showinfo("Nothing to do", "No images have been assigned to buckets yet.", parent=self)
+            return
+
+        counts = self.sorter.counts()
+        summary = "\n".join(
+            f"   {b}: {counts[b]} images" for b in self.sorter.buckets if counts[b] > 0)
+        if not messagebox.askyesno(
+                "Execute Manual Sort",
+                f"Move {len(self.sorter.assignments)} images into bucket folders?\n\n{summary}\n\n"
+                f"Unassigned images ({counts['unassigned']}) stay where they are.",
+                parent=self):
+            return
+
+        self.execute_btn.configure(state="disabled", text="Moving...")
+
+        def run():
+            results = self.sorter.execute()
+            self.after(0, self._on_executed, results)
+
+        Thread(target=run, daemon=True).start()
+
+    def _on_executed(self, results):
+        moved_total = sum(results["moved"].values())
+        moved_paths = set(self.sorter.assignments.keys())
+
+        # Drop moved images from the working set
+        self.sorter.images = [p for p in self.sorter.images if p not in moved_paths]
+        self.sorter.assignments = {}
+
+        self.execute_btn.configure(state="normal", text="🚀 Execute Sort")
+        self._update_counts()
+
+        msg = f"Moved {moved_total} images into bucket folders.\n\nRemaining unsorted: {len(self.sorter.images)}"
+        if results["errors"]:
+            msg += f"\n\n⚠️ {len(results['errors'])} errors — see session log."
+        messagebox.showinfo("Sort Complete", msg, parent=self)
+        self.log_fn(f"🖼️ Manual sort executed: {results['moved']}")
+
+        # Back to gallery on a valid page
+        self.page = min(self.page, self._page_count() - 1)
+        self._show_gallery()
+        self._render_page()
+
+    def _on_close(self):
+        if self.sorter.assignments:
+            if not messagebox.askyesno(
+                    "Unsaved assignments",
+                    f"{len(self.sorter.assignments)} images are assigned but not yet moved.\n"
+                    "Close anyway and lose these assignments?",
+                    parent=self):
+                return
+        self._closing = True
+        self.destroy()
+
+
 class SorterGUI(ctk.CTk):
     """Main Sorter 2.0 GUI Application - Compact Design"""
     
@@ -314,7 +673,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Generate Metadata", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "Manual Sort (Triage)", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -329,15 +688,19 @@ class SorterGUI(ctk.CTk):
         self.search_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.color_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.flatten_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.extract_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.manual_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.logs_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
-        
+
         # Build all forms
         self._build_checkpoint_form()
         self._build_lora_form()
         self._build_search_form()
         self._build_color_form()
         self._build_flatten_form()
+        self._build_extract_form()
+        self._build_manual_form()
         self._build_metadata_form()
         self._build_logs_form()
         
@@ -599,7 +962,265 @@ class SorterGUI(ctk.CTk):
                          "• Performance statistics",
                     font=ctk.CTkFont(size=12),
                     text_color="#aaa").pack(pady=10)
-    
+
+    def _build_extract_form(self):
+        """Build the Extract Images form."""
+        PRESET_LABELS = list(CROP_PRESETS.keys())
+
+        # --- Source: files or directory ---
+        src_row = ctk.CTkFrame(self.extract_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+
+        def _pick_files():
+            files = filedialog.askopenfilenames(
+                title="Select files to extract from",
+                filetypes=[
+                    ("All supported", " ".join(f"*{e}" for e in sorted(SUPPORTED_EXTENSIONS))),
+                    ("PDF", "*.pdf"), ("EPUB", "*.epub"),
+                    ("MOBI/AZW", "*.mobi *.azw *.azw3"),
+                    ("Comic archives", "*.cbr *.cbz"),
+                    ("All files", "*.*"),
+                ]
+            )
+            if files:
+                self._extract_input_paths = list(files)
+                short = f"{len(files)} file(s) selected" if len(files) > 1 else Path(files[0]).name
+                self.extract_src_label.configure(text=short)
+                self.log_message(f"📦 Extract source: {short}")
+
+        def _pick_src_dir():
+            d = filedialog.askdirectory(title="Select source directory")
+            if d:
+                self._extract_input_paths = [d]
+                self.extract_src_label.configure(text=os.path.basename(d))
+                self.log_message(f"📦 Extract source directory: {d}")
+
+        ctk.CTkButton(src_row, text="📄 Select File(s)", command=_pick_files, width=140).pack(side="left", padx=(0, 5))
+        ctk.CTkButton(src_row, text="📁 Select Directory", command=_pick_src_dir, width=140).pack(side="left")
+        self.extract_src_label = ctk.CTkLabel(src_row, text="No source selected", text_color="#888")
+        self.extract_src_label.pack(side="left", padx=(10, 0))
+
+        # --- Output directory ---
+        out_row = ctk.CTkFrame(self.extract_frame)
+        out_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkButton(out_row, text="📂 Output Directory (Optional)",
+                      command=lambda: self._choose_directory("output"), width=210).pack(side="left")
+        self.extract_out_label = ctk.CTkLabel(out_row, text="extracted_images", text_color="#888")
+        self.extract_out_label.pack(side="left", padx=(10, 0))
+
+        # --- Folder prefix + min dimensions ---
+        opts_row = ctk.CTkFrame(self.extract_frame)
+        opts_row.pack(fill="x", padx=15, pady=5)
+
+        ctk.CTkLabel(opts_row, text="Folder prefix:").pack(side="left")
+        self.extract_prefix_entry = ctk.CTkEntry(opts_row, width=120, placeholder_text="optional")
+        self.extract_prefix_entry.pack(side="left", padx=(5, 20))
+
+        ctk.CTkLabel(opts_row, text="Min W:").pack(side="left")
+        self.extract_min_w = ctk.CTkEntry(opts_row, width=55, placeholder_text="512")
+        self.extract_min_w.pack(side="left", padx=(5, 10))
+
+        ctk.CTkLabel(opts_row, text="Min H:").pack(side="left")
+        self.extract_min_h = ctk.CTkEntry(opts_row, width=55, placeholder_text="512")
+        self.extract_min_h.pack(side="left", padx=5)
+
+        # --- Crop preset ---
+        crop_row = ctk.CTkFrame(self.extract_frame)
+        crop_row.pack(fill="x", padx=15, pady=5)
+
+        ctk.CTkLabel(crop_row, text="Crop preset:").pack(side="left")
+        self.extract_crop_var = ctk.StringVar(value=PRESET_LABELS[0])
+        self.extract_crop_menu = ctk.CTkOptionMenu(
+            crop_row,
+            variable=self.extract_crop_var,
+            values=PRESET_LABELS,
+            command=self._on_crop_preset_change,
+            width=250,
+        )
+        self.extract_crop_menu.pack(side="left", padx=(10, 15))
+
+        ctk.CTkLabel(crop_row, text="Mode:").pack(side="left")
+        self.extract_crop_mode_var = ctk.StringVar(value="center")
+        self.extract_crop_mode_menu = ctk.CTkOptionMenu(
+            crop_row,
+            variable=self.extract_crop_mode_var,
+            values=["center", "face"],
+            width=100,
+        )
+        self.extract_crop_mode_menu.pack(side="left", padx=(5, 0))
+
+        # --- Custom size row (shown only for "Custom...") ---
+        self.extract_custom_row = ctk.CTkFrame(self.extract_frame)
+        # Not packed until preset = Custom...
+        ctk.CTkLabel(self.extract_custom_row, text="Custom W:").pack(side="left")
+        self.extract_custom_w = ctk.CTkEntry(self.extract_custom_row, width=70, placeholder_text="px")
+        self.extract_custom_w.pack(side="left", padx=(5, 15))
+        ctk.CTkLabel(self.extract_custom_row, text="Custom H:").pack(side="left")
+        self.extract_custom_h = ctk.CTkEntry(self.extract_custom_row, width=70, placeholder_text="px")
+        self.extract_custom_h.pack(side="left", padx=5)
+
+        # --- Chain-to-sort option ---
+        chain_row = ctk.CTkFrame(self.extract_frame)
+        chain_row.pack(fill="x", padx=15, pady=5)
+
+        self.extract_chain_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(chain_row, text="Chain to sort after extraction:",
+                        variable=self.extract_chain_var).pack(side="left", padx=(0, 10))
+
+        self.extract_chain_mode_var = ctk.StringVar(value="Sort by Checkpoint")
+        self.extract_chain_menu = ctk.CTkOptionMenu(
+            chain_row,
+            variable=self.extract_chain_mode_var,
+            values=["Sort by Checkpoint", "Sort by Color", "Flatten Images"],
+            width=180,
+        )
+        self.extract_chain_menu.pack(side="left")
+
+        # --- Info ---
+        ctk.CTkLabel(
+            self.extract_frame,
+            text="📦 Extracts images from PDF, EPUB, MOBI, CBZ, CBR files. Face crop requires mediapipe.",
+            text_color="#aaa", font=ctk.CTkFont(size=11),
+        ).pack(padx=15, pady=(5, 15))
+
+        # Internal state
+        self._extract_input_paths = []
+
+    def _on_crop_preset_change(self, value):
+        if value == "Custom...":
+            self.extract_custom_row.pack(fill="x", padx=15, pady=(0, 5))
+        else:
+            self.extract_custom_row.pack_forget()
+
+    def extract_images(self):
+        """Run image extraction, then optionally chain to a sort operation."""
+        if not self._extract_input_paths:
+            messagebox.showerror("Error", "Please select source file(s) or directory.")
+            return
+
+        output_dir = self.output_dir if self.output_dir else "extracted_images"
+
+        try:
+            min_w = int(self.extract_min_w.get().strip() or 512)
+            min_h = int(self.extract_min_h.get().strip() or 512)
+        except ValueError:
+            min_w = min_h = 512
+
+        preset_label = self.extract_crop_var.get()
+        crop_size = CROP_PRESETS.get(preset_label)
+        if crop_size == "custom":
+            try:
+                crop_size = (int(self.extract_custom_w.get()), int(self.extract_custom_h.get()))
+            except ValueError:
+                messagebox.showerror("Error", "Invalid custom crop dimensions.")
+                return
+
+        crop_mode = self.extract_crop_mode_var.get() if crop_size else "none"
+        folder_prefix = self.extract_prefix_entry.get().strip()
+        chain = self.extract_chain_var.get()
+        chain_mode = self.extract_chain_mode_var.get()
+
+        self.log_message(f"📦 Starting extraction → {output_dir}  crop={preset_label}  mode={crop_mode}")
+
+        progress_window = ProgressWindow(self, "Extracting Images", output_dir)
+
+        def run_extract():
+            try:
+                extractor = ImageExtractorSorter(
+                    logger=self.logger,
+                    min_width=min_w,
+                    min_height=min_h,
+                    output_dir=output_dir,
+                    folder_prefix=folder_prefix,
+                    crop_size=crop_size,
+                    crop_mode=crop_mode,
+                )
+
+                def on_progress(completed, total, filename):
+                    progress_window.enqueue(("progress", (completed, total, filename)))
+                    if filename:
+                        progress_window.enqueue(("log", f"Processing: {filename}"))
+
+                results = extractor.process_paths(
+                    self._extract_input_paths,
+                    progress_callback=on_progress,
+                )
+
+                progress_window.enqueue(("log", f"✅ Extracted {results['total_extracted']} images from {results['total_files']} file(s)"))
+                progress_window.enqueue(("complete", True))
+
+                # Chain to sort if requested
+                if chain and results["total_extracted"] > 0:
+                    self.source_dir = results["output_dir"]
+                    self.after(500, lambda: self._run_chained_sort(chain_mode, results["output_dir"]))
+
+            except Exception as e:
+                progress_window.enqueue(("error", str(e)))
+                self.logger.log_error(f"Extraction failed: {e}", str(self._extract_input_paths), "Extraction")
+
+        Thread(target=run_extract, daemon=True).start()
+
+    def _run_chained_sort(self, chain_mode: str, source_dir: str):
+        """Switch to the selected sort mode pre-filled with extracted output."""
+        self.source_dir = source_dir
+        self.mode_var.set(chain_mode)
+        self._switch_mode(chain_mode)
+        self.log_message(f"🔗 Chained to '{chain_mode}' — source set to extracted folder.")
+
+    def _build_manual_form(self):
+        """Build the Manual Sort (Triage) form."""
+        # Source directory
+        src_row = ctk.CTkFrame(self.manual_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Image Folder",
+                      command=lambda: self._choose_directory("source")).pack(side="left")
+        self.manual_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.manual_src_label.pack(side="left", padx=(10, 0))
+
+        # Bucket names
+        buckets_row = ctk.CTkFrame(self.manual_frame)
+        buckets_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(buckets_row, text="Bucket names:").pack(side="left")
+
+        self.manual_bucket_entries = []
+        defaults = ["Keep", "Favorites", "Maybe"]
+        for i in range(3):
+            e = ctk.CTkEntry(buckets_row, width=110, placeholder_text=f"Bucket {i+1}")
+            e.insert(0, defaults[i])
+            e.pack(side="left", padx=5)
+            self.manual_bucket_entries.append(e)
+
+        ctk.CTkLabel(buckets_row, text=f"+ {TRASH_BUCKET} (always)",
+                     text_color="#F44336").pack(side="left", padx=(10, 0))
+
+        # Info
+        ctk.CTkLabel(
+            self.manual_frame,
+            text="🖼️ Visual triage: browse a gallery, view full-size, press 1-4 to bucket each image,\n"
+                 "then Execute to move them into labeled subfolders. Unassigned images stay in place.",
+            text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
+        ).pack(padx=15, pady=(5, 15))
+
+    def manual_sort(self):
+        """Open the triage window for the selected folder."""
+        if not self.source_dir or not os.path.isdir(self.source_dir):
+            messagebox.showerror("Error", "Please select an image folder first.")
+            return
+
+        bucket_names = [e.get().strip() for e in self.manual_bucket_entries if e.get().strip()]
+        if not bucket_names:
+            bucket_names = ["Keep"]
+
+        sorter = ManualSorter(self.logger, self.source_dir, bucket_names)
+
+        if not sorter.images:
+            messagebox.showerror("Error", "No images found in the selected folder.\n"
+                                 f"Supported: {', '.join(sorted(IMAGE_EXTENSIONS))}")
+            return
+
+        self.log_message(f"🖼️ Opening triage: {len(sorter.images)} images, buckets: {', '.join(sorter.buckets)}")
+        TriageWindow(self, sorter, self.log_message)
+
     def _build_metadata_form(self):
         """Build metadata generation form"""
         # Source directory
@@ -651,9 +1272,11 @@ class SorterGUI(ctk.CTk):
                     self.flatten_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Sort by LoRA Stack":
                     self.lora_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Manual Sort (Triage)":
+                    self.manual_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Generate Metadata":
                     self.metadata_src_label.configure(text=os.path.basename(directory))
-                
+
                 self.log_message(f"📁 Source directory selected: {directory}")
         
         elif dir_type == "output":
@@ -671,15 +1294,17 @@ class SorterGUI(ctk.CTk):
                     self.flatten_out_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Sort by LoRA Stack":
                     self.lora_out_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Extract Images":
+                    self.extract_out_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Generate Metadata":
                     self.metadata_out_label.configure(text=os.path.basename(directory))
-                
+
                 self.log_message(f"📂 Output directory selected: {directory}")
     
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.metadata_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.manual_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -699,6 +1324,12 @@ class SorterGUI(ctk.CTk):
         elif mode == "Flatten Images":
             self.flatten_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📂 Flatten images mode selected")
+        elif mode == "Extract Images":
+            self.extract_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("📦 Extract images mode selected")
+        elif mode == "Manual Sort (Triage)":
+            self.manual_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("🖼️ Manual sort (triage) mode selected")
         elif mode == "Generate Metadata":
             self.metadata_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📄 Generate metadata mode selected")
@@ -726,6 +1357,10 @@ class SorterGUI(ctk.CTk):
             self.sort_by_color()
         elif mode == "Flatten Images":
             self.flatten_images()
+        elif mode == "Extract Images":
+            self.extract_images()
+        elif mode == "Manual Sort (Triage)":
+            self.manual_sort()
         elif mode == "Generate Metadata":
             self.generate_metadata()
         elif mode == "View Session Logs":
