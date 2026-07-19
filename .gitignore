@@ -200,3 +200,6 @@ debug_metadata*.json
 
 # Extractor/triage outputs (never commit extracted or bucketed images)
 extracted_images/
+
+# Claude Code session workspaces
+.claude/
