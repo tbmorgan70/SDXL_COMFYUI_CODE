@@ -1,5 +1,5 @@
 """
-File Operations Handler for Sorter 2.3
+File Operations Handler for Sorter
 
 Enhanced file operations that handle moving PNG images along with their 
 associated metadata files (.txt files with same basename).

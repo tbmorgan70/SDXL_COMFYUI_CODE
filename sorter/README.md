@@ -1,9 +1,17 @@
-# 🚀 Sorter 2.4 - Production Release
+# 🚀 Sorter 3.0 - Production Release
 
 **Advanced ComfyUI Image Organizer - Clean, Fast, Reliable**
 
-> ⭐ **Part of SDXL_COMFYUI_CODE v3.0**  
+> ⭐ **Part of SDXL_COMFYUI_CODE v3.1**  
 > This is the main production sorter tool. For other tools, see the [main repository README](../README.md).
+
+## 🆕 What's New in 3.0
+
+- **📦 Extract Images** — pull images out of PDF/EPUB/MOBI/CBR/CBZ files with auto-crop presets (SDXL training sizes, social ratios, and more) and optional face-centered cropping; chain straight into sorting
+- **🖼️ Manual Sort (Triage)** — keyboard-driven visual gallery: view full-size, press 1-4 to bucket each image into custom-named folders (plus Trash), then execute the moves
+- **🌈 Color engine rewrite** — HSV pixel voting with chromatic priority; dark images classify correctly and four intuitive sliders replace the old dark threshold
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ## Quick Start
 
@@ -168,7 +176,7 @@ All operations are logged to `sort_logs/` directory:
 
 **Built for Production Use - Reliable, Fast, User-Friendly**
 
-**Last Updated:** March 6, 2026 (v2.4.0)  
-**Part of:** SDXL_COMFYUI_CODE v3.0 - Unified Overhaul
+**Last Updated:** July 12, 2026 (v3.0.0)  
+**Part of:** SDXL_COMFYUI_CODE v3.1 - Sorter 3.0
 
 *Clean codebase extracted from development version - ready for deployment*

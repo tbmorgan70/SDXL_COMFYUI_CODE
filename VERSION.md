@@ -1,16 +1,25 @@
 # 📌 Version Information
 
-**Last Updated:** March 7, 2026
+**Last Updated:** July 12, 2026
 
 ---
 
-## 🎯 Repository Version: 3.0.0
+## 🎯 Repository Version: 3.1.0
 
-**Release Date:** March 7, 2026  
-**Status:** ✅ Released - All Phases Complete  
-**Codename:** "Unified Overhaul"
+**Release Date:** July 12, 2026  
+**Status:** ✅ Released  
+**Codename:** "Sorter 3.0"
 
-### What's New in 3.0:
+### What's New in 3.1:
+- ✅ **Sorter 3.0 released** — Extract Images, Manual Sort (Triage), and rewritten Color engine
+- ✅ Extract Images: PDF/EPUB/MOBI/CBR/CBZ extraction with auto-crop presets + face-centered crop
+- ✅ Manual Sort: keyboard-driven visual triage into custom-named buckets
+- ✅ Color sorting: HSV pixel voting with chromatic priority and intuitive tuning sliders
+- ✅ Standalone `ImageExtractor/` deprecated (superseded by Sorter's Extract Images mode)
+- ✅ `civitai_converter/` removed from repository
+- ✅ Version numbers unified across code and documentation
+
+### What Was New in 3.0:
 - ✅ Complete knowledge preservation system (Phase 1)
 - ✅ Resolved duplicate nested structures (Phase 1)
 - ✅ Consolidated documentation (Phase 1)
@@ -34,10 +43,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v2.4.0** ✅ Production Ready
+### Main Sorter - **v3.0.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** Recent
+**Last Updated:** July 12, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -45,11 +54,14 @@
 - Generate Metadata Only mode (v2.3+)
 - Auto-Open Output Folder (v2.3+)
 - Automatic Metadata Preservation (v2.4+)
+- Extract Images from PDF/EPUB/MOBI/CBR/CBZ with auto-crop + face crop (v3.0)
+- Manual Sort — visual triage with custom buckets (v3.0)
+- Color sorting via HSV pixel voting with tuning sliders (v3.0)
 - Search & Sort by Metadata
-- Color-based sorting with visual previews
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.0:** Extract Images mode, Manual Sort (Triage) mode, color engine rewrite
 - **v2.4:** Automatic metadata preservation - PNG images move with their .txt files
 - **v2.3:** LoRA Stack sorting, Metadata-only mode, Auto-open output
 - **v2.0:** Production-ready release from consolidated repo
@@ -61,18 +73,16 @@
 
 ---
 
-### CivitAI Converter - **v1.0.0** ✅ Functional
-**Location:** `civitai_converter/`  
-**Status:** Stable  
-**Last Updated:** Repository consolidation (v2.0)
+### CivitAI Converter - 🗑️ Removed
+**Status:** Removed from repository (2026)  
+Old versions remain available in git history if ever needed.
 
-#### Features:
-- Convert ComfyUI workflows to CivitAI format
-- Metadata preservation and cleanup
-- Batch processing support
+---
 
-**Documentation:**
-- [civitai_converter/COMFYUI_TO_CIVITAI_README.md](civitai_converter/COMFYUI_TO_CIVITAI_README.md)
+### Image Extractor - 📦 Deprecated
+**Location:** `ImageExtractor/`  
+**Status:** Superseded by Sorter 3.0's built-in **Extract Images** mode  
+Kept for reference only; will not receive further updates.
 
 ---
 
@@ -137,13 +147,23 @@
 - ComfyUI batch processing
 - Color analysis features
 
-**Superseded By:** Sorter v2.4 (in `sorter/` directory)
+**Superseded By:** Sorter v3.0 (in `sorter/` directory)
 
 ---
 
 ## 📊 Version History
 
-### v3.0.0 - March 2026 - "Unified Overhaul" 🔄 In Progress
+### v3.1.0 - July 12, 2026 - "Sorter 3.0" ✅ Released
+**Focus:** Major Sorter feature expansion and documentation unification
+
+**Highlights:**
+- ✅ Sorter 3.0: Extract Images mode (PDF/EPUB/MOBI/CBR/CBZ → images, crop presets, face crop)
+- ✅ Sorter 3.0: Manual Sort (Triage) — visual gallery with keyboard bucket assignment
+- ✅ Sorter 3.0: Color engine rewrite (HSV pixel voting, chromatic priority, tuning sliders)
+- ✅ Deprecated standalone ImageExtractor; removed civitai_converter
+- ✅ Unified version numbers across code and docs
+
+### v3.0.0 - March 2026 - "Unified Overhaul" ✅ Complete
 **Focus:** Knowledge preservation, cleanup, and organization
 
 **Phase 1 Complete (March 1, 2026):**
@@ -185,11 +205,11 @@
 - ✅ Proposed shared library structure (lib/ directory)
 - ✅ Outlined unified dashboard concept (Tkinter + web)
 
-**Phase 5 Upcoming:**
-- ⏳ Quality assurance
-- ⏳ Link validation
-- ⏳ Repository audit
-- ⏳ User testing
+**Phase 5 Complete (March 7, 2026):**
+- ✅ Quality assurance
+- ✅ Link validation
+- ✅ Repository audit
+- ✅ User testing
 
 ### v2.0.0 - 2025 - "Repository Consolidation"
 **Focus:** Unifying multiple separate repositories
@@ -235,11 +255,9 @@ Each tool maintains independent versioning:
 
 ## 🎯 Version Roadmap
 
-### Q2 2026 - v3.1.0 (Planned)
-- Complete documentation overhaul
-- Archive consolidation
-- Enhanced cross-linking
-- Quality assurance complete
+### Q2/Q3 2026 - v3.1.0 ✅ Delivered July 2026
+- Sorter 3.0 (Extract Images, Manual Sort, new color engine)
+- Documentation and version unification
 
 ### Q3 2026 - v3.2.0 (Planned)
 - Tool integration preparation

@@ -1,12 +1,13 @@
 # 🗺️ Development Roadmap - Unified Repository
 
-## 🎯 Current Status (v2.0)
+## 🎯 Current Status (v3.1 — July 2026)
 - ✅ Repository consolidation complete
 - ✅ Clean folder structure implemented
-- ✅ Sorter 2.0 production ready
-- ✅ CivitAI converter functional
+- ✅ Sorter 3.0 production ready (Extract Images, Manual Sort/Triage, HSV color engine)
 - ✅ HTML builders available
 - ✅ Legacy tools archived
+- ✅ Cross-tool workflow started: Extract → Sort chaining inside the Sorter
+- 🗑️ CivitAI converter removed; standalone ImageExtractor deprecated
 
 ## 🚀 Upcoming Features
 

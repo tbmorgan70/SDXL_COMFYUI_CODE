@@ -1,5 +1,5 @@
 """
-Sorter 2.3 - Modern GUI Interface
+Sorter 3.0 - Modern GUI Interface
 
 Beautiful, compact interface for all sorting operations with real-time progress tracking.
 Built on the rock-solid command-line backend for maximum reliability.
@@ -625,7 +625,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 2.4.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.0.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -655,7 +655,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 2.4.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.0.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -729,7 +729,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 2.4.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.0.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -897,19 +897,41 @@ class SorterGUI(ctk.CTk):
         ctk.CTkCheckBox(opts1, text="Create metadata files", variable=self.color_metadata_var).pack(side="left", padx=(0, 20))
         ctk.CTkCheckBox(opts1, text="Rename files", variable=self.color_rename_var).pack(side="left")
         
-        # Rename and threshold row
+        # Rename prefix row
         opts2 = ctk.CTkFrame(self.color_frame)
         opts2.pack(fill="x", padx=15, pady=5)
         ctk.CTkLabel(opts2, text="Prefix:").pack(side="left")
         self.color_prefix_entry = ctk.CTkEntry(opts2, width=120, placeholder_text="e.g. myproject")
         self.color_prefix_entry.pack(side="left", padx=(5, 20))
-        ctk.CTkLabel(opts2, text="Dark threshold:").pack(side="left")
-        self.color_threshold_entry = ctk.CTkEntry(opts2, width=80, placeholder_text="0.1")
-        self.color_threshold_entry.pack(side="left", padx=(5, 0))
-        
+
+        # Tuning sliders — each row: name, slider, live % readout
+        def _slider_row(label, default, tooltip):
+            row = ctk.CTkFrame(self.color_frame)
+            row.pack(fill="x", padx=15, pady=2)
+            ctk.CTkLabel(row, text=label, width=140, anchor="w").pack(side="left")
+            var = ctk.DoubleVar(value=default)
+            readout = ctk.CTkLabel(row, text=f"{default:.0%}", width=45)
+            slider = ctk.CTkSlider(
+                row, from_=0.0, to=1.0, variable=var, width=220,
+                command=lambda v, r=readout: r.configure(text=f"{v:.0%}"))
+            slider.pack(side="left", padx=(5, 5))
+            readout.pack(side="left")
+            ctk.CTkLabel(row, text=tooltip, text_color="#888",
+                         font=ctk.CTkFont(size=10)).pack(side="left", padx=(10, 0))
+            return var
+
+        self.color_black_var = _slider_row(
+            "Black level", 0.12, "darker than this = black")
+        self.color_white_var = _slider_row(
+            "White level", 0.90, "brighter than this (and colorless) = white")
+        self.color_graysat_var = _slider_row(
+            "Color purity", 0.15, "below this saturation = gray, not a color")
+        self.color_neutral_var = _slider_row(
+            "Neutral dominance", 0.75, "% black/white/gray needed to beat the top color")
+
         # Info
-        info_label = ctk.CTkLabel(self.color_frame, 
-                                 text="🌈 Organizes images by dominant colors - supports PNG, JPG, GIF, BMP, TIFF, WebP",
+        info_label = ctk.CTkLabel(self.color_frame,
+                                 text="🌈 Sorts by the strongest color unless the image is mostly neutral — lower Neutral dominance to favor Black/White/Gray less",
                                  text_color="#aaa", font=ctk.CTkFont(size=11))
         info_label.pack(padx=15, pady=(5, 15))
     
@@ -1657,14 +1679,12 @@ class SorterGUI(ctk.CTk):
         rename_files = self.color_rename_var.get()
         user_prefix = self.color_prefix_entry.get().strip() if rename_files else ""
         
-        # Get dark threshold
-        threshold_text = self.color_threshold_entry.get().strip()
-        try:
-            dark_threshold = float(threshold_text) if threshold_text else 0.1
-            dark_threshold = max(0.0, min(1.0, dark_threshold))
-        except ValueError:
-            dark_threshold = 0.1
-        
+        # Tuning values from sliders
+        black_level = self.color_black_var.get()
+        white_level = self.color_white_var.get()
+        gray_sat = self.color_graysat_var.get()
+        neutral_dominance = self.color_neutral_var.get()
+
         # Confirm operation
         operation = "MOVE" if move_files else "COPY"
         confirmation = messagebox.askyesno(
@@ -1677,7 +1697,7 @@ class SorterGUI(ctk.CTk):
             f"   Metadata files: {'Yes' if create_metadata else 'No'}\n" +
             f"   Rename files: {'Yes' if rename_files else 'No'}\n" +
             (f"   Prefix: '{user_prefix}' (e.g. {user_prefix}_red_img1.png)\n" if rename_files and user_prefix else "") +
-            f"   Dark threshold: {dark_threshold}\n\n" +
+            f"   Black {black_level:.0%} / White {white_level:.0%} / Purity {gray_sat:.0%} / Neutral dom. {neutral_dominance:.0%}\n\n" +
             f"Proceed with color sorting?"
         )
         
@@ -1704,9 +1724,12 @@ class SorterGUI(ctk.CTk):
                     output_dir=output_dir,
                     move_files=move_files,
                     create_metadata=create_metadata,
-                    ignore_dark_threshold=dark_threshold,
                     rename_files=rename_files,
-                    user_prefix=user_prefix
+                    user_prefix=user_prefix,
+                    black_level=black_level,
+                    white_level=white_level,
+                    gray_sat=gray_sat,
+                    neutral_dominance=neutral_dominance,
                 )
                 
                 if success:
@@ -1934,7 +1957,7 @@ class SorterGUI(ctk.CTk):
             messagebox.showerror("Error", f"Failed to generate metadata: {str(e)}")
 
 def main():
-    """Launch the Sorter 2.3 GUI"""
+    """Launch the Sorter 3.0 GUI"""
     try:
         app = SorterGUI()
         app.mainloop()

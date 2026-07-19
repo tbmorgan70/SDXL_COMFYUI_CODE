@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import shutil
 from collections import Counter
@@ -14,113 +14,139 @@ sys.path.append(parent_dir)
 from core.diagnostics import SortLogger
 from core.file_operations import FileOperationsHandler
 
-# Color categories with RGB ranges
-COLOR_CATEGORIES = {
-    'Red': [(255, 0, 0), (220, 20, 60), (178, 34, 34), (139, 0, 0)],
-    'Orange': [(255, 165, 0), (255, 140, 0), (255, 69, 0), (255, 99, 71)],
-    'Yellow': [(255, 255, 0), (255, 215, 0), (218, 165, 32), (184, 134, 11)],
-    'Green': [(0, 255, 0), (34, 139, 34), (0, 128, 0), (46, 125, 50)],
-    'Blue': [(0, 0, 255), (30, 144, 255), (0, 191, 255), (70, 130, 180)],
-    'Purple': [(128, 0, 128), (75, 0, 130), (148, 0, 211), (138, 43, 226)],
-    'Pink': [(255, 192, 203), (255, 20, 147), (219, 112, 147), (199, 21, 133)],
-    'Brown': [(165, 42, 42), (139, 69, 19), (160, 82, 45), (210, 180, 140)],
-    'Black': [(0, 0, 0), (25, 25, 25), (50, 50, 50), (75, 75, 75)],
-    'White': [(255, 255, 255), (248, 248, 255), (245, 245, 245), (220, 220, 220)],
-    'Gray': [(128, 128, 128), (105, 105, 105), (169, 169, 169), (192, 192, 192)]
-}
+# Bucket names -- neutrals are only chosen when they dominate the image
+# (see neutral_dominance in classify_image).
+NEUTRAL_CATEGORIES = ('Black', 'White', 'Gray')
+CHROMATIC_CATEGORIES = ('Red', 'Orange', 'Yellow', 'Green', 'Cyan',
+                        'Blue', 'Purple', 'Pink', 'Brown')
 
 class ColorSorter:
-    """Enhanced color sorting with progress tracking and logging"""
-    
+    """Color sorting via HSV pixel voting with chromatic priority.
+
+    Every pixel is bucketed by HSV rules (hue ranges for colors; value/
+    saturation thresholds for black/white/gray), then the image takes the
+    plurality color. Neutrals only win when they exceed neutral_dominance,
+    so a subject on a dark background sorts by the subject's color.
+    """
+
+    ANALYSIS_SIZE = 128  # thumbnail edge used for pixel voting
+
     def __init__(self, logger: SortLogger = None):
         self.logger = logger or SortLogger()
         self.file_handler = FileOperationsHandler(self.logger)
-    
-    def rgb_to_hsv(self, r, g, b):
-        """Convert RGB to HSV values."""
-        return colorsys.rgb_to_hsv(r/255.0, g/255.0, b/255.0)
-    
-    def get_dominant_color(self, image_path, num_colors=5, ignore_dark_threshold=0.1):
-        """Extract the dominant color from an image, with option to ignore very dark pixels."""
+
+    @staticmethod
+    def classify_pixel(h, s, v, black_level, white_level, gray_sat):
+        """Bucket one HSV pixel (h,s,v all 0..1) into a category name."""
+        if v <= black_level:
+            return 'Black'
+        if s <= gray_sat:
+            return 'White' if v >= white_level else 'Gray'
+
+        hue = h * 360.0
+
+        # Light, washed-out reds/magentas read as pink
+        if (hue < 15 or hue >= 345) and s < 0.45 and v > 0.75:
+            return 'Pink'
+        # Dark or muddy orange reads as brown
+        if 15 <= hue < 50 and (v < 0.60 or s < 0.35):
+            return 'Brown'
+
+        if hue < 15 or hue >= 345:
+            return 'Red'
+        if hue < 45:
+            return 'Orange'
+        if hue < 70:
+            return 'Yellow'
+        if hue < 165:
+            return 'Green'
+        if hue < 200:
+            return 'Cyan'
+        if hue < 260:
+            return 'Blue'
+        if hue < 290:
+            return 'Purple'
+        return 'Pink'  # 290..345 magenta range
+
+    def classify_image(self, image_path, black_level=0.12, white_level=0.90,
+                       gray_sat=0.15, neutral_dominance=0.75):
+        """Classify an image into a color category by pixel voting.
+
+        Returns (category, breakdown) where breakdown maps category -> share
+        (0..1) of pixels, or ("Unknown", {}) on failure.
+        """
         try:
             with Image.open(image_path) as img:
-                # Convert to RGB if necessary
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
-                
-                # Resize for faster processing
-                img = img.resize((150, 150))
-                
-                # Get all pixels
-                pixels = list(img.getdata())
-                
-                # Count color frequencies (with some grouping to reduce noise)
-                color_counts = Counter()
+                img.thumbnail((self.ANALYSIS_SIZE, self.ANALYSIS_SIZE))
+                pixels = img.getdata()
+
+                votes = Counter()
                 for r, g, b in pixels:
-                    # Skip very dark pixels if requested
-                    h, s, v = self.rgb_to_hsv(r, g, b)
-                    if v < ignore_dark_threshold:
-                        continue
-                    
-                    # Group similar colors (reduce precision)
-                    grouped_color = (r//10*10, g//10*10, b//10*10)
-                    color_counts[grouped_color] += 1
-                
-                if not color_counts:
-                    return None
-                
-                # Get most common color
-                dominant_rgb = color_counts.most_common(1)[0][0]
-                return dominant_rgb
-                
+                    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+                    votes[self.classify_pixel(h, s, v, black_level, white_level, gray_sat)] += 1
+
+                total = sum(votes.values())
+                if total == 0:
+                    return "Unknown", {}
+
+                breakdown = {cat: n / total for cat, n in votes.items()}
+                neutral_share = sum(breakdown.get(c, 0.0) for c in NEUTRAL_CATEGORIES)
+
+                chromatic = {c: breakdown[c] for c in breakdown if c in CHROMATIC_CATEGORIES}
+                neutrals = {c: breakdown[c] for c in breakdown if c in NEUTRAL_CATEGORIES}
+
+                # Chromatic priority: strongest color wins unless the image
+                # is overwhelmingly neutral.
+                if chromatic and neutral_share < neutral_dominance:
+                    category = max(chromatic, key=chromatic.get)
+                elif neutrals:
+                    category = max(neutrals, key=neutrals.get)
+                elif chromatic:
+                    category = max(chromatic, key=chromatic.get)
+                else:
+                    return "Unknown", {}
+
+                return category, breakdown
+
         except Exception as e:
             self.logger.log_error(f"Error analyzing color for {image_path}: {e}")
-            return None
+            return "Unknown", {}
     
-    def categorize_color(self, rgb_color):
-        """Categorize an RGB color into one of the predefined color categories."""
-        if not rgb_color:
-            return "Unknown"
-        
-        r, g, b = rgb_color
-        best_category = "Unknown"
-        min_distance = float('inf')
-        
-        for category_name, category_colors in COLOR_CATEGORIES.items():
-            for cat_r, cat_g, cat_b in category_colors:
-                # Calculate Euclidean distance in RGB space
-                distance = ((r - cat_r) ** 2 + (g - cat_g) ** 2 + (b - cat_b) ** 2) ** 0.5
-                if distance < min_distance:
-                    min_distance = distance
-                    best_category = category_name
-        
-        return best_category
-    
-    def sort_by_color(self, source_dir, output_dir, move_files=False, 
-                     create_metadata=True, ignore_dark_threshold=0.1,
-                     rename_files=False, user_prefix=''):
+    def sort_by_color(self, source_dir, output_dir, move_files=False,
+                     create_metadata=True, rename_files=False, user_prefix='',
+                     black_level=0.12, white_level=0.90, gray_sat=0.15,
+                     neutral_dominance=0.75):
         """
         Sort images by dominant color into categorized folders
-        
+
         Args:
             source_dir: Source directory containing images
             output_dir: Output directory for sorted images
             move_files: Whether to move (True) or copy (False) files
             create_metadata: Whether to create metadata files
-            ignore_dark_threshold: Threshold for ignoring dark pixels (0.0-1.0)
             rename_files: Whether to rename files with sequential numbering
             user_prefix: Custom prefix for renamed files (e.g. 'myproject')
+            black_level: Pixels darker than this count as black (0-1)
+            white_level: Bright low-saturation pixels above this count as white (0-1)
+            gray_sat: Pixels below this saturation are neutral, not a color (0-1)
+            neutral_dominance: Neutral share needed for black/white/gray to
+                               beat the strongest color (0-1)
         """
         source_path = Path(source_dir)
         output_path = Path(output_dir)
-        
+
         # Start logging
         operation_name = "Color Sorting"
         self.logger.start_operation(operation_name)
         self.logger.log_config("Source", str(source_path))
         self.logger.log_config("Output", str(output_path))
         self.logger.log_config("Operation", "MOVE" if move_files else "COPY")
-        self.logger.log_config("Dark threshold", str(ignore_dark_threshold))
+        self.logger.log_config("Black level", f"{black_level:.2f}")
+        self.logger.log_config("White level", f"{white_level:.2f}")
+        self.logger.log_config("Color purity (gray sat)", f"{gray_sat:.2f}")
+        self.logger.log_config("Neutral dominance", f"{neutral_dominance:.2f}")
         
         # Find all image files
         image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'}
@@ -152,20 +178,30 @@ class ColorSorter:
         for i, image_file in enumerate(image_files):
             if i % 25 == 0:  # Progress every 25 files
                 self.logger.update_progress(i, total_files, str(image_file.name))
-            
-            # Get dominant color
-            dominant_color = self.get_dominant_color(str(image_file), ignore_dark_threshold=ignore_dark_threshold)
-            color_category = self.categorize_color(dominant_color)
-            
+
+            color_category, breakdown = self.classify_image(
+                str(image_file),
+                black_level=black_level,
+                white_level=white_level,
+                gray_sat=gray_sat,
+                neutral_dominance=neutral_dominance,
+            )
+
+            # Log top shares so surprising results are explainable
+            if breakdown:
+                top = sorted(breakdown.items(), key=lambda kv: kv[1], reverse=True)[:3]
+                shares = ", ".join(f"{c} {p:.0%}" for c, p in top)
+                self.logger.log_info(f"  {image_file.name}: {shares} -> {color_category}")
+
             # Track statistics
             if color_category not in color_stats:
                 color_stats[color_category] = 0
             color_stats[color_category] += 1
-            
+
             # Store result for sorting phase in separate dictionary
             file_color_mapping[str(image_file)] = {
                 'color_category': color_category,
-                'dominant_color': dominant_color
+                'breakdown': breakdown
             }
         
         self.logger.end_phase("Color Analysis")
@@ -258,7 +294,10 @@ class ColorSorter:
                     f.write(f"Color Category: {color_category}\n")
                     f.write(f"Image Count: {count}\n")
                     f.write(f"Sort Date: {self.logger.session_id}\n")
-                    f.write(f"Dark Threshold: {ignore_dark_threshold}\n")
+                    f.write(f"Black Level: {black_level}\n")
+                    f.write(f"White Level: {white_level}\n")
+                    f.write(f"Color Purity (gray sat): {gray_sat}\n")
+                    f.write(f"Neutral Dominance: {neutral_dominance}\n")
                 
                 self.logger.log_file_operation("CREATED", "metadata", str(metadata_file))
             

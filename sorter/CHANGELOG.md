@@ -1,6 +1,40 @@
-# 📋 Sorter 2.4 - Changelog
+# 📋 Sorter - Changelog
 
-All notable changes to the Sorter 2.4 project will be documented in this file.
+All notable changes to the Sorter project will be documented in this file.
+
+## [3.0.0] - 2026-07-12 - "Extract, Triage & Color Engine" 🎨
+
+### 🎉 Major New Features
+
+#### 📦 Extract Images (new mode)
+- Extract images from **PDF, EPUB, MOBI/AZW3, CBR, CBZ** files — single file, multi-select, or whole directory
+- Minimum-dimension filtering with per-source subfolders and optional folder prefix
+- **13 auto-crop presets** covering SDXL training sizes (512/768/1024), social (1:1, 4:5, 9:16), landscape (16:9), classic (4:3, 3:2), ultrawide (21:9), plus custom dimensions
+- **Face-centered cropping** via MediaPipe (largest face, padded framing) with automatic center-crop fallback
+- Optional **chain to sort**: run Checkpoint / Color / Flatten on the extracted output in one step
+- Supersedes the standalone `ImageExtractor/` tool (now deprecated)
+
+#### 🖼️ Manual Sort — Visual Triage (new mode)
+- Paginated thumbnail gallery with background loading (handles 1000+ images)
+- Full-size viewer: **←/→** navigate, **1-4** assign bucket + auto-advance, **0** clear, **Del** = Trash, **Esc** back to gallery
+- Up to 3 custom-named buckets plus an always-present **Trash** bucket
+- Colored borders + live per-bucket counts; Execute moves images into labeled subfolders
+- Unassigned images stay in place — triage across multiple sittings safely
+
+#### 🌈 Sort by Color — engine rewrite
+- Replaced RGB-swatch-distance matching with **HSV pixel voting**: every pixel is bucketed by hue/saturation/value rules, the image takes the plurality color
+- **Chromatic priority**: black/white/gray only win when they exceed a *Neutral dominance* share — a subject on a dark background now sorts by the subject's color
+- Dark saturated colors (navy, deep red) now classify correctly instead of falling into Black
+- New **Cyan** category; smarter Brown/Pink rules
+- Four intuitive tuning sliders: **Black level**, **White level**, **Color purity**, **Neutral dominance** (replaces the old "dark threshold")
+- Per-image vote breakdown logged (e.g. `Black 54%, Red 31% → Red`) so results are explainable
+
+### 🛠️ Other Changes
+- New dependencies: `PyMuPDF`, `rarfile` (extraction); `mediapipe`, `numpy` (optional, face crop)
+- New modules: `sorters/image_extractor.py`, `sorters/manual_sorter.py`
+- CLI menu expanded to include Extract Images
+
+---
 
 ## [2.4.0] - 2024-12-13 - "Metadata Preservation Update" 🗂️
 

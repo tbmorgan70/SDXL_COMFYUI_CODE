@@ -45,7 +45,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 2.4.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.0.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -368,12 +368,20 @@ class SorterV2:
         if rename_files:
             user_prefix = input("Enter filename prefix (optional, e.g. 'myproject'): ").strip()
         
-        dark_threshold = input("Dark pixel threshold (0.0-1.0, default=0.1): ").strip()
-        try:
-            dark_threshold = float(dark_threshold) if dark_threshold else 0.1
-            dark_threshold = max(0.0, min(1.0, dark_threshold))
-        except ValueError:
-            dark_threshold = 0.1
+        # Color tuning (press Enter to accept defaults)
+        print("\n🎛️  COLOR TUNING (press Enter for defaults):")
+
+        def _pct_input(prompt, default):
+            raw = input(f"{prompt} (0-100, default={default:.0f}): ").strip()
+            try:
+                return max(0.0, min(1.0, float(raw) / 100.0)) if raw else default / 100.0
+            except ValueError:
+                return default / 100.0
+
+        black_level = _pct_input("Black level — darker than this = black", 12)
+        white_level = _pct_input("White level — brighter (and colorless) = white", 90)
+        gray_sat = _pct_input("Color purity — below this saturation = gray", 15)
+        neutral_dominance = _pct_input("Neutral dominance — % neutral needed to beat top color", 75)
         
         # Confirmation
         print(f"\n📋 CONFIRMATION:")
@@ -388,7 +396,7 @@ class SorterV2:
                 print(f"   Prefix: '{user_prefix}' (e.g. {user_prefix}_red_img1.png)")
             else:
                 print(f"   Naming: color_img# format (e.g. red_img1.png)")
-        print(f"   Dark threshold: {dark_threshold}")
+        print(f"   Tuning: Black {black_level:.0%} / White {white_level:.0%} / Purity {gray_sat:.0%} / Neutral dom. {neutral_dominance:.0%}")
         
         if input("\nProceed? (y/n): ").strip().lower() != 'y':
             print("❌ Operation cancelled")
@@ -403,7 +411,10 @@ class SorterV2:
             output_dir=output_dir,
             move_files=move_files,
             create_metadata=create_metadata,
-            ignore_dark_threshold=dark_threshold,
+            black_level=black_level,
+            white_level=white_level,
+            gray_sat=gray_sat,
+            neutral_dominance=neutral_dominance,
             rename_files=rename_files,
             user_prefix=user_prefix
         )
@@ -668,7 +679,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 2.4.0...")
+        print("\n\n👋 Exiting Sorter 3.0.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

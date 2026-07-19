@@ -1,36 +1,36 @@
 # 🎯 SDXL ComfyUI Code - Complete Toolkit
 **The ultimate collection of tools for managing, sorting, and optimizing AI image generation workflows.**
 
-> 🆕 **Version 3.0 - Unified & Organized!** All tools consolidated into one clean, powerful repository. Previously scattered across multiple repos, now everything you need is here in one organized place.
+> 🆕 **Version 3.1 - Sorter 3.0 Released!** Extract images from documents, triage visually with keyboard-driven buckets, and sort by color with the new HSV voting engine — all inside the main Sorter.
 
 📚 **[Knowledge Index](KNOWLEDGE_INDEX.md)** | 📋 **[Version Info](VERSION.md)** | 🔀 **[Git Workflow](GIT_WORKFLOW.md)** | 🗺️ **[Roadmap](ROADMAP.md)**
 
 ## 🛠️ Complete Toolkit Overview
 
-This unified repository contains four powerful tools:
+This unified repository contains these tools:
 
-### 1. **🎯 Main Sorter v2.4** (`sorter/`) - *Production Ready*
+### 1. **🎯 Main Sorter v3.0** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
-- **v2.3+** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
-- **v2.3+** 📄 Generate Metadata Only - Extract metadata without moving files  
-- **v2.3+** 📁 Auto-Open Output Folder - Instant access to results
+- **v3.0** 📦 Extract Images - Pull images from PDF/EPUB/MOBI/CBR/CBZ with auto-crop presets and face-centered cropping
+- **v3.0** 🖼️ Manual Sort (Triage) - Visual gallery with keyboard-driven bucket sorting
+- **v3.0** 🌈 New Color Engine - HSV pixel voting with intuitive tuning sliders
 - **v2.4** 🗂️ Automatic Metadata Preservation - PNG images move with their .txt files
+- **v2.3+** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
+- **v2.3+** 📄 Generate Metadata Only - Extract metadata without moving files
 - Search & Sort by Metadata (LoRAs, prompts, settings)
-- Color-based sorting with visual previews
 - Both GUI and CLI interfaces
 - **Start here for most users!**
 
-### 2. **🔄 CivitAI Converter** (`civitai_converter/`)
-- Convert ComfyUI workflows to CivitAI format
-- Metadata preservation and cleanup
-- Batch processing support
-
-### 3. **🌐 HTML Builder Suite** (`builder/`)
+### 2. **🌐 HTML Builder Suite** (`builder/`)
 - Dynamic prompt generation interfaces
 - Interactive HTML dashboards
 - Custom workflow builders
 - *Will be integrated with main sorter in future releases*
+
+### 3. **🧩 Modular Builder** (`modular_builder/`)
+- Category-based prompt building with 168+ category CSV files
+- Server-based interface, highly customizable
 
 ### 4. **📝 Unified Legacy Sorter** (`unified_sorter.py`)
 - Original multi-mode sorter
@@ -38,9 +38,11 @@ This unified repository contains four powerful tools:
 - ComfyUI batch processing
 - Color analysis features
 
+> 📦 **Deprecated:** The standalone `ImageExtractor/` tool has been superseded by the Sorter's built-in Extract Images mode.
+
 ## 🚀 Quick Start Guide
 
-### **Recommended: Sorter 2.4 (Most Users)**
+### **Recommended: Sorter 3.0 (Most Users)**
 ```bash
 # Navigate to the main sorter
 cd sorter/
@@ -73,13 +75,13 @@ python comfyui_to_civitai_converter.py
 pip install -r requirements.txt
 
 # Or install for specific tools:
-pip install -r sorter/requirements.txt        # For Sorter 2.4
+pip install -r sorter/requirements.txt        # For Sorter 3.0
 ```
 
 ### **📁 Repository Structure**
 ```
 SDXL_COMFYUI_CODE/
-├── 🎯 sorter/                 # Main Sorter 2.3 (Production)
+├── 🎯 sorter/                 # Main Sorter 3.0 (Production)
 │   ├── gui.py                 # GUI interface
 │   ├── main.py                # CLI interface
 │   ├── core/                  # Core sorting logic
@@ -126,7 +128,7 @@ Every operation now ends with a handy "Open Output Folder" button for instant ac
 - **✨ [Sorter Changelog](sorter/CHANGELOG.md)** - Latest features and improvements
 - **📖 [Migration Guide](MIGRATION_GUIDE.md)** - Switching from old repos/versions
 - **🗺️ [Development Roadmap](ROADMAP.md)** - Future plans and priorities
-- **🔧 [Sorter 2.3 Guide](sorter/README.md)** - Detailed sorter documentation
+- **🔧 [Sorter 3.0 Guide](sorter/README.md)** - Detailed sorter documentation
 - **🔄 [Converter Guide](civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - CivitAI conversion help
 - **🌐 [Builder Guide](builder/README.md)** - HTML interface documentation
 

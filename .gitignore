@@ -197,3 +197,6 @@ sort_logs/
 
 # Debug and metadata files
 debug_metadata*.json
+
+# Extractor/triage outputs (never commit extracted or bucketed images)
+extracted_images/

@@ -1,6 +1,6 @@
-# 🚀 Sorter 2.3 - Feature Showcase
+# 🚀 Sorter - Feature Showcase
 
-**Quick reference for all the powerful features available in Sorter 2.3**
+**Quick reference for the Sorter's core features** (written for v2.3 — see [CHANGELOG.md](CHANGELOG.md) for v2.4 metadata preservation and v3.0 Extract Images / Manual Sort / color engine additions)
 
 ---
 
