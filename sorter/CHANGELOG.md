@@ -2,6 +2,26 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.1.0] - 2026-08-01 - "Civitai Prep" 🏷️
+
+### 🎉 Major New Feature
+
+#### 🏷️ Civitai Prep (new mode, GUI + CLI)
+- Rewrites PNGs with an A1111/Civitai-style `parameters` chunk so **Civitai auto-detects every resource on upload**: checkpoint, LoRAs (with weights), VAE, and embeddings
+- Resolves workflow resource names to local model files (exact/stem/fuzzy/prefix matching across nested model folders), computes **AutoV2 hashes** with a persistent cache — each file hashed once, ever
+- Optional **Civitai API enrichment** (public `by-hash` endpoint, no key): adds model/version names and AIR identifiers via `Civitai resources` entries; results cached as `.civitai.info` sidecars shared with ComfyUI-Image-Saver; misses negative-cached; degrades gracefully offline
+- Primary-checkpoint selection is refiner-aware and filename-hinted — dual-loader workflows pick the model that actually generated the image
+- Safe by default: copies into `civitai_ready/` (originals untouched); in-place rewrite and workflow-JSON stripping are opt-in
+
+#### 🧠 Link-Aware Metadata Extraction (shared engine upgrade)
+- New `WorkflowTrace` class in `core/metadata_engine.py`, used by Civitai Prep **and** the .txt metadata reports
+- Follows ComfyUI node links (`[node_id, slot]`) through selector, primitive, pipe (`easy pipeIn/Out`), and `StringConcatenate` nodes to the literal values
+- Prompts traced from the base sampler's own conditioning inputs — supports `CLIPTextEncodeSDXL+`/refiner encoders, keeps positive/negative branches separate, and scores base passes over refiner passes (no more refiner boilerplate in reports)
+- **Runtime prompt merging**: prompts from the image's existing `parameters` chunk (where Florence2 captions / wildcard text actually live) are merged with workflow-traced template text
+- Sampling parameters and seeds fully dereferenced — no more raw `['1029', 0]` links or refiner steps in .txt reports
+
+---
+
 ## [3.0.0] - 2026-07-12 - "Extract, Triage & Color Engine" 🎨
 
 ### 🎉 Major New Features

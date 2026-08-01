@@ -1,4 +1,4 @@
-"""
+﻿"""
 Sorter 3.0 - Modern GUI Interface
 
 Beautiful, compact interface for all sorting operations with real-time progress tracking.
@@ -32,6 +32,7 @@ from sorters.image_flattener import ImageFlattener
 from sorters.metadata_generator import MetadataGenerator
 from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
 from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
+from sorters.civitai_prep import CivitaiPrep
 from PIL import Image
 
 # Set appearance mode and color theme
@@ -625,7 +626,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.0.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.1.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -655,7 +656,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.0.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.1.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -673,7 +674,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "Manual Sort (Triage)", "Generate Metadata", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "Manual Sort (Triage)", "Civitai Prep", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -690,6 +691,7 @@ class SorterGUI(ctk.CTk):
         self.flatten_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.extract_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.manual_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.civitai_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.logs_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
 
@@ -701,6 +703,7 @@ class SorterGUI(ctk.CTk):
         self._build_flatten_form()
         self._build_extract_form()
         self._build_manual_form()
+        self._build_civitai_form()
         self._build_metadata_form()
         self._build_logs_form()
         
@@ -729,7 +732,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.0.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.1.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -1243,6 +1246,107 @@ class SorterGUI(ctk.CTk):
         self.log_message(f"🖼️ Opening triage: {len(sorter.images)} images, buckets: {', '.join(sorter.buckets)}")
         TriageWindow(self, sorter, self.log_message)
 
+    def _build_civitai_form(self):
+        """Build the Civitai Prep form."""
+        # Source directory
+        src_row = ctk.CTkFrame(self.civitai_frame)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Image Folder",
+                      command=lambda: self._choose_directory("source")).pack(side="left")
+        self.civitai_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.civitai_src_label.pack(side="left", padx=(10, 0))
+
+        # Models directory
+        models_row = ctk.CTkFrame(self.civitai_frame)
+        models_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(models_row, text="Models dir:").pack(side="left")
+        self.civitai_models_entry = ctk.CTkEntry(models_row, width=380)
+        self.civitai_models_entry.insert(0, r"D:\ComfyUI_windows_portable\ComfyUI\models")
+        self.civitai_models_entry.pack(side="left", padx=(5, 0))
+
+        # Options
+        opts = ctk.CTkFrame(self.civitai_frame)
+        opts.pack(fill="x", padx=15, pady=5)
+
+        self.civitai_api_var = ctk.BooleanVar(value=True)
+        self.civitai_inplace_var = ctk.BooleanVar(value=False)
+        self.civitai_strip_var = ctk.BooleanVar(value=False)
+
+        ctk.CTkCheckBox(opts, text="Civitai API lookup", variable=self.civitai_api_var).pack(side="left", padx=(0, 15))
+        ctk.CTkCheckBox(opts, text="Rewrite in place", variable=self.civitai_inplace_var).pack(side="left", padx=(0, 15))
+        ctk.CTkCheckBox(opts, text="Strip workflow JSON", variable=self.civitai_strip_var).pack(side="left")
+
+        # Info
+        ctk.CTkLabel(
+            self.civitai_frame,
+            text="🏷️ Embeds Model/LoRA/VAE hashes + Civitai resource IDs into PNG metadata so Civitai\n"
+                 "auto-detects every resource on upload. Default writes copies into 'civitai_ready/'.",
+            text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
+        ).pack(padx=15, pady=(5, 15))
+
+    def civitai_prep(self):
+        """Run Civitai Prep on the selected folder."""
+        if not self.source_dir or not os.path.isdir(self.source_dir):
+            messagebox.showerror("Error", "Please select an image folder first.")
+            return
+
+        models_dir = self.civitai_models_entry.get().strip()
+        if not os.path.isdir(models_dir):
+            messagebox.showerror("Error", f"Models directory not found:\n{models_dir}")
+            return
+
+        png_count = len([f for f in os.listdir(self.source_dir) if f.lower().endswith('.png')])
+        if png_count == 0:
+            messagebox.showerror("Error", "No PNG files found in the selected folder.")
+            return
+
+        enrich = self.civitai_api_var.get()
+        in_place = self.civitai_inplace_var.get()
+        strip = self.civitai_strip_var.get()
+
+        if not messagebox.askyesno(
+                "Confirm Civitai Prep",
+                f"📋 CONFIRMATION:\n"
+                f"   Source: {self.source_dir}  ({png_count} PNGs)\n"
+                f"   Models: {models_dir}\n"
+                f"   API lookup: {'Yes' if enrich else 'No'}\n"
+                f"   Output: {'REWRITE IN PLACE' if in_place else 'copies in civitai_ready/'}\n"
+                f"   Workflow JSON: {'stripped' if strip else 'preserved'}\n\n"
+                f"Proceed?"):
+            return
+
+        out_dir = self.source_dir if in_place else os.path.join(self.source_dir, "civitai_ready")
+        progress_window = ProgressWindow(self, "Civitai Prep", out_dir)
+
+        src = self.source_dir
+
+        def run_prep():
+            try:
+                prep = CivitaiPrep(self.logger, models_dir, api_lookup=enrich)
+
+                def on_progress(completed, total, filename):
+                    progress_window.enqueue(("progress", (completed, total, filename)))
+
+                report = prep.process_folder(
+                    src,
+                    in_place=in_place,
+                    clean_level='strip' if strip else 'keep',
+                    enrich=enrich,
+                    progress_callback=on_progress,
+                )
+                stats = report['stats']
+                progress_window.enqueue(("log",
+                    f"✅ {stats['written']} written, {stats['resources_linked']} resources linked, "
+                    f"{stats['skipped_no_metadata']} without metadata, {stats['failed']} failed"))
+                for name, kind in report['unresolved'].items():
+                    progress_window.enqueue(("log", f"⚠️ unresolved {kind}: {name}"))
+                progress_window.enqueue(("complete", True))
+            except Exception as e:
+                progress_window.enqueue(("error", str(e)))
+                self.logger.log_error(f"Civitai Prep failed: {e}", src, "Civitai Prep")
+
+        Thread(target=run_prep, daemon=True).start()
+
     def _build_metadata_form(self):
         """Build metadata generation form"""
         # Source directory
@@ -1296,6 +1400,8 @@ class SorterGUI(ctk.CTk):
                     self.lora_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Manual Sort (Triage)":
                     self.manual_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Civitai Prep":
+                    self.civitai_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Generate Metadata":
                     self.metadata_src_label.configure(text=os.path.basename(directory))
 
@@ -1326,7 +1432,7 @@ class SorterGUI(ctk.CTk):
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.manual_frame, self.metadata_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.manual_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -1352,6 +1458,9 @@ class SorterGUI(ctk.CTk):
         elif mode == "Manual Sort (Triage)":
             self.manual_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🖼️ Manual sort (triage) mode selected")
+        elif mode == "Civitai Prep":
+            self.civitai_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("🏷️ Civitai Prep mode selected")
         elif mode == "Generate Metadata":
             self.metadata_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📄 Generate metadata mode selected")
@@ -1383,6 +1492,8 @@ class SorterGUI(ctk.CTk):
             self.extract_images()
         elif mode == "Manual Sort (Triage)":
             self.manual_sort()
+        elif mode == "Civitai Prep":
+            self.civitai_prep()
         elif mode == "Generate Metadata":
             self.generate_metadata()
         elif mode == "View Session Logs":

@@ -1,7 +1,7 @@
-# Sorter 3.0.0 - Extract, Triage & Color Engine Release
-VERSION = "3.0.0"
-BUILD_DATE = "2026-07-12"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Extract, Triage & Color Engine Update"
+# Sorter 3.1.0 - Civitai Prep Release
+VERSION = "3.1.0"
+BUILD_DATE = "2026-08-01"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Civitai Prep Update"
 
 # Features included in this build:
 FEATURES = [
@@ -15,7 +15,9 @@ FEATURES = [
     "Flatten Image Folders",
     "Extract Images from PDF/EPUB/MOBI/CBR/CBZ",  # NEW in v3.0.0!
     "Auto-Crop Presets + Face-Centered Crop",     # NEW in v3.0.0!
-    "Manual Sort (Visual Triage)",                # NEW in v3.0.0!
+    "Manual Sort (Visual Triage)",                # v3.0.0
+    "Civitai Prep (resource hash embedding)",     # NEW in v3.1.0!
+    "Link-Aware Workflow Metadata Tracing",       # NEW in v3.1.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -26,5 +28,5 @@ FEATURES = [
     "Empty Folder Cleanup"          # Enhanced in v2.4.0
 ]
 
-# Extract images from documents, triage visually, sort by true color
-NOTES = "Extract Images pulls training data from PDFs/EPUBs/comics with crop presets; Manual Sort adds a keyboard-driven visual triage gallery; color sorting now uses HSV pixel voting with chromatic priority."
+# Civitai uploads now auto-detect every resource
+NOTES = "Civitai Prep embeds Model/LoRA/VAE/embedding hashes and Civitai resource IDs into PNG metadata so uploads auto-detect everything; metadata extraction is now link-aware (selector/pipe/concat nodes, runtime prompt merging)."

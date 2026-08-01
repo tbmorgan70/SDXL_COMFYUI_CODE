@@ -1,4 +1,4 @@
-"""
+﻿"""
 Sorter 2.0 - Main Interface
 
 Simple, rob            print("1. 🎯 Sort by Base Checkpoint (Most Used)")
@@ -39,13 +39,14 @@ from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
 from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
+from sorters.civitai_prep import CivitaiPrep
 
 class SorterV2:
     """Main interface for Sorter 2.0"""
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.0.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.1.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -57,10 +58,11 @@ class SorterV2:
             print("3. 🌈 Sort by Color")
             print("4. 📂 Flatten Image Folders")
             print("5. 📦 Extract Images from Files (PDF/EPUB/CBZ…)")
-            print("6. 📊 View Previous Session Logs")
+            print("6. 🏷️ Civitai Prep (embed resource hashes for upload)")
+            print("7. 📊 View Previous Session Logs")
             print("0. ❌ Exit")
 
-            choice = input("\nChoose option (0-6): ").strip()
+            choice = input("\nChoose option (0-7): ").strip()
 
             if choice == "1":
                 self.sort_by_checkpoint()
@@ -73,6 +75,8 @@ class SorterV2:
             elif choice == "5":
                 self.extract_images()
             elif choice == "6":
+                self.civitai_prep()
+            elif choice == "7":
                 self.view_session_logs()
             elif choice == "0":
                 print("👋 Goodbye!")
@@ -617,6 +621,67 @@ class SorterV2:
             print(f"\n→ Running flatten on: {extracted_dir}")
             self.flatten_images()
 
+    def civitai_prep(self):
+        """Embed Civitai-recognizable resource hashes into PNG metadata."""
+        print("\n🏷️ CIVITAI PREP")
+        print("-" * 40)
+        print("Rewrites PNGs with Model/LoRA/VAE hashes so Civitai")
+        print("auto-detects every resource when you upload.")
+
+        source_dir = self._get_directory_input("Enter folder of images to prep")
+        if not source_dir:
+            return
+
+        models_dir = input(
+            "Models directory (Enter for D:\\ComfyUI_windows_portable\\ComfyUI\\models): "
+        ).strip().strip('"\'') or r"D:\ComfyUI_windows_portable\ComfyUI\models"
+        if not os.path.isdir(models_dir):
+            print(f"❌ Models directory not found: {models_dir}")
+            return
+
+        enrich = input("Look up resources on Civitai API? (y/n, default=y): ").strip().lower() != 'n'
+        in_place = input("Rewrite originals in place? (y/n, default=n = copies to 'civitai_ready'): ").strip().lower() == 'y'
+        strip = input("Strip ComfyUI workflow JSON from output? (y/n, default=n): ").strip().lower() == 'y'
+
+        png_count = len([f for f in os.listdir(source_dir) if f.lower().endswith('.png')])
+        print(f"\n📋 CONFIRMATION:")
+        print(f"   Source:   {source_dir}  ({png_count} PNGs)")
+        print(f"   Models:   {models_dir}")
+        print(f"   API:      {'on' if enrich else 'off'}")
+        print(f"   Output:   {'IN PLACE' if in_place else 'civitai_ready/ copies'}")
+        print(f"   Workflow: {'stripped' if strip else 'preserved'}")
+
+        if input("\nProceed? (y/n): ").strip().lower() != 'y':
+            print("❌ Cancelled")
+            return
+
+        try:
+            prep = CivitaiPrep(self.logger, models_dir, api_lookup=enrich)
+            report = prep.process_folder(
+                source_dir,
+                in_place=in_place,
+                clean_level='strip' if strip else 'keep',
+                enrich=enrich,
+            )
+            stats = report['stats']
+            print(f"\n✅ CIVITAI PREP COMPLETE!")
+            print(f"   Written:          {stats['written']}")
+            print(f"   Resources linked: {stats['resources_linked']}")
+            print(f"   No metadata:      {stats['skipped_no_metadata']}")
+            print(f"   Failed:           {stats['failed']}")
+            if report['unresolved']:
+                print(f"   ⚠️ Unresolved:")
+                for name, kind in report['unresolved'].items():
+                    print(f"      {kind}: {name}")
+            print(f"   Output: {report['output_dir']}")
+
+            if input("\nOpen output folder? (y/n): ").strip().lower() == 'y':
+                os.startfile(report['output_dir'])
+
+        except Exception as e:
+            print(f"❌ Civitai Prep failed: {e}")
+            self.logger.log_error(f"Civitai Prep failed: {e}", source_dir, "Civitai Prep")
+
     def view_session_logs(self):
         """View previous session logs"""
         print("\n📊 SESSION LOGS")
@@ -679,7 +744,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 3.0.0...")
+        print("\n\n👋 Exiting Sorter 3.1.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

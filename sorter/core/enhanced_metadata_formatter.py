@@ -42,11 +42,11 @@ class EnhancedMetadataFormatter:
         lines.append("")
         
         # Positive Prompt Section
-        lines.extend(self._format_positive_prompt_section(metadata))
+        lines.extend(self._format_positive_prompt_section(metadata, image_path))
         lines.append("")
-        
+
         # Negative Prompt Section
-        lines.extend(self._format_negative_prompt_section(metadata))
+        lines.extend(self._format_negative_prompt_section(metadata, image_path))
         lines.append("")
         lines.append("")
         lines.append("")
@@ -224,59 +224,66 @@ Generated: {timestamp}
         
         return lines
     
-    def _format_positive_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format positive prompt section with support for node references and base model priority"""
+    def _format_positive_prompt_section(self, metadata: Dict[str, Any],
+                                        image_path: Optional[str] = None) -> List[str]:
+        """Format positive prompt (workflow-traced merged with runtime chunk)"""
         lines = ["=== POSITIVE PROMPT ==="]
-        
-        positive_prompt = None
+
+        from .metadata_engine import WorkflowTrace
+        positive_prompt = WorkflowTrace.extract_prompts_full(
+            metadata, image_path).get('positive', '')
+
+        if not positive_prompt:
+            positive_prompt = self._legacy_positive_prompt(metadata)
+
+        if positive_prompt:
+            lines.append(positive_prompt)
+
+        return lines
+
+    def _legacy_positive_prompt(self, metadata: Dict[str, Any]) -> Optional[str]:
+        """Fallback: encode-node scan with base-over-refiner priority"""
         base_model_prompt = None
         refiner_prompt = None
-        
-        # First pass: categorize prompts by base vs refiner
+
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
-                
+
             class_type = node_data.get('class_type', '')
             inputs = node_data.get('inputs', {})
             title = node_data.get('_meta', {}).get('title', '').lower()
-            
-            if class_type in ['CLIPTextEncode', 'CLIPTextEncodeSDXL', 'CLIPTextEncodeSDXLRefiner'] and 'text' in inputs:
+
+            if 'CLIPTextEncode' in class_type and 'text' in inputs:
                 # Skip negative prompts
                 if 'negative' in title or 'neg' in title:
                     continue
-                
+
                 # Determine if this is a refiner node
                 is_refiner = (
-                    'refiner' in class_type.lower() or 
+                    'refiner' in class_type.lower() or
                     'refiner' in title or
-                    'ascore' in inputs or  # Common refiner parameter
-                    'width' in inputs  # SDXL refiner often has width/height
+                    'ascore' in inputs  # Common refiner parameter
                 )
-                
+
                 # Extract text (direct or via node reference)
                 text_data = inputs['text']
                 extracted_text = None
-                
+
                 if isinstance(text_data, str) and text_data.strip():
                     extracted_text = text_data.strip()
                 elif isinstance(text_data, list) and len(text_data) >= 1:
                     ref_node_id = text_data[0]
                     extracted_text = self._resolve_text_node_reference(metadata, ref_node_id)
-                
+
                 if extracted_text:
                     if is_refiner:
                         refiner_prompt = extracted_text
                     else:
                         base_model_prompt = extracted_text
-        
+
         # Prioritize base model prompt over refiner prompt
-        positive_prompt = base_model_prompt or refiner_prompt
-        
-        if positive_prompt:
-            lines.append(positive_prompt)
-        
-        return lines
+        return base_model_prompt or refiner_prompt
     
     def _resolve_text_node_reference(self, metadata: Dict[str, Any], node_id: str) -> Optional[str]:
         """Resolve a text node reference to get the actual text content"""
@@ -345,12 +352,19 @@ Generated: {timestamp}
         
         return None
     
-    def _format_negative_prompt_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format negative prompt section"""
+    def _format_negative_prompt_section(self, metadata: Dict[str, Any],
+                                        image_path: Optional[str] = None) -> List[str]:
+        """Format negative prompt (workflow-traced merged with runtime chunk)"""
         lines = ["=== NEGATIVE PROMPT ==="]
-        
-        negative_prompt = None
-        
+
+        from .metadata_engine import WorkflowTrace
+        negative_prompt = WorkflowTrace.extract_prompts_full(
+            metadata, image_path).get('negative', '')
+
+        if negative_prompt:
+            lines.append(negative_prompt)
+            return lines
+
         for node_id, node_data in metadata.items():
             if not isinstance(node_data, dict):
                 continue
@@ -382,9 +396,24 @@ Generated: {timestamp}
         return lines
     
     def _format_sampling_section(self, metadata: Dict[str, Any]) -> List[str]:
-        """Format sampling parameters section to match original format (prioritize base KSampler over refiner)"""
+        """Format sampling parameters (base pass preferred, node links resolved)"""
         lines = ["=== SAMPLING PARAMETERS ==="]
-        
+
+        from .metadata_engine import WorkflowTrace
+        traced = WorkflowTrace.extract_sampling(metadata)
+        if traced:
+            def fmt_num(v):
+                return int(v) if isinstance(v, float) and v.is_integer() else v
+            if traced.get('steps') is not None:
+                lines.append(f"Steps: {fmt_num(traced['steps'])}")
+            if traced.get('cfg') is not None:
+                lines.append(f"Cfg: {fmt_num(traced['cfg'])}")
+            if traced.get('sampler_name'):
+                lines.append(f"Sampler Name: {traced['sampler_name']}")
+            if traced.get('scheduler'):
+                lines.append(f"Scheduler: {traced['scheduler']}")
+            return lines
+
         base_steps = None
         base_cfg = None
         base_sampler_name = None

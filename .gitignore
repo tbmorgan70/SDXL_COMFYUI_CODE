@@ -203,3 +203,6 @@ extracted_images/
 
 # Claude Code session workspaces
 .claude/
+
+# Machine-specific model hash cache
+sorter/civitai_hash_cache.json

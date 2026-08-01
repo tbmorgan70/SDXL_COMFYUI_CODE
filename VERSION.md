@@ -1,14 +1,19 @@
 # 📌 Version Information
 
-**Last Updated:** July 12, 2026
+**Last Updated:** August 1, 2026
 
 ---
 
-## 🎯 Repository Version: 3.1.0
+## 🎯 Repository Version: 3.2.0
 
-**Release Date:** July 12, 2026  
+**Release Date:** August 1, 2026  
 **Status:** ✅ Released  
-**Codename:** "Sorter 3.0"
+**Codename:** "Civitai Prep"
+
+### What's New in 3.2:
+- ✅ **Sorter 3.1** — Civitai Prep: embed Model/LoRA/VAE/embedding hashes + Civitai resource IDs into PNGs so uploads auto-detect every resource
+- ✅ Link-aware workflow metadata tracing (`WorkflowTrace`) — fixes refiner prompts and raw node-links in .txt reports
+- ✅ Runtime prompt merging (Florence2 captions + template text)
 
 ### What's New in 3.1:
 - ✅ **Sorter 3.0 released** — Extract Images, Manual Sort (Triage), and rewritten Color engine
@@ -43,10 +48,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.0.0** ✅ Production Ready
+### Main Sorter - **v3.1.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** July 12, 2026
+**Last Updated:** August 1, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -61,6 +66,7 @@
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.1:** Civitai Prep — resource hash embedding for auto-detection on upload; link-aware metadata tracing
 - **v3.0:** Extract Images mode, Manual Sort (Triage) mode, color engine rewrite
 - **v2.4:** Automatic metadata preservation - PNG images move with their .txt files
 - **v2.3:** LoRA Stack sorting, Metadata-only mode, Auto-open output
