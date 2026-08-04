@@ -1,9 +1,18 @@
 """
-Image Extractor Sorter — Extract images from PDF/EPUB/MOBI/CBR/CBZ files.
+Image Extractor Sorter — Extract images from documents and archives.
+
+Supported containers: PDF, EPUB, MOBI/AZW, CBZ/CBR/CB7/CBT, and plain
+ZIP/RAR/7Z/TAR. The real container format is detected by magic bytes, not
+extension — many ".cbr" files in the wild are actually ZIPs (and vice
+versa), and this handles them transparently.
+
 Supports auto-crop to standard aspect ratios with optional face-centered cropping.
 """
 
 import io
+import os
+import shutil
+import tarfile
 import zipfile
 from pathlib import Path
 
@@ -22,12 +31,97 @@ except ImportError:
     HAS_RARFILE = False
 
 try:
+    import py7zr
+    HAS_PY7ZR = True
+except ImportError:
+    HAS_PY7ZR = False
+
+try:
     import mediapipe as mp
     HAS_MEDIAPIPE = True
 except ImportError:
     HAS_MEDIAPIPE = False
 
-SUPPORTED_EXTENSIONS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3', '.cbr', '.cbz'}
+SUPPORTED_EXTENSIONS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3',
+                        '.cbr', '.cbz', '.cb7', '.cbt',
+                        '.zip', '.rar', '.7z', '.tar'}
+
+ARCHIVE_EXTENSIONS = {'.cbr', '.cbz', '.cb7', '.cbt', '.zip', '.rar', '.7z', '.tar'}
+
+ARCHIVE_IMAGE_EXTS = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')
+
+
+def sniff_format(filepath) -> str:
+    """Detect the real container format by magic bytes.
+
+    Returns one of 'zip', 'rar', '7z', 'tar', 'pdf', 'mobi', or ''.
+    Extensions lie constantly in the comic/ebook world — trust the bytes.
+    """
+    try:
+        with open(filepath, 'rb') as f:
+            head = f.read(8)
+            f.seek(60)
+            mobi_sig = f.read(8)
+            f.seek(257)
+            tar_sig = f.read(5)
+    except OSError:
+        return ''
+    if head.startswith(b'PK\x03\x04') or head.startswith(b'PK\x05\x06'):
+        return 'zip'
+    if head.startswith(b'Rar!'):
+        return 'rar'
+    if head.startswith(b'7z\xbc\xaf\x27\x1c'):
+        return '7z'
+    if head.startswith(b'%PDF'):
+        return 'pdf'
+    if mobi_sig in (b'BOOKMOBI', b'TEXtREAd'):
+        return 'mobi'
+    if tar_sig == b'ustar':
+        return 'tar'
+    return ''
+
+
+def setup_rar_backend() -> str:
+    """Point rarfile at an available extraction tool.
+
+    rarfile needs an external tool for real RAR archives. Probes PATH,
+    then common Windows install locations for 7-Zip and WinRAR.
+    Returns a status string ('' = ready, else a human-readable problem).
+    """
+    if not HAS_RARFILE:
+        return "rarfile module not installed (pip install rarfile)"
+
+    # Already available on PATH?
+    for tool in ('unrar', 'unar', 'bsdtar', '7z', '7zz'):
+        if shutil.which(tool):
+            return ''
+
+    # Common Windows install locations, including archive managers that
+    # bundle their own 7z binary rather than installing one on PATH
+    candidates = [
+        (r"C:\Program Files\WinRAR\UnRAR.exe", 'unrar'),
+        (r"C:\Program Files (x86)\WinRAR\UnRAR.exe", 'unrar'),
+        (r"C:\Program Files\7-Zip\7z.exe", '7z'),
+        (r"C:\Program Files (x86)\7-Zip\7z.exe", '7z'),
+        # PeaZip ships 7z + unrar under res\bin
+        (r"C:\Program Files\PeaZip\res\bin\7z\7z.exe", '7z'),
+        (r"C:\Program Files (x86)\PeaZip\res\bin\7z\7z.exe", '7z'),
+        (os.path.expandvars(r"%LOCALAPPDATA%\Programs\PeaZip\res\bin\7z\7z.exe"), '7z'),
+        (r"C:\Program Files\PeaZip\res\bin\unrar\unrar.exe", 'unrar'),
+        (r"C:\Program Files (x86)\PeaZip\res\bin\unrar\unrar.exe", 'unrar'),
+        # NanaZip (Microsoft Store 7-Zip fork)
+        (r"C:\Program Files\NanaZip\NanaZipC.exe", '7z'),
+    ]
+    for path, kind in candidates:
+        if os.path.isfile(path):
+            if kind == 'unrar':
+                rarfile.UNRAR_TOOL = path
+            else:
+                rarfile.SEVENZIP_TOOL = path
+            return ''
+
+    return ("no RAR tool found — install 7-Zip (winget install 7zip.7zip), "
+            "PeaZip, or WinRAR to enable RAR-based archives")
 
 # Crop size presets: display label → (width, height) or None
 CROP_PRESETS = {
@@ -119,7 +213,19 @@ class ImageExtractorSorter:
         base = base.replace(' ', '_')[:50]
         if self.folder_prefix:
             base = f"{self.folder_prefix}_{base}"
-        self.current_source_dir = self.output_dir / base
+
+        # Same-stem sources in one run (comic.cbz + comic.cbr) must not
+        # overwrite each other's output
+        if not hasattr(self, '_used_folder_names'):
+            self._used_folder_names = set()
+        name = base
+        n = 2
+        while name in self._used_folder_names:
+            name = f"{base}_{n}"
+            n += 1
+        self._used_folder_names.add(name)
+
+        self.current_source_dir = self.output_dir / name
         self.current_source_dir.mkdir(exist_ok=True)
         self.current_file_counter = 0
 
@@ -295,46 +401,92 @@ class ImageExtractorSorter:
             self._log(f"  Error reading MOBI: {e}")
         return self.current_file_counter
 
-    def extract_from_cbr(self, filepath: Path) -> int:
-        if not HAS_RARFILE:
-            self._log(f"Skipping CBR (rarfile not installed): {filepath.name}")
-            return 0
-        self._log(f"\nProcessing CBR: {filepath.name}")
-        self._setup_source_folder(filepath.name)
-        try:
-            with rarfile.RarFile(filepath, 'r') as rf:
-                for name in rf.namelist():
-                    if any(name.lower().endswith(e) for e in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')):
-                        self._save_image(rf.read(name))
-        except Exception as e:
-            self._log(f"  Error reading CBR: {e}")
-        return self.current_file_counter
+    def extract_from_archive(self, filepath: Path) -> int:
+        """Extract images from any archive container (CBZ/CBR/CB7/CBT,
+        ZIP/RAR/7Z/TAR). The real format is sniffed from magic bytes, so
+        mislabeled files ("cbr" that is really a zip, etc.) just work."""
+        fmt = sniff_format(filepath)
 
-    def extract_from_cbz(self, filepath: Path) -> int:
-        self._log(f"\nProcessing CBZ: {filepath.name}")
+        # Misnamed documents route to their real handlers
+        if fmt == 'pdf':
+            self._log(f"({filepath.name} is actually a PDF)")
+            return self.extract_from_pdf(filepath)
+        if fmt == 'mobi':
+            self._log(f"({filepath.name} is actually a MOBI)")
+            return self.extract_from_mobi(filepath)
+
+        if not fmt:
+            # Fall back to what the extension claims
+            ext = filepath.suffix.lower()
+            fmt = {'.cbz': 'zip', '.zip': 'zip', '.cbr': 'rar', '.rar': 'rar',
+                   '.cb7': '7z', '.7z': '7z', '.cbt': 'tar', '.tar': 'tar'}.get(ext, '')
+        if not fmt:
+            self._log(f"Skipping {filepath.name}: unrecognized format")
+            return 0
+
+        self._log(f"\nProcessing archive ({fmt.upper()}): {filepath.name}")
         self._setup_source_folder(filepath.name)
+
+        def is_image(name: str) -> bool:
+            return name.lower().endswith(ARCHIVE_IMAGE_EXTS)
+
         try:
-            with zipfile.ZipFile(filepath, 'r') as zf:
-                for name in zf.namelist():
-                    if any(name.lower().endswith(e) for e in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')):
-                        self._save_image(zf.read(name))
+            if fmt == 'zip':
+                with zipfile.ZipFile(filepath, 'r') as zf:
+                    for name in sorted(zf.namelist()):
+                        if is_image(name):
+                            self._save_image(zf.read(name))
+
+            elif fmt == 'rar':
+                status = setup_rar_backend()
+                if status:
+                    self._log(f"  ✗ Cannot extract RAR: {status}")
+                    return 0
+                with rarfile.RarFile(filepath, 'r') as rf:
+                    for name in sorted(rf.namelist()):
+                        if is_image(name):
+                            self._save_image(rf.read(name))
+
+            elif fmt == '7z':
+                if not HAS_PY7ZR:
+                    self._log("  ✗ Cannot extract 7z: py7zr not installed (pip install py7zr)")
+                    return 0
+                import tempfile
+                with py7zr.SevenZipFile(filepath, 'r') as zf:
+                    targets = sorted(n for n in zf.getnames() if is_image(n))
+                    if targets:
+                        # py7zr 1.x extracts to disk only — use a temp dir
+                        with tempfile.TemporaryDirectory() as tmp:
+                            zf.extract(path=tmp, targets=targets)
+                            for name in targets:
+                                member = Path(tmp) / name
+                                if member.is_file():
+                                    self._save_image(member.read_bytes())
+
+            elif fmt == 'tar':
+                with tarfile.open(filepath, 'r:*') as tf:
+                    for member in sorted(tf.getmembers(), key=lambda m: m.name):
+                        if member.isfile() and is_image(member.name):
+                            fobj = tf.extractfile(member)
+                            if fobj:
+                                self._save_image(fobj.read())
+
         except Exception as e:
-            self._log(f"  Error reading CBZ: {e}")
+            self._log(f"  Error reading archive: {e}")
+
         return self.current_file_counter
 
     def process_file(self, filepath: Path) -> int:
         ext = filepath.suffix.lower()
-        dispatch = {
-            '.pdf':  self.extract_from_pdf,
-            '.epub': self.extract_from_epub,
-            '.mobi': self.extract_from_mobi,
-            '.azw':  self.extract_from_mobi,
-            '.azw3': self.extract_from_mobi,
-            '.cbr':  self.extract_from_cbr,
-            '.cbz':  self.extract_from_cbz,
-        }
-        handler = dispatch.get(ext)
-        return handler(filepath) if handler else 0
+        if ext == '.pdf':
+            return self.extract_from_pdf(filepath)
+        if ext == '.epub':
+            return self.extract_from_epub(filepath)
+        if ext in ('.mobi', '.azw', '.azw3'):
+            return self.extract_from_mobi(filepath)
+        if ext in ARCHIVE_EXTENSIONS:
+            return self.extract_from_archive(filepath)
+        return 0
 
     # ------------------------------------------------------------------
     # Public entry point

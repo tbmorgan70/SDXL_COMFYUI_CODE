@@ -1,7 +1,7 @@
-# Sorter 3.1.0 - Civitai Prep Release
-VERSION = "3.1.0"
-BUILD_DATE = "2026-08-01"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Civitai Prep Update"
+# Sorter 3.2.0 - Universal Archives & Chained Prep Release
+VERSION = "3.2.0"
+BUILD_DATE = "2026-08-03"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Universal Archives & Chained Prep"
 
 # Features included in this build:
 FEATURES = [
@@ -13,11 +13,13 @@ FEATURES = [
     "Search & Sort by Metadata",
     "Sort by Color (HSV pixel voting)",  # Rewritten in v3.0.0!
     "Flatten Image Folders",
-    "Extract Images from PDF/EPUB/MOBI/CBR/CBZ",  # NEW in v3.0.0!
-    "Auto-Crop Presets + Face-Centered Crop",     # NEW in v3.0.0!
+    "Extract Images from PDF/EPUB/MOBI/Archives",  # v3.0.0, expanded v3.2.0
+    "Auto-Crop Presets + Face-Centered Crop",     # v3.0.0
     "Manual Sort (Visual Triage)",                # v3.0.0
-    "Civitai Prep (resource hash embedding)",     # NEW in v3.1.0!
-    "Link-Aware Workflow Metadata Tracing",       # NEW in v3.1.0!
+    "Civitai Prep (resource hash embedding)",     # v3.1.0
+    "Link-Aware Workflow Metadata Tracing",       # v3.1.0
+    "Magic-Byte Archive Detection (CBZ/CBR/CB7/CBT/ZIP/RAR/7Z/TAR)",  # NEW in v3.2.0!
+    "Civitai Prep Chained to Any Sort",           # NEW in v3.2.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -28,5 +30,5 @@ FEATURES = [
     "Empty Folder Cleanup"          # Enhanced in v2.4.0
 ]
 
-# Civitai uploads now auto-detect every resource
-NOTES = "Civitai Prep embeds Model/LoRA/VAE/embedding hashes and Civitai resource IDs into PNG metadata so uploads auto-detect everything; metadata extraction is now link-aware (selector/pipe/concat nodes, runtime prompt merging)."
+# One-pass workflow: extract anything, sort it, ship it to Civitai
+NOTES = "Archive extraction now detects the real container format by magic bytes (mislabeled .cbr/.cbz just work) and supports CB7/CBT/ZIP/RAR/7Z/TAR; Civitai Prep can run automatically as part of any sort operation."

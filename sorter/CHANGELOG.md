@@ -2,6 +2,30 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.2.0] - 2026-08-03 - "Universal Archives & Chained Prep" 📚
+
+### 🎉 New Features
+
+#### 📚 Universal Archive Support (Extract Images)
+- **Magic-byte format detection** — the real container type is read from the file's bytes, not its extension. Mislabeled files (a ZIP named `.cbr`, a RAR named `.cbz`) now extract correctly instead of failing, which is extremely common for scanned books and comics
+- **New formats**: `.cb7` / `.7z` (via `py7zr`), `.cbt` / `.tar`, plus bare `.zip` / `.rar` — many "books" are shared as plain archives
+- **RAR backend auto-detection**: probes PATH, then 7-Zip, WinRAR, **PeaZip** (bundled `res\bin\7z` and `res\bin\unrar`), and NanaZip install locations. When no tool exists, the log says exactly what to install instead of failing silently
+- Misnamed *documents* reroute too — a PDF or MOBI with an archive extension is detected and sent to the right handler
+- Archive entries are extracted in sorted order so page sequence is preserved
+- Fixed: two sources with the same stem in one batch (`comic.cbz` + `comic.cbr`) no longer overwrite each other's output folder
+
+#### 🏷️ Civitai Prep Chained to Sorting
+- **Sort by Checkpoint**, **Sort by LoRA Stack**, and **Sort by Color** each gained a "🏷️ Civitai Prep" checkbox — sort and embed resource hashes in one operation
+- Runs **recursively and in place** across the sorted output tree, so folder structure is preserved and no duplicate copies are created
+- CLI equivalents prompt "Run Civitai Prep on sorted output?" after checkpoint and color sorts
+- `CivitaiPrep.process_folder()` gained a `recursive` parameter (implies in-place)
+
+### 🛠️ Other Changes
+- New dependency: `py7zr` (7z/CB7 support)
+- `requirements.txt` notes that RAR support needs an external tool (7-Zip / PeaZip / WinRAR)
+
+---
+
 ## [3.1.0] - 2026-08-01 - "Civitai Prep" 🏷️
 
 ### 🎉 Major New Feature

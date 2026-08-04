@@ -6,9 +6,10 @@ pillow>=9.0.0
 # GUI (required for gui.py)
 customtkinter>=5.0.0
 
-# Image extraction from PDF/EPUB/MOBI/CBZ/CBR (required for Extract Images mode)
+# Image extraction from PDF/EPUB/MOBI/CBZ/CBR/CB7/CBT/ZIP/RAR/7Z/TAR
 PyMuPDF>=1.23.0        # PDF support
-rarfile>=4.0           # CBR support
+rarfile>=4.0           # RAR/CBR support (needs 7-Zip or WinRAR installed)
+py7zr>=1.0             # 7z/CB7 support
 
 # Face-centered crop (optional — falls back to center crop if absent)
 mediapipe>=0.10.0

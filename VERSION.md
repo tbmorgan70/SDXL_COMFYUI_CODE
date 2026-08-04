@@ -1,16 +1,21 @@
 # 📌 Version Information
 
-**Last Updated:** August 1, 2026
+**Last Updated:** August 3, 2026
 
 ---
 
-## 🎯 Repository Version: 3.2.0
+## 🎯 Repository Version: 3.3.0
 
-**Release Date:** August 1, 2026  
+**Release Date:** August 3, 2026  
 **Status:** ✅ Released  
-**Codename:** "Civitai Prep"
+**Codename:** "Universal Archives"
 
-### What's New in 3.2:
+### What's New in 3.3:
+- ✅ **Sorter 3.2** — magic-byte archive detection: mislabeled `.cbr`/`.cbz` files now extract correctly
+- ✅ New archive formats: CB7/CBT/ZIP/RAR/7Z/TAR, with RAR backend auto-detection (7-Zip, PeaZip, WinRAR, NanaZip)
+- ✅ Civitai Prep can run automatically as part of any sort operation
+
+### What Was New in 3.2:
 - ✅ **Sorter 3.1** — Civitai Prep: embed Model/LoRA/VAE/embedding hashes + Civitai resource IDs into PNGs so uploads auto-detect every resource
 - ✅ Link-aware workflow metadata tracing (`WorkflowTrace`) — fixes refiner prompts and raw node-links in .txt reports
 - ✅ Runtime prompt merging (Florence2 captions + template text)
@@ -48,10 +53,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.1.0** ✅ Production Ready
+### Main Sorter - **v3.2.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** August 1, 2026
+**Last Updated:** August 3, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -66,6 +71,7 @@
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.2:** Universal archive support (magic-byte detection, CB7/CBT/ZIP/RAR/7Z/TAR); Civitai Prep chained to any sort
 - **v3.1:** Civitai Prep — resource hash embedding for auto-detection on upload; link-aware metadata tracing
 - **v3.0:** Extract Images mode, Manual Sort (Triage) mode, color engine rewrite
 - **v2.4:** Automatic metadata preservation - PNG images move with their .txt files

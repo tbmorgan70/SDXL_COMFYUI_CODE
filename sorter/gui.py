@@ -626,7 +626,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.1.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.2.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -656,7 +656,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.1.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.2.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -732,7 +732,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.1.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.2.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -757,10 +757,12 @@ class SorterGUI(ctk.CTk):
         self.checkpoint_move_var = ctk.BooleanVar(value=False)
         self.checkpoint_metadata_var = ctk.BooleanVar(value=True)
         self.checkpoint_rename_var = ctk.BooleanVar(value=False)
-        
+        self.checkpoint_civitai_var = ctk.BooleanVar(value=False)
+
         ctk.CTkCheckBox(opts1, text="Move files (instead of copy)", variable=self.checkpoint_move_var).pack(side="left", padx=(0, 20))
         ctk.CTkCheckBox(opts1, text="Create metadata files", variable=self.checkpoint_metadata_var).pack(side="left", padx=(0, 20))
-        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.checkpoint_rename_var).pack(side="left")
+        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.checkpoint_rename_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts1, text="🏷️ Civitai Prep", variable=self.checkpoint_civitai_var).pack(side="left")
         
         # Rename options row
         rename_row = ctk.CTkFrame(self.checkpoint_frame)
@@ -807,10 +809,12 @@ class SorterGUI(ctk.CTk):
         self.lora_move_var = ctk.BooleanVar(value=False)
         self.lora_metadata_var = ctk.BooleanVar(value=True)
         self.lora_rename_var = ctk.BooleanVar(value=False)
-        
+        self.lora_civitai_var = ctk.BooleanVar(value=False)
+
         ctk.CTkCheckBox(opts1, text="Move files", variable=self.lora_move_var).pack(side="left", padx=(0, 20))
         ctk.CTkCheckBox(opts1, text="Create metadata files", variable=self.lora_metadata_var).pack(side="left", padx=(0, 20))
-        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.lora_rename_var).pack(side="left")
+        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.lora_rename_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts1, text="🏷️ Civitai Prep", variable=self.lora_civitai_var).pack(side="left")
         
         # Rename row
         rename_row = ctk.CTkFrame(self.lora_frame)
@@ -895,10 +899,12 @@ class SorterGUI(ctk.CTk):
         self.color_move_var = ctk.BooleanVar(value=False)
         self.color_metadata_var = ctk.BooleanVar(value=True)
         self.color_rename_var = ctk.BooleanVar(value=False)
-        
+        self.color_civitai_var = ctk.BooleanVar(value=False)
+
         ctk.CTkCheckBox(opts1, text="Move files", variable=self.color_move_var).pack(side="left", padx=(0, 20))
         ctk.CTkCheckBox(opts1, text="Create metadata files", variable=self.color_metadata_var).pack(side="left", padx=(0, 20))
-        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.color_rename_var).pack(side="left")
+        ctk.CTkCheckBox(opts1, text="Rename files", variable=self.color_rename_var).pack(side="left", padx=(0, 20))
+        ctk.CTkCheckBox(opts1, text="🏷️ Civitai Prep", variable=self.color_civitai_var).pack(side="left")
         
         # Rename prefix row
         opts2 = ctk.CTkFrame(self.color_frame)
@@ -1003,7 +1009,8 @@ class SorterGUI(ctk.CTk):
                     ("All supported", " ".join(f"*{e}" for e in sorted(SUPPORTED_EXTENSIONS))),
                     ("PDF", "*.pdf"), ("EPUB", "*.epub"),
                     ("MOBI/AZW", "*.mobi *.azw *.azw3"),
-                    ("Comic archives", "*.cbr *.cbz"),
+                    ("Comic archives", "*.cbr *.cbz *.cb7 *.cbt"),
+                    ("Archives", "*.zip *.rar *.7z *.tar"),
                     ("All files", "*.*"),
                 ]
             )
@@ -1245,6 +1252,40 @@ class SorterGUI(ctk.CTk):
 
         self.log_message(f"🖼️ Opening triage: {len(sorter.images)} images, buckets: {', '.join(sorter.buckets)}")
         TriageWindow(self, sorter, self.log_message)
+
+    def _chain_civitai_prep(self, output_dir, progress_window):
+        """Run Civitai Prep in-place over a sorted output tree.
+
+        Called from sort worker threads when the mode's Civitai Prep
+        checkbox is on. Recursive + in-place, so the sorted folder
+        structure is preserved and no duplicate copies are made.
+        """
+        try:
+            models_dir = self.civitai_models_entry.get().strip() or \
+                r"D:\ComfyUI_windows_portable\ComfyUI\models"
+            if not os.path.isdir(models_dir):
+                progress_window.enqueue(("log",
+                    f"⚠️ Civitai Prep skipped: models dir not found ({models_dir})"))
+                return
+
+            progress_window.enqueue(("operation", "🏷️ Civitai Prep: embedding resource hashes..."))
+            prep = CivitaiPrep(self.logger, models_dir, api_lookup=True)
+
+            def on_progress(completed, total, filename):
+                progress_window.enqueue(("progress", (completed, total, filename)))
+
+            report = prep.process_folder(
+                str(output_dir), recursive=True, enrich=True,
+                progress_callback=on_progress)
+            stats = report['stats']
+            progress_window.enqueue(("log",
+                f"🏷️ Civitai Prep: {stats['written']} PNGs updated in place, "
+                f"{stats['resources_linked']} resource links embedded"))
+            for name, kind in report['unresolved'].items():
+                progress_window.enqueue(("log", f"⚠️ unresolved {kind}: {name}"))
+        except Exception as e:
+            progress_window.enqueue(("log", f"⚠️ Civitai Prep failed: {e}"))
+            self.logger.log_error(f"Chained Civitai Prep failed: {e}", str(output_dir), "Civitai Prep")
 
     def _build_civitai_form(self):
         """Build the Civitai Prep form."""
@@ -1586,7 +1627,10 @@ class SorterGUI(ctk.CTk):
                                 f"   Folders created: {stats.get('folders_created', 0)}\n" + \
                                 f"   Unknown checkpoints: {stats.get('unknown_checkpoint', 0)}"
                     progress_window.enqueue(("log", success_msg))
-                
+
+                if self.checkpoint_civitai_var.get():
+                    self._chain_civitai_prep(output_dir, progress_window)
+
                 progress_window.enqueue(("complete", True))
                 
             except Exception as e:
@@ -1663,7 +1707,10 @@ class SorterGUI(ctk.CTk):
                     rename_prefix=user_prefix,
                     progress_callback=progress_window.update_progress
                 )
-                
+
+                if self.lora_civitai_var.get():
+                    self._chain_civitai_prep(output_dir, progress_window)
+
                 # Signal completion
                 progress_window.enqueue(("complete", True))
                 
@@ -1845,7 +1892,9 @@ class SorterGUI(ctk.CTk):
                 
                 if success:
                     progress_window.enqueue(("log", "✅ COLOR SORTING COMPLETE!"))
-                
+                    if self.color_civitai_var.get():
+                        self._chain_civitai_prep(output_dir, progress_window)
+
                 progress_window.enqueue(("complete", success))
                 
             except Exception as e:

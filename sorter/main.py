@@ -46,7 +46,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.1.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.2.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -172,7 +172,10 @@ class SorterV2:
             print(f"   Sorted: {stats['sorted_images']}/{stats['total_images']} images")
             print(f"   Folders created: {stats['folders_created']}")
             print(f"   Unknown checkpoints: {stats['unknown_checkpoint']}")
-            
+
+            if input("\nRun Civitai Prep on sorted output? (y/n, default=n): ").lower() == 'y':
+                self._chain_civitai_prep(output_dir)
+
             # Offer to open output folder
             if input("\nOpen output folder? (y/n): ").lower() == 'y':
                 os.startfile(output_dir)
@@ -425,6 +428,10 @@ class SorterV2:
         
         if success:
             print("✅ COLOR SORTING COMPLETE!")
+
+            if input("\nRun Civitai Prep on sorted output? (y/n, default=n): ").strip().lower() == 'y':
+                self._chain_civitai_prep(output_dir)
+
             if input("\nOpen output folder? (y/n): ").strip().lower() == 'y':
                 import subprocess
                 subprocess.run(['explorer', os.path.abspath(output_dir)], shell=True)
@@ -621,6 +628,27 @@ class SorterV2:
             print(f"\n→ Running flatten on: {extracted_dir}")
             self.flatten_images()
 
+    def _chain_civitai_prep(self, output_dir: str):
+        """Run Civitai Prep in-place over a sorted output tree (CLI chain)."""
+        models_dir = input(
+            "Models directory (Enter for D:\\ComfyUI_windows_portable\\ComfyUI\\models): "
+        ).strip().strip('"\'') or r"D:\ComfyUI_windows_portable\ComfyUI\models"
+        if not os.path.isdir(models_dir):
+            print(f"⚠️ Civitai Prep skipped: models dir not found ({models_dir})")
+            return
+        try:
+            print("🏷️ Running Civitai Prep on sorted output...")
+            prep = CivitaiPrep(self.logger, models_dir, api_lookup=True)
+            report = prep.process_folder(output_dir, recursive=True, enrich=True)
+            stats = report['stats']
+            print(f"🏷️ Civitai Prep: {stats['written']} PNGs updated in place, "
+                  f"{stats['resources_linked']} resource links embedded")
+            for name, kind in report['unresolved'].items():
+                print(f"   ⚠️ unresolved {kind}: {name}")
+        except Exception as e:
+            print(f"⚠️ Civitai Prep failed: {e}")
+            self.logger.log_error(f"Chained Civitai Prep failed: {e}", output_dir, "Civitai Prep")
+
     def civitai_prep(self):
         """Embed Civitai-recognizable resource hashes into PNG metadata."""
         print("\n🏷️ CIVITAI PREP")
@@ -744,7 +772,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 3.1.0...")
+        print("\n\n👋 Exiting Sorter 3.2.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

@@ -616,14 +616,22 @@ class CivitaiPrep:
 
     def process_folder(self, source_dir: str, in_place: bool = False,
                        clean_level: str = 'keep', enrich: bool = True,
+                       recursive: bool = False,
                        progress_callback=None) -> Dict[str, Any]:
         """Phase 3 batch: analyze every PNG and write Civitai-ready copies.
 
         Default writes copies into <source>/civitai_ready/ ; in_place=True
         rewrites originals (atomic per file via temp + replace).
+        recursive=True walks subfolders (for sorted output trees) — this
+        forces in-place mode so folder structure is preserved.
         """
         source = Path(source_dir)
-        png_files = sorted(source.glob('*.png'))
+        if recursive:
+            in_place = True  # copies would flatten/duplicate the sorted tree
+            png_files = sorted(p for p in source.rglob('*.png')
+                               if 'civitai_ready' not in p.parts)
+        else:
+            png_files = sorted(source.glob('*.png'))
         total = len(png_files)
 
         out_dir = source if in_place else source / 'civitai_ready'
