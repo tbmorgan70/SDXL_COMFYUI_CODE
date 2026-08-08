@@ -626,7 +626,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.2.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.3.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -656,7 +656,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.2.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.3.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -732,7 +732,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.2.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.3.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -1079,7 +1079,13 @@ class SorterGUI(ctk.CTk):
             values=["center", "face"],
             width=100,
         )
-        self.extract_crop_mode_menu.pack(side="left", padx=(5, 0))
+        self.extract_crop_mode_menu.pack(side="left", padx=(5, 10))
+
+        ctk.CTkLabel(crop_row, text="Face zoom:").pack(side="left")
+        self.extract_face_zoom = ctk.CTkEntry(crop_row, width=50, placeholder_text="2.2")
+        self.extract_face_zoom.pack(side="left", padx=(5, 0))
+        ctk.CTkLabel(crop_row, text="(lower = tighter)", text_color="#888",
+                     font=ctk.CTkFont(size=10)).pack(side="left", padx=(5, 0))
 
         # --- Custom size row (shown only for "Custom...") ---
         self.extract_custom_row = ctk.CTkFrame(self.extract_frame)
@@ -1111,8 +1117,9 @@ class SorterGUI(ctk.CTk):
         # --- Info ---
         ctk.CTkLabel(
             self.extract_frame,
-            text="📦 Extracts images from PDF, EPUB, MOBI, CBZ, CBR files. Face crop requires mediapipe.",
-            text_color="#aaa", font=ctk.CTkFont(size=11),
+            text="📦 Extracts images from PDF/EPUB/MOBI and CBZ/CBR/CB7/CBT/ZIP/RAR/7Z/TAR archives.\n"
+                 "Face crop uses a YOLO face model (ultralytics) and never upscales past native resolution.",
+            text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
         ).pack(padx=15, pady=(5, 15))
 
         # Internal state
@@ -1148,6 +1155,11 @@ class SorterGUI(ctk.CTk):
                 return
 
         crop_mode = self.extract_crop_mode_var.get() if crop_size else "none"
+        try:
+            face_zoom = float(self.extract_face_zoom.get().strip() or 2.2)
+            face_zoom = max(1.0, min(face_zoom, 10.0))
+        except ValueError:
+            face_zoom = 2.2
         folder_prefix = self.extract_prefix_entry.get().strip()
         chain = self.extract_chain_var.get()
         chain_mode = self.extract_chain_mode_var.get()
@@ -1166,6 +1178,7 @@ class SorterGUI(ctk.CTk):
                     folder_prefix=folder_prefix,
                     crop_size=crop_size,
                     crop_mode=crop_mode,
+                    face_zoom=face_zoom,
                 )
 
                 def on_progress(completed, total, filename):

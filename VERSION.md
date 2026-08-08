@@ -1,16 +1,21 @@
 # 📌 Version Information
 
-**Last Updated:** August 3, 2026
+**Last Updated:** August 7, 2026
 
 ---
 
-## 🎯 Repository Version: 3.3.0
+## 🎯 Repository Version: 3.4.0
 
-**Release Date:** August 3, 2026  
+**Release Date:** August 7, 2026  
 **Status:** ✅ Released  
-**Codename:** "Universal Archives"
+**Codename:** "YOLO Face Crop"
 
-### What's New in 3.3:
+### What's New in 3.4:
+- ✅ **Sorter 3.3** — face-centered crop works: YOLO backend (reuses your existing `face_yolov8m.pt`) with OpenCV Haar fallback
+- ✅ Root-caused the mediapipe failure: 0.10.x removed the `mp.solutions` API entirely
+- ✅ Face crops never upscale past native resolution; new Face zoom control
+
+### What Was New in 3.3:
 - ✅ **Sorter 3.2** — magic-byte archive detection: mislabeled `.cbr`/`.cbz` files now extract correctly
 - ✅ New archive formats: CB7/CBT/ZIP/RAR/7Z/TAR, with RAR backend auto-detection (7-Zip, PeaZip, WinRAR, NanaZip)
 - ✅ Civitai Prep can run automatically as part of any sort operation
@@ -53,10 +58,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.2.0** ✅ Production Ready
+### Main Sorter - **v3.3.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** August 3, 2026
+**Last Updated:** August 7, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -71,6 +76,7 @@
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.3:** YOLO-backed face crop with Haar fallback; no-upscale framing; Face zoom control
 - **v3.2:** Universal archive support (magic-byte detection, CB7/CBT/ZIP/RAR/7Z/TAR); Civitai Prep chained to any sort
 - **v3.1:** Civitai Prep — resource hash embedding for auto-detection on upload; link-aware metadata tracing
 - **v3.0:** Extract Images mode, Manual Sort (Triage) mode, color engine rewrite

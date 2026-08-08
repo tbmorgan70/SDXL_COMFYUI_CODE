@@ -37,10 +37,24 @@ except ImportError:
     HAS_PY7ZR = False
 
 try:
-    import mediapipe as mp
-    HAS_MEDIAPIPE = True
+    import cv2
+    HAS_CV2 = True
 except ImportError:
-    HAS_MEDIAPIPE = False
+    HAS_CV2 = False
+
+try:
+    from ultralytics import YOLO
+    HAS_ULTRALYTICS = True
+except ImportError:
+    HAS_ULTRALYTICS = False
+
+# Where to look for a YOLO face model (first hit wins). ComfyUI users
+# typically already have face_yolov8m.pt for FaceDetailer/Impact Pack.
+YOLO_FACE_MODEL_PATHS = [
+    r"D:\ComfyUI_windows_portable\ComfyUI\models\ultralytics\bbox\face_yolov8m.pt",
+    r"D:\ComfyUI_windows_portable\ComfyUI\models\ultralytics\bbox\face_yolov8n.pt",
+    r"D:\ComfyUI_windows_portable\ComfyUI\models\ultralytics\bbox\face_yolov8s.pt",
+]
 
 SUPPORTED_EXTENSIONS = {'.pdf', '.epub', '.mobi', '.azw', '.azw3',
                         '.cbr', '.cbz', '.cb7', '.cbt',
@@ -79,6 +93,97 @@ def sniff_format(filepath) -> str:
     if tar_sig == b'ustar':
         return 'tar'
     return ''
+
+
+class FaceDetector:
+    """Face detection with automatic backend selection.
+
+    Tries backends in descending order of quality and reports which one it
+    picked, so the log always explains what you're getting:
+
+      1. YOLO  — ultralytics + a face_yolov8*.pt model (best on angled,
+                 partial and stylized faces; GPU-accelerated when available)
+      2. Haar  — OpenCV cascade, bundled with opencv (frontal faces only)
+
+    NOTE: mediapipe is deliberately not used. Its legacy `mp.solutions`
+    face API was removed in 0.10.x, and the replacement Tasks API needs a
+    separate model download — YOLO is both better and already present for
+    most ComfyUI users.
+
+    detect() returns a list of (x1, y1, x2, y2, confidence) in pixels.
+    """
+
+    def __init__(self, model_path=None, min_confidence: float = 0.35, log=None):
+        self.min_confidence = min_confidence
+        self.backend = None
+        self._model = None
+        self._log = log or (lambda m: None)
+        self._init_backend(model_path)
+
+    def _init_backend(self, model_path):
+        # 1. YOLO face model
+        if HAS_ULTRALYTICS:
+            candidates = ([model_path] if model_path else []) + YOLO_FACE_MODEL_PATHS
+            for path in candidates:
+                if path and os.path.isfile(path):
+                    try:
+                        self._model = YOLO(path)
+                        self.backend = 'yolo'
+                        self._log(f"  Face detection: YOLO ({Path(path).name})")
+                        return
+                    except Exception as e:
+                        self._log(f"  YOLO model failed to load ({e}); trying next backend")
+
+        # 2. OpenCV Haar cascade
+        if HAS_CV2:
+            try:
+                cascade_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+                if os.path.isfile(cascade_file):
+                    self._model = cv2.CascadeClassifier(cascade_file)
+                    if not self._model.empty():
+                        self.backend = 'haar'
+                        self._log("  Face detection: OpenCV Haar cascade "
+                                  "(frontal faces only — install ultralytics "
+                                  "and a face_yolov8*.pt model for better results)")
+                        return
+            except Exception:
+                pass
+
+        self._log("  Face detection unavailable — face crop will use center crop")
+
+    @property
+    def available(self) -> bool:
+        return self.backend is not None
+
+    def detect(self, img: Image.Image):
+        """Detect faces in a PIL image. Returns [(x1,y1,x2,y2,conf), ...]."""
+        if not self.available:
+            return []
+        try:
+            if self.backend == 'yolo':
+                return self._detect_yolo(img)
+            return self._detect_haar(img)
+        except Exception as e:
+            self._log(f"  Face detection error ({e})")
+            return []
+
+    def _detect_yolo(self, img: Image.Image):
+        result = self._model.predict(source=img.convert('RGB'), verbose=False,
+                                     conf=self.min_confidence)[0]
+        if result.boxes is None:
+            return []
+        return [(float(x1), float(y1), float(x2), float(y2), float(c))
+                for (x1, y1, x2, y2), c
+                in zip(result.boxes.xyxy.tolist(), result.boxes.conf.tolist())]
+
+    def _detect_haar(self, img: Image.Image):
+        import numpy as np
+        gray = cv2.cvtColor(np.array(img.convert('RGB')), cv2.COLOR_RGB2GRAY)
+        faces = self._model.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5,
+                                             minSize=(40, 40))
+        # Haar gives no confidence score; report 1.0
+        return [(float(x), float(y), float(x + w), float(y + h), 1.0)
+                for (x, y, w, h) in faces]
 
 
 def setup_rar_backend() -> str:
@@ -155,7 +260,8 @@ class ImageExtractorSorter:
 
     def __init__(self, logger, min_width=512, min_height=512,
                  output_dir="extracted_images", folder_prefix="",
-                 crop_size=None, crop_mode="center"):
+                 crop_size=None, crop_mode="center", face_model_path=None,
+                 face_zoom=2.2, max_upscale=1.0):
         """
         Parameters
         ----------
@@ -168,6 +274,11 @@ class ImageExtractorSorter:
         crop_mode   : "none" | "center" | "face"
                       "face" detects the largest face and centers the crop
                       around it, falling back to center crop if none found.
+        face_model_path : optional explicit YOLO face model (.pt)
+        face_zoom   : how many face-heights tall the face crop should be
+                      (higher = wider shot; 2.2 ~ head and shoulders)
+        max_upscale : cap on enlarging the source for face framing; 1.0
+                      keeps everything at native resolution or smaller
         """
         self.logger = logger
         self.min_width = min_width
@@ -177,6 +288,8 @@ class ImageExtractorSorter:
         self.folder_prefix = folder_prefix
         self.crop_size = crop_size
         self.crop_mode = crop_mode if crop_size else "none"
+        self.face_zoom = face_zoom      # crop height in face-heights
+        self.max_upscale = max_upscale  # never enlarge past this x native
 
         self.total_extracted = 0
         self.current_source_dir = None
@@ -184,22 +297,12 @@ class ImageExtractorSorter:
 
         self._face_detector = None
         if self.crop_mode == "face":
-            if HAS_MEDIAPIPE:
-                self._init_face_detector()
-            else:
-                self._log("Warning: mediapipe not installed — face crop will fall back to center crop.")
+            self._face_detector = FaceDetector(model_path=face_model_path,
+                                               log=self._log)
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-
-    def _init_face_detector(self):
-        mp_face = mp.solutions.face_detection
-        # model_selection=1 uses the full-range model (better for varied angles/distances)
-        self._face_detector = mp_face.FaceDetection(
-            model_selection=1,
-            min_detection_confidence=0.5
-        )
 
     def _log(self, msg: str):
         if self.logger:
@@ -245,54 +348,52 @@ class ImageExtractorSorter:
         return img.crop((left, top, left + target_w, top + target_h))
 
     def _face_crop(self, img: Image.Image, target_w: int, target_h: int) -> Image.Image:
-        """Detect largest face, center the crop around it.
-        Falls back to center crop when no face is found or mediapipe unavailable."""
-        if not HAS_MEDIAPIPE or self._face_detector is None:
+        """Crop around the primary (largest) face.
+
+        Falls back to center crop when no detector is available or no face
+        is found. The crop is padded to ~2.2x the face height so hair, neck
+        and shoulders are included rather than a tight head shot.
+        """
+        if self._face_detector is None or not self._face_detector.available:
             return self._center_crop(img, target_w, target_h)
 
-        try:
-            import numpy as np
-            rgb = np.array(img.convert("RGB"))
-            results = self._face_detector.process(rgb)
-
-            if not results.detections:
-                return self._center_crop(img, target_w, target_h)
-
-            src_w, src_h = img.size
-
-            # Pick the largest face by relative bounding box area
-            best = max(
-                results.detections,
-                key=lambda d: (
-                    d.location_data.relative_bounding_box.width *
-                    d.location_data.relative_bounding_box.height
-                )
-            )
-            bb = best.location_data.relative_bounding_box
-            face_cx = (bb.xmin + bb.width / 2) * src_w
-            face_cy = (bb.ymin + bb.height / 2) * src_h
-            face_h_px = bb.height * src_h
-
-            # Pad to ~1.8× face height so hair/neck are included
-            needed_h = face_h_px * 1.8
-            scale = max(target_w / src_w, target_h / src_h,
-                        target_h / needed_h)
-
-            new_w = int(src_w * scale)
-            new_h = int(src_h * scale)
-            img_scaled = img.resize((new_w, new_h), Image.LANCZOS)
-
-            cx = int(face_cx * scale)
-            cy = int(face_cy * scale)
-
-            left = max(0, min(cx - target_w // 2, new_w - target_w))
-            top  = max(0, min(cy - target_h // 2, new_h - target_h))
-
-            return img_scaled.crop((left, top, left + target_w, top + target_h))
-
-        except Exception as e:
-            self._log(f"  Face detection error ({e}), falling back to center crop")
+        faces = self._face_detector.detect(img)
+        if not faces:
             return self._center_crop(img, target_w, target_h)
+
+        src_w, src_h = img.size
+
+        # Primary face = largest by area (matches "the subject" in practice)
+        x1, y1, x2, y2, conf = max(faces, key=lambda f: (f[2] - f[0]) * (f[3] - f[1]))
+        face_cx = (x1 + x2) / 2
+        face_cy = (y1 + y2) / 2
+        face_h = max(1.0, y2 - y1)
+
+        # Ideal framing puts `face_zoom` face-heights in the crop, but a
+        # small face (group shots, full-body at distance) would demand huge
+        # upscaling. Clamp so we never enlarge past max_upscale of native —
+        # a wider sharp crop beats a tight blurry one for training data.
+        fill_scale = max(target_w / src_w, target_h / src_h)
+        framing_scale = target_h / (face_h * self.face_zoom)
+        scale = min(framing_scale, max(fill_scale, self.max_upscale))
+        scale = max(scale, fill_scale)
+
+        new_w = max(target_w, int(src_w * scale))
+        new_h = max(target_h, int(src_h * scale))
+        img_scaled = img.resize((new_w, new_h), Image.LANCZOS)
+
+        # Bias the crop slightly above the face centre so the subject's eyes
+        # land nearer the upper third rather than dead centre.
+        cx = int(face_cx * scale)
+        cy = int(face_cy * scale - target_h * 0.08)
+
+        left = max(0, min(cx - target_w // 2, new_w - target_w))
+        top = max(0, min(cy - target_h // 2, new_h - target_h))
+
+        if len(faces) > 1:
+            self._log(f"    ({len(faces)} faces, using largest @ {conf:.2f})")
+
+        return img_scaled.crop((left, top, left + target_w, top + target_h))
 
     def _apply_crop(self, img: Image.Image) -> Image.Image:
         if not self.crop_size:

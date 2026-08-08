@@ -46,7 +46,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.2.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.3.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -559,12 +559,19 @@ class SorterV2:
 
         # --- Crop mode ---
         crop_mode = "none"
+        face_zoom = 2.2
         if crop_size:
             print("\n✂️  CROP MODE:")
             print("  1. Center fill (default)")
-            print("  2. Face-centered (requires mediapipe; falls back to center)")
+            print("  2. Face-centered (YOLO face model; falls back to center crop)")
             mode_choice = input("Choose (1-2, default=1): ").strip() or "1"
             crop_mode = "face" if mode_choice == "2" else "center"
+            if crop_mode == "face":
+                try:
+                    raw = input("  Face zoom — crop height in face-heights (default 2.2, lower = tighter): ").strip()
+                    face_zoom = max(1.0, min(float(raw or 2.2), 10.0))
+                except ValueError:
+                    face_zoom = 2.2
 
         # --- Confirm ---
         print(f"\n📋 CONFIRMATION:")
@@ -587,6 +594,7 @@ class SorterV2:
                 folder_prefix=folder_prefix,
                 crop_size=crop_size,
                 crop_mode=crop_mode,
+                face_zoom=face_zoom,
             )
             results = extractor.process_paths(input_paths)
 
@@ -772,7 +780,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 3.2.0...")
+        print("\n\n👋 Exiting Sorter 3.3.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

@@ -11,8 +11,11 @@ PyMuPDF>=1.23.0        # PDF support
 rarfile>=4.0           # RAR/CBR support (needs 7-Zip or WinRAR installed)
 py7zr>=1.0             # 7z/CB7 support
 
-# Face-centered crop (optional — falls back to center crop if absent)
-mediapipe>=0.10.0
+# Face-centered crop (optional — falls back to center crop if absent).
+# Best results need a YOLO face model such as face_yolov8m.pt, which most
+# ComfyUI users already have (models/ultralytics/bbox, used by FaceDetailer).
+# Without ultralytics, OpenCV's bundled Haar cascade is used instead.
+ultralytics>=8.0
 numpy>=1.24.0
 
 # Development

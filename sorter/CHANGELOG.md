@@ -2,6 +2,31 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.3.0] - 2026-08-07 - "YOLO Face Crop" 🎯
+
+### 🎉 Face-Centered Crop Now Actually Works
+
+#### 🎯 Multi-Backend Face Detection
+- **Root cause of the long-standing "mediapipe doesn't work" issue**: mediapipe 0.10.x **removed** the legacy `mp.solutions` API this code targeted — `mp.solutions.face_detection` raises `AttributeError` no matter how many times you reinstall. The replacement Tasks API also requires a separate model download.
+- New `FaceDetector` class picks the best available backend automatically:
+  1. **YOLO** (`ultralytics` + a `face_yolov8*.pt` model) — best on angled, partial and stylized faces, GPU-accelerated. Auto-discovers `models/ultralytics/bbox/face_yolov8m.pt`, which most ComfyUI users already have for FaceDetailer
+  2. **OpenCV Haar cascade** — bundled with opencv, no download, frontal faces only
+  3. **Center crop** — final fallback
+- The chosen backend is logged, so results are always explainable
+- Multi-face images report the count and the confidence of the face used
+
+#### 🖼️ Framing Quality Fix
+- Face crops are **never upscaled past native resolution**. Previously a small face (group shots, full-body at distance) could demand ~7x enlargement to hit the 2.2x-face-height framing, producing soft, over-zoomed crops
+- A small face now yields a wider *sharp* crop instead of a tight blurry one — measured across test generations, faces land at 31–45% of frame height with zero upscaling
+- Crop is biased slightly above face centre so eyes sit nearer the upper third
+- New **Face zoom** control (GUI entry + CLI prompt, default 2.2 = head and shoulders; lower is tighter)
+
+### 🛠️ Other Changes
+- `requirements.txt`: `mediapipe` replaced with `ultralytics` (optional; Haar fallback needs nothing)
+- Verified end to end: a real `.cbr` extracted to 469 face-centered images, all exactly 1024×1024
+
+---
+
 ## [3.2.0] - 2026-08-03 - "Universal Archives & Chained Prep" 📚
 
 ### 🎉 New Features
