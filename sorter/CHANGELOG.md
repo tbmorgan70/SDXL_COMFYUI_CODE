@@ -2,6 +2,48 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.4.0] - 2026-08-15 - "Page Stitching & Honest Framing" 📄
+
+### 🐛 Fixed: pages extracted as horizontal halves
+
+Large, high-resolution scans (magazines especially) frequently store **each
+page as several image XObjects placed edge-to-edge** — e.g. a top strip at
+y 0→396 and a bottom strip at y 396→792. `page.get_images()` returns those
+separately, so extraction produced half-pages, and face crops near the seam
+were cut in two.
+
+- New **auto-stitch** PDF mode (now the default) reads each image's placement
+  rectangle, groups pieces that tile edge-to-edge, and reassembles them at
+  native resolution
+- Only merges when the pieces cleanly cover their bounding box (within 2%),
+  so genuinely separate photos that merely touch are never combined
+- Handles vertical strips, horizontal strips and grids; falls back to
+  per-image extraction whenever a group doesn't tile cleanly
+- Two other modes selectable: **Raw embedded images** (previous behaviour)
+  and **Render whole page** (rasterize at a chosen DPI)
+- Verified on a real 304-page magazine PDF: 12 strips → 6 whole pages at
+  1183×1632, seam invisible
+
+### 🖼️ Face framing is now legible — and honest
+
+- `face_zoom` (crop height measured in face-heights) was accurate but
+  opaque. Replaced in both UIs with named presets: **Close-up / Portrait
+  (head & shoulders) / Upper body / Half body / Wide**
+- **Discovered while testing**: on low-DPI sources the v3.3 no-upscale guard
+  silently overrode the framing setting. A 194px face on a 1183×1632 scan
+  needs 3.76x enlargement for a close-up at 1024×1024, so four of five
+  presets collapsed to an identical crop — correct behaviour, but
+  indistinguishable from a broken control
+- The extractor now **reports** it: `18/19 face crops (95%) were framed
+  wider than requested — the source lacks the resolution...`, with concrete
+  suggestions
+- New **Allow upscaling** option for when tight framing matters more than
+  sharpness. Measured on magazine scans: 1024 crop = 95% clamped,
+  512 crop = 68%, 1024 with upscaling = 32%
+- `process_paths()` returns `face_crops` and `framing_clamped` counts
+
+---
+
 ## [3.3.0] - 2026-08-07 - "YOLO Face Crop" 🎯
 
 ### 🎉 Face-Centered Crop Now Actually Works

@@ -38,7 +38,9 @@ from sorters.checkpoint_sorter import CheckpointSorter
 from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
-from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
+from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
+                                     SUPPORTED_EXTENSIONS, FACE_FRAMING_PRESETS,
+                                     DEFAULT_FACE_FRAMING, PDF_MODES)
 from sorters.civitai_prep import CivitaiPrep
 
 class SorterV2:
@@ -46,7 +48,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.3.0 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.4.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -560,6 +562,7 @@ class SorterV2:
         # --- Crop mode ---
         crop_mode = "none"
         face_zoom = 2.2
+        max_upscale = 1.0
         if crop_size:
             print("\n✂️  CROP MODE:")
             print("  1. Center fill (default)")
@@ -567,11 +570,35 @@ class SorterV2:
             mode_choice = input("Choose (1-2, default=1): ").strip() or "1"
             crop_mode = "face" if mode_choice == "2" else "center"
             if crop_mode == "face":
+                framing_keys = list(FACE_FRAMING_PRESETS.keys())
+                default_idx = framing_keys.index(DEFAULT_FACE_FRAMING)
+                print("\n  🖼️  FRAMING — how much of the subject to keep:")
+                for i, key in enumerate(framing_keys):
+                    mark = " (default)" if i == default_idx else ""
+                    print(f"    {i}. {key}{mark}")
                 try:
-                    raw = input("  Face zoom — crop height in face-heights (default 2.2, lower = tighter): ").strip()
-                    face_zoom = max(1.0, min(float(raw or 2.2), 10.0))
+                    raw = input(f"  Choose (0-{len(framing_keys)-1}, default={default_idx}): ").strip()
+                    idx = int(raw) if raw else default_idx
+                    idx = max(0, min(idx, len(framing_keys) - 1))
                 except ValueError:
-                    face_zoom = 2.2
+                    idx = default_idx
+                face_zoom = FACE_FRAMING_PRESETS[framing_keys[idx]]
+                allow_up = input("  Allow upscaling for tighter framing "
+                                 "(softer images)? (y/n, default=n): ").strip().lower() == 'y'
+                max_upscale = 4.0 if allow_up else 1.0
+
+        # --- PDF page handling ---
+        pdf_keys = list(PDF_MODES.keys())
+        print("\n📄 PDF PAGES (scanned pages are often stored as split strips):")
+        for i, key in enumerate(pdf_keys):
+            print(f"  {i}. {key}")
+        try:
+            raw = input(f"Choose (0-{len(pdf_keys)-1}, default=0): ").strip()
+            pdf_idx = int(raw) if raw else 0
+            pdf_idx = max(0, min(pdf_idx, len(pdf_keys) - 1))
+        except ValueError:
+            pdf_idx = 0
+        pdf_mode = PDF_MODES[pdf_keys[pdf_idx]]
 
         # --- Confirm ---
         print(f"\n📋 CONFIRMATION:")
@@ -579,6 +606,7 @@ class SorterV2:
         print(f"   Output:     {output_dir}")
         print(f"   Min size:   {min_w}×{min_h}")
         print(f"   Crop:       {preset_label}  mode={crop_mode}")
+        print(f"   PDF mode:   {pdf_keys[pdf_idx]}")
 
         if input("\nProceed? (y/n): ").strip().lower() != 'y':
             print("❌ Cancelled")
@@ -595,6 +623,8 @@ class SorterV2:
                 crop_size=crop_size,
                 crop_mode=crop_mode,
                 face_zoom=face_zoom,
+                pdf_mode=pdf_mode,
+                max_upscale=max_upscale,
             )
             results = extractor.process_paths(input_paths)
 
@@ -780,7 +810,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 3.3.0...")
+        print("\n\n👋 Exiting Sorter 3.4.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

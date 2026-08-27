@@ -254,6 +254,25 @@ CROP_PRESETS = {
 
 CROP_MODES = ["none", "center", "face"]
 
+# How much of the subject to keep around a detected face, in plain terms.
+# The number is the crop height measured in face-heights: 1.0 would be the
+# face alone, so 2.2 leaves room for hair, neck and shoulders.
+FACE_FRAMING_PRESETS = {
+    "Close-up (face fills frame)":   1.4,
+    "Portrait (head & shoulders)":   2.2,   # default
+    "Upper body":                    3.5,
+    "Half body":                     5.0,
+    "Wide (full figure)":            8.0,
+}
+DEFAULT_FACE_FRAMING = "Portrait (head & shoulders)"
+
+# How PDF pages are turned into images
+PDF_MODES = {
+    "Auto-stitch split pages (recommended)": "stitch",
+    "Raw embedded images":                   "raw",
+    "Render whole page":                     "render",
+}
+
 
 class ImageExtractorSorter:
     """Extract images from document/archive files with optional auto-crop."""
@@ -261,7 +280,8 @@ class ImageExtractorSorter:
     def __init__(self, logger, min_width=512, min_height=512,
                  output_dir="extracted_images", folder_prefix="",
                  crop_size=None, crop_mode="center", face_model_path=None,
-                 face_zoom=2.2, max_upscale=1.0):
+                 face_zoom=2.2, max_upscale=1.0,
+                 pdf_mode="stitch", pdf_render_dpi=200):
         """
         Parameters
         ----------
@@ -279,6 +299,11 @@ class ImageExtractorSorter:
                       (higher = wider shot; 2.2 ~ head and shoulders)
         max_upscale : cap on enlarging the source for face framing; 1.0
                       keeps everything at native resolution or smaller
+        pdf_mode    : "stitch" (default) reassembles pages that scanners
+                      stored as several tiled strips; "raw" saves every
+                      embedded image separately (old behaviour);
+                      "render" rasterizes each page as it appears
+        pdf_render_dpi : resolution used by pdf_mode="render"
         """
         self.logger = logger
         self.min_width = min_width
@@ -290,10 +315,14 @@ class ImageExtractorSorter:
         self.crop_mode = crop_mode if crop_size else "none"
         self.face_zoom = face_zoom      # crop height in face-heights
         self.max_upscale = max_upscale  # never enlarge past this x native
+        self.pdf_mode = pdf_mode        # "stitch" | "raw" | "render"
+        self.pdf_render_dpi = pdf_render_dpi
 
         self.total_extracted = 0
         self.current_source_dir = None
         self.current_file_counter = 0
+        self._face_crops = 0
+        self._framing_clamped = 0
 
         self._face_detector = None
         if self.crop_mode == "face":
@@ -378,6 +407,12 @@ class ImageExtractorSorter:
         scale = min(framing_scale, max(fill_scale, self.max_upscale))
         scale = max(scale, fill_scale)
 
+        # Track when the source simply lacks the pixels for the requested
+        # framing, so the summary can say so instead of silently ignoring it
+        self._face_crops += 1
+        if framing_scale > scale + 0.01:
+            self._framing_clamped += 1
+
         new_w = max(target_w, int(src_w * scale))
         new_h = max(target_h, int(src_h * scale))
         img_scaled = img.resize((new_w, new_h), Image.LANCZOS)
@@ -408,16 +443,24 @@ class ImageExtractorSorter:
     # ------------------------------------------------------------------
 
     def _save_image(self, img_data: bytes) -> bool:
+        """Save raw encoded image bytes (archive members, PDF XObjects)."""
         try:
             img = Image.open(io.BytesIO(img_data))
             img.load()  # force decode before format is lost
+            return self._save_pil(img, fmt_hint=img.format)
+        except Exception as e:
+            self._log(f"  ✗ Image error: {e}")
+            return False
 
+    def _save_pil(self, img: Image.Image, fmt_hint=None) -> bool:
+        """Size-filter, crop and write a PIL image."""
+        try:
             if img.width < self.min_width or img.height < self.min_height:
                 return False
 
             img = self._apply_crop(img)
 
-            fmt = (img.format or 'png').lower()
+            fmt = (fmt_hint or img.format or 'png').lower()
             if fmt == 'jpeg':
                 fmt = 'jpg'
             if fmt not in ('jpg', 'png', 'gif', 'webp', 'bmp'):
@@ -442,18 +485,152 @@ class ImageExtractorSorter:
     # Format extractors
     # ------------------------------------------------------------------
 
+    # --- PDF tiling helpers -------------------------------------------
+
+    @staticmethod
+    def _tiles_adjacent(a, b, tol: float = 2.0) -> bool:
+        """True if two placement rects sit edge-to-edge like scan strips.
+
+        Requires the shared edge to line up AND the perpendicular extent to
+        match, so genuinely separate photos that merely touch aren't merged.
+        """
+        (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = a, b
+        # Vertically stacked: same left/right edges, one's bottom == other's top
+        if abs(ax0 - bx0) <= tol and abs(ax1 - bx1) <= tol:
+            if abs(ay1 - by0) <= tol or abs(by1 - ay0) <= tol:
+                return True
+        # Horizontally adjacent: same top/bottom edges, touching sides
+        if abs(ay0 - by0) <= tol and abs(ay1 - by1) <= tol:
+            if abs(ax1 - bx0) <= tol or abs(bx1 - ax0) <= tol:
+                return True
+        return False
+
+    @classmethod
+    def _group_tiles(cls, rects, tol: float = 2.0):
+        """Union-find grouping of placement rects into tiled clusters."""
+        n = len(rects)
+        parent = list(range(n))
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                if cls._tiles_adjacent(rects[i], rects[j], tol):
+                    ri, rj = find(i), find(j)
+                    if ri != rj:
+                        parent[rj] = ri
+
+        groups = {}
+        for i in range(n):
+            groups.setdefault(find(i), []).append(i)
+        return list(groups.values())
+
+    def _stitch_tiles(self, doc, infos, idxs):
+        """Reassemble tiled strips into the single image they represent.
+
+        Returns a PIL image, or None if the tiles don't cleanly cover their
+        bounding box (in which case the caller keeps them separate).
+        """
+        members = [infos[i] for i in idxs]
+        rects = [m['bbox'] for m in members]
+        x0 = min(r[0] for r in rects)
+        y0 = min(r[1] for r in rects)
+        x1 = max(r[2] for r in rects)
+        y1 = max(r[3] for r in rects)
+        union_w, union_h = x1 - x0, y1 - y0
+        if union_w <= 0 or union_h <= 0:
+            return None
+
+        # Only stitch if the pieces actually tile the region (no gaps/overlaps)
+        covered = sum((r[2] - r[0]) * (r[3] - r[1]) for r in rects)
+        if abs(covered - union_w * union_h) > 0.02 * union_w * union_h:
+            return None
+
+        # Pixels per PDF point, taken from the densest tile
+        scale_x = max(m['width'] / max(1e-6, m['bbox'][2] - m['bbox'][0]) for m in members)
+        scale_y = max(m['height'] / max(1e-6, m['bbox'][3] - m['bbox'][1]) for m in members)
+        canvas_w = max(1, round(union_w * scale_x))
+        canvas_h = max(1, round(union_h * scale_y))
+
+        canvas = Image.new('RGB', (canvas_w, canvas_h))
+        for m in members:
+            raw = doc.extract_image(m['xref'])
+            tile = Image.open(io.BytesIO(raw['image']))
+            tile.load()
+            tile = tile.convert('RGB')
+
+            bx0, by0, bx1, by1 = m['bbox']
+            px = round((bx0 - x0) * scale_x)
+            py = round((by0 - y0) * scale_y)
+            tw = max(1, round((bx1 - bx0) * scale_x))
+            th = max(1, round((by1 - by0) * scale_y))
+            if tile.size != (tw, th):
+                tile = tile.resize((tw, th), Image.LANCZOS)
+            canvas.paste(tile, (px, py))
+
+        return canvas
+
     def extract_from_pdf(self, filepath: Path) -> int:
         if not HAS_PYMUPDF:
             self._log(f"Skipping PDF (PyMuPDF not installed): {filepath.name}")
             return 0
-        self._log(f"\nProcessing PDF: {filepath.name}")
+        self._log(f"\nProcessing PDF: {filepath.name}  (mode={self.pdf_mode})")
         self._setup_source_folder(filepath.name)
+
+        stitched_pages = 0
         try:
             doc = fitz.open(filepath)
+
             for page_num in range(len(doc)):
-                for img in doc[page_num].get_images():
-                    self._save_image(doc.extract_image(img[0])["image"])
+                page = doc[page_num]
+
+                # Render mode: rasterize the whole page as it appears
+                if self.pdf_mode == 'render':
+                    pix = page.get_pixmap(dpi=self.pdf_render_dpi)
+                    self._save_pil(Image.frombytes(
+                        'RGB', (pix.width, pix.height), pix.samples), fmt_hint='png')
+                    continue
+
+                # Raw mode: every embedded image XObject, as-is
+                if self.pdf_mode == 'raw':
+                    for img in page.get_images():
+                        self._save_image(doc.extract_image(img[0])['image'])
+                    continue
+
+                # Stitch mode (default): reassemble scan strips into pages
+                try:
+                    infos = page.get_image_info(xrefs=True)
+                except Exception:
+                    infos = []
+                infos = [m for m in infos if m.get('xref')]
+
+                if not infos:
+                    for img in page.get_images():
+                        self._save_image(doc.extract_image(img[0])['image'])
+                    continue
+
+                rects = [m['bbox'] for m in infos]
+                for idxs in self._group_tiles(rects):
+                    if len(idxs) > 1:
+                        merged = self._stitch_tiles(doc, infos, idxs)
+                        if merged is not None:
+                            if self._save_pil(merged, fmt_hint='png'):
+                                stitched_pages += 1
+                            continue
+                    # Single image, or tiles that didn't cleanly cover
+                    for i in idxs:
+                        self._save_image(doc.extract_image(infos[i]['xref'])['image'])
+
             doc.close()
+
+            if stitched_pages:
+                self._log(f"  ↳ reassembled {stitched_pages} tiled page(s) "
+                          f"from split strips")
+
         except Exception as e:
             self._log(f"  Error reading PDF: {e}")
         return self.current_file_counter
@@ -625,8 +802,22 @@ class ImageExtractorSorter:
         if progress_callback:
             progress_callback(total, total, "")
 
+        # Be explicit when the requested framing couldn't be honoured — the
+        # source simply lacked pixels, and silently ignoring it looks like a bug
+        if self._framing_clamped:
+            pct = 100 * self._framing_clamped / max(1, self._face_crops)
+            self._log(
+                f"⚠️  {self._framing_clamped}/{self._face_crops} face crops ({pct:.0f}%) "
+                f"were framed wider than requested — the source lacks the resolution "
+                f"for this framing at {self.crop_size[0]}×{self.crop_size[1]}.")
+            self._log(
+                "    Fix: choose a smaller crop size, a wider framing preset, "
+                "or enable 'Allow upscaling' to accept softer images.")
+
         return {
             "total_files":     total,
             "total_extracted": self.total_extracted,
             "output_dir":      str(self.output_dir.absolute()),
+            "face_crops":      self._face_crops,
+            "framing_clamped": self._framing_clamped,
         }

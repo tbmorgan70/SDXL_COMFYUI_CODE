@@ -30,7 +30,9 @@ from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
 from sorters.image_flattener import ImageFlattener
 from sorters.metadata_generator import MetadataGenerator
-from sorters.image_extractor import ImageExtractorSorter, CROP_PRESETS, SUPPORTED_EXTENSIONS
+from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
+                                     SUPPORTED_EXTENSIONS, FACE_FRAMING_PRESETS,
+                                     DEFAULT_FACE_FRAMING, PDF_MODES)
 from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
 from sorters.civitai_prep import CivitaiPrep
 from PIL import Image
@@ -626,7 +628,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.3.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.4.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -656,7 +658,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.3.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.4.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -732,7 +734,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.3.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.4.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -1081,11 +1083,28 @@ class SorterGUI(ctk.CTk):
         )
         self.extract_crop_mode_menu.pack(side="left", padx=(5, 10))
 
-        ctk.CTkLabel(crop_row, text="Face zoom:").pack(side="left")
-        self.extract_face_zoom = ctk.CTkEntry(crop_row, width=50, placeholder_text="2.2")
-        self.extract_face_zoom.pack(side="left", padx=(5, 0))
-        ctk.CTkLabel(crop_row, text="(lower = tighter)", text_color="#888",
-                     font=ctk.CTkFont(size=10)).pack(side="left", padx=(5, 0))
+        ctk.CTkLabel(crop_row, text="Framing:").pack(side="left")
+        self.extract_framing_var = ctk.StringVar(value=DEFAULT_FACE_FRAMING)
+        ctk.CTkOptionMenu(crop_row, variable=self.extract_framing_var,
+                          values=list(FACE_FRAMING_PRESETS.keys()),
+                          width=210).pack(side="left", padx=(5, 10))
+
+        self.extract_upscale_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(crop_row, text="Allow upscaling",
+                        variable=self.extract_upscale_var).pack(side="left")
+
+        # --- PDF handling ---
+        pdf_row = ctk.CTkFrame(self.extract_frame)
+        pdf_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(pdf_row, text="PDF pages:").pack(side="left")
+        self.extract_pdf_mode_var = ctk.StringVar(
+            value=list(PDF_MODES.keys())[0])
+        ctk.CTkOptionMenu(pdf_row, variable=self.extract_pdf_mode_var,
+                          values=list(PDF_MODES.keys()),
+                          width=280).pack(side="left", padx=(5, 10))
+        ctk.CTkLabel(pdf_row,
+                     text="scanned pages are often stored as split strips",
+                     text_color="#888", font=ctk.CTkFont(size=10)).pack(side="left")
 
         # --- Custom size row (shown only for "Custom...") ---
         self.extract_custom_row = ctk.CTkFrame(self.extract_frame)
@@ -1155,16 +1174,15 @@ class SorterGUI(ctk.CTk):
                 return
 
         crop_mode = self.extract_crop_mode_var.get() if crop_size else "none"
-        try:
-            face_zoom = float(self.extract_face_zoom.get().strip() or 2.2)
-            face_zoom = max(1.0, min(face_zoom, 10.0))
-        except ValueError:
-            face_zoom = 2.2
+        face_zoom = FACE_FRAMING_PRESETS.get(self.extract_framing_var.get(), 2.2)
+        pdf_mode = PDF_MODES.get(self.extract_pdf_mode_var.get(), "stitch")
+        max_upscale = 4.0 if self.extract_upscale_var.get() else 1.0
         folder_prefix = self.extract_prefix_entry.get().strip()
         chain = self.extract_chain_var.get()
         chain_mode = self.extract_chain_mode_var.get()
 
-        self.log_message(f"📦 Starting extraction → {output_dir}  crop={preset_label}  mode={crop_mode}")
+        self.log_message(f"📦 Starting extraction → {output_dir}  crop={preset_label}  "
+                         f"mode={crop_mode}  pdf={pdf_mode}")
 
         progress_window = ProgressWindow(self, "Extracting Images", output_dir)
 
@@ -1179,6 +1197,8 @@ class SorterGUI(ctk.CTk):
                     crop_size=crop_size,
                     crop_mode=crop_mode,
                     face_zoom=face_zoom,
+                    pdf_mode=pdf_mode,
+                    max_upscale=max_upscale,
                 )
 
                 def on_progress(completed, total, filename):

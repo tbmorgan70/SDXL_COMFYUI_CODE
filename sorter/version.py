@@ -1,7 +1,7 @@
-# Sorter 3.3.0 - YOLO Face Crop Release
-VERSION = "3.3.0"
-BUILD_DATE = "2026-08-07"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - YOLO Face Crop"
+# Sorter 3.4.0 - Page Stitching & Honest Framing Release
+VERSION = "3.4.0"
+BUILD_DATE = "2026-08-15"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Page Stitching & Honest Framing"
 
 # Features included in this build:
 FEATURES = [
@@ -20,7 +20,9 @@ FEATURES = [
     "Link-Aware Workflow Metadata Tracing",       # v3.1.0
     "Magic-Byte Archive Detection (CBZ/CBR/CB7/CBT/ZIP/RAR/7Z/TAR)",  # NEW in v3.2.0!
     "Civitai Prep Chained to Any Sort",           # v3.2.0
-    "Multi-Backend Face Detection (YOLO/Haar)",   # NEW in v3.3.0!
+    "Multi-Backend Face Detection (YOLO/Haar)",   # v3.3.0
+    "PDF Page Auto-Stitching (split scan strips)",  # NEW in v3.4.0!
+    "Named Face Framing Presets",                 # NEW in v3.4.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -31,5 +33,5 @@ FEATURES = [
     "Empty Folder Cleanup"          # Enhanced in v2.4.0
 ]
 
-# Face crop finally works — and never trades sharpness for framing
-NOTES = "Face-centered crop now uses a YOLO face model (reusing the face_yolov8m.pt most ComfyUI users already have) with an OpenCV Haar fallback; mediapipe's removed solutions API is no longer required. Crops are never upscaled past native resolution, so a small face yields a wider sharp crop instead of a blurry tight one."
+# Scanned pages come out whole, and framing limits are no longer silent
+NOTES = "PDF pages that scanners stored as several tiled strips are now reassembled automatically, so magazine scans extract as whole pages instead of halves. Face framing moved to named presets, and the extractor reports when a source lacks the resolution for the requested framing instead of silently widening the crop."
