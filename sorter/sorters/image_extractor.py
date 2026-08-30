@@ -14,6 +14,7 @@ import os
 import shutil
 import tarfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image
@@ -323,6 +324,7 @@ class ImageExtractorSorter:
         self.current_file_counter = 0
         self._face_crops = 0
         self._framing_clamped = 0
+        self._stitched_pages = 0
 
         self._face_detector = None
         if self.crop_mode == "face":
@@ -339,12 +341,36 @@ class ImageExtractorSorter:
         else:
             print(msg)
 
+    def _framing_label(self) -> str:
+        """Short name for the current face framing (for folder names)."""
+        for name, val in FACE_FRAMING_PRESETS.items():
+            if abs(val - self.face_zoom) < 1e-6:
+                return name.split(' (')[0].lower().replace(' ', '-')
+        return f"z{self.face_zoom:g}"
+
+    def _settings_suffix(self) -> str:
+        """Compact description of the crop settings, appended to folders so
+        repeat runs with different settings sit side by side."""
+        parts = []
+        if self.crop_size:
+            w, h = self.crop_size
+            s = f"{w}x{h}_{self.crop_mode}"
+            if self.crop_mode == "face":
+                s += f"-{self._framing_label()}"
+                if self.max_upscale > 1.0:
+                    s += "+up"
+            parts.append(s)
+        if self.pdf_mode != "stitch":
+            parts.append(f"pdf-{self.pdf_mode}")
+        return ("__" + "_".join(parts)) if parts else ""
+
     def _setup_source_folder(self, source_filename: str):
         base = Path(source_filename).stem
         base = "".join(c for c in base if c.isalnum() or c in (' ', '-', '_'))
         base = base.replace(' ', '_')[:50]
         if self.folder_prefix:
             base = f"{self.folder_prefix}_{base}"
+        base += self._settings_suffix()
 
         # Same-stem sources in one run (comic.cbz + comic.cbr) must not
         # overwrite each other's output
@@ -581,7 +607,7 @@ class ImageExtractorSorter:
         self._log(f"\nProcessing PDF: {filepath.name}  (mode={self.pdf_mode})")
         self._setup_source_folder(filepath.name)
 
-        stitched_pages = 0
+        stitched_here = 0
         try:
             doc = fitz.open(filepath)
 
@@ -619,7 +645,8 @@ class ImageExtractorSorter:
                         merged = self._stitch_tiles(doc, infos, idxs)
                         if merged is not None:
                             if self._save_pil(merged, fmt_hint='png'):
-                                stitched_pages += 1
+                                stitched_here += 1
+                                self._stitched_pages += 1
                             continue
                     # Single image, or tiles that didn't cleanly cover
                     for i in idxs:
@@ -627,8 +654,8 @@ class ImageExtractorSorter:
 
             doc.close()
 
-            if stitched_pages:
-                self._log(f"  ↳ reassembled {stitched_pages} tiled page(s) "
+            if stitched_here:
+                self._log(f"  ↳ reassembled {stitched_here} tiled page(s) "
                           f"from split strips")
 
         except Exception as e:
@@ -754,17 +781,79 @@ class ImageExtractorSorter:
 
         return self.current_file_counter
 
+    def _write_manifest(self, source: Path, saved: int, stats: dict):
+        """Record exactly how this folder was produced, next to the images."""
+        if self.current_source_dir is None or saved == 0:
+            return
+        try:
+            lines = [
+                "=== EXTRACTION INFO ===",
+                f"Source file : {source.name}",
+                f"Source path : {source.parent}",
+                f"Extracted   : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                "",
+                "--- Settings ---",
+                f"Min size      : {self.min_width}x{self.min_height}",
+            ]
+            if self.crop_size:
+                lines.append(f"Crop size     : {self.crop_size[0]}x{self.crop_size[1]}")
+                if self.crop_mode == "face":
+                    lines.append(
+                        f"Crop mode     : face — {self._framing_label()} "
+                        f"({self.face_zoom:g} face-heights)")
+                    lines.append(
+                        f"Allow upscale : {'yes' if self.max_upscale > 1.0 else 'no'} "
+                        f"(max {self.max_upscale:g}x native)")
+                    backend = getattr(self._face_detector, 'backend', None)
+                    lines.append(f"Face backend  : {backend or 'none (center crop)'}")
+                else:
+                    lines.append(f"Crop mode     : {self.crop_mode}")
+            else:
+                lines.append("Crop          : none (original size kept)")
+            if source.suffix.lower() == '.pdf':
+                lines.append(f"PDF mode      : {self.pdf_mode}"
+                             + (f" @ {self.pdf_render_dpi} dpi"
+                                if self.pdf_mode == 'render' else ""))
+
+            lines += ["", "--- Results ---", f"Images written : {saved}"]
+            if stats.get('stitched'):
+                lines.append(f"Pages restitched : {stats['stitched']} "
+                             f"(split scan strips reassembled)")
+            if stats.get('face_crops'):
+                clamped = stats.get('clamped', 0)
+                pct = 100 * clamped / max(1, stats['face_crops'])
+                lines.append(f"Face crops     : {stats['face_crops']}")
+                lines.append(f"Framing limited: {clamped} ({pct:.0f}%)"
+                             + ("  <- source lacked resolution for this framing"
+                                if clamped else ""))
+
+            (self.current_source_dir / "_extraction_info.txt").write_text(
+                "\n".join(lines) + "\n", encoding="utf-8")
+        except OSError as e:
+            self._log(f"  Could not write manifest: {e}")
+
     def process_file(self, filepath: Path) -> int:
         ext = filepath.suffix.lower()
+        before_faces, before_clamped = self._face_crops, self._framing_clamped
+        before_stitched = self._stitched_pages
+
         if ext == '.pdf':
-            return self.extract_from_pdf(filepath)
-        if ext == '.epub':
-            return self.extract_from_epub(filepath)
-        if ext in ('.mobi', '.azw', '.azw3'):
-            return self.extract_from_mobi(filepath)
-        if ext in ARCHIVE_EXTENSIONS:
-            return self.extract_from_archive(filepath)
-        return 0
+            saved = self.extract_from_pdf(filepath)
+        elif ext == '.epub':
+            saved = self.extract_from_epub(filepath)
+        elif ext in ('.mobi', '.azw', '.azw3'):
+            saved = self.extract_from_mobi(filepath)
+        elif ext in ARCHIVE_EXTENSIONS:
+            saved = self.extract_from_archive(filepath)
+        else:
+            return 0
+
+        self._write_manifest(filepath, saved, {
+            'face_crops': self._face_crops - before_faces,
+            'clamped': self._framing_clamped - before_clamped,
+            'stitched': self._stitched_pages - before_stitched,
+        })
+        return saved
 
     # ------------------------------------------------------------------
     # Public entry point

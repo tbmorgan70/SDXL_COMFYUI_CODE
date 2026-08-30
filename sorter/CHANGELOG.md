@@ -2,6 +2,29 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.4.1] - 2026-08-30 - "Traceable Extractions" 🏷️
+
+### 🔍 Output now records how it was made
+
+Comparing extraction settings meant guessing which folder came from which
+run. Output is now self-documenting:
+
+- **Folder names carry the crop settings**, e.g.
+  `Playboy_USA_-_1965-12__1024x1024_face-portrait`,
+  `..._512x512_face-portrait`, `..._1024x1024_face-close-up+up`,
+  `..._pdf-raw`. Re-running the same source with different settings puts the
+  results side by side instead of colliding
+- Suffix is added only when it carries information (no crop = no suffix;
+  PDF mode shown only when it isn't the default)
+- **`_extraction_info.txt` manifest** written into each folder with the full
+  record: source file and path, timestamp, min size, crop size and mode,
+  framing preset in both label and face-heights, upscaling allowance, face
+  detection backend, PDF mode — plus results: images written, pages
+  restitched, face crops, and how many were framing-limited
+- Filenames stay short and sequential (Windows path lengths matter)
+
+---
+
 ## [3.4.0] - 2026-08-15 - "Page Stitching & Honest Framing" 📄
 
 ### 🐛 Fixed: pages extracted as horizontal halves

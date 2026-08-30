@@ -1,6 +1,6 @@
-# Sorter 3.4.0 - Page Stitching & Honest Framing Release
-VERSION = "3.4.0"
-BUILD_DATE = "2026-08-15"
+﻿# Sorter 3.4.1 - Page Stitching & Honest Framing Release
+VERSION = "3.4.1"
+BUILD_DATE = "2026-08-30"
 DESCRIPTION = "Advanced ComfyUI Image Organizer - Page Stitching & Honest Framing"
 
 # Features included in this build:
@@ -22,7 +22,8 @@ FEATURES = [
     "Civitai Prep Chained to Any Sort",           # v3.2.0
     "Multi-Backend Face Detection (YOLO/Haar)",   # v3.3.0
     "PDF Page Auto-Stitching (split scan strips)",  # NEW in v3.4.0!
-    "Named Face Framing Presets",                 # NEW in v3.4.0!
+    "Named Face Framing Presets",                 # v3.4.0
+    "Self-Describing Output Folders + Manifests",  # NEW in v3.4.1!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",

@@ -628,7 +628,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.4.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.4.1 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -658,7 +658,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.4.0 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.4.1 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -734,7 +734,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.4.0 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.4.1 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
