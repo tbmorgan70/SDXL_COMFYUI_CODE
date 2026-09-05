@@ -2,6 +2,48 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.4.2] - 2026-09-05 - "Resource Identification Fixes" 🔧
+
+Found while investigating why VAEs never appear in Civitai's Resources panel.
+The VAE data was correct all along — but two other bugs were corrupting what
+got embedded.
+
+### 🐛 Upscalers and detectors were being written as the checkpoint
+
+`model_name` is a *generic* ComfyUI input key: `UpscaleModelLoader`,
+`SAMLoader`, `UltralyticsDetectorProvider` and `easy hiresFix` all use it.
+Every one of those was collected as a checkpoint candidate, and whichever
+resolved first won — so images were frequently stamped with
+`Model: 4x-UltraSharp` instead of the real checkpoint.
+
+- Generic keys (`model_name`, `checkpoint`, `base_model`) now only count when
+  the node is a genuine checkpoint/UNet loader; `ckpt_name` and `unet_name`
+  are still accepted anywhere
+- Known non-checkpoint node classes are excluded outright
+- Filename-derived checkpoint hints that are junk (e.g. `00004` grabbed from
+  a sequence number) are ignored
+- Regression: 60/60 real images resolve the correct checkpoint, 0 false hits
+
+### 🐛 One network blip silently disabled enrichment for a whole run
+
+A single API timeout set an `offline` flag permanently, so every resource
+afterwards got hashes but no `Civitai resources` entry — the strongest
+matching signal — with only one warning line to show for it.
+
+- API requests now retry transient failures (timeouts, 429/5xx) with backoff
+- The offline flag only trips after 5 *consecutive* failures; a success
+  resets the counter
+- A run summary reports how many lookups failed and that re-running will
+  complete them
+
+### 🔧 Stronger resource entries
+
+`Civitai resources` entries now carry `modelVersionId`, `type` **and** `air`
+together instead of AIR alone, since different parsers key off different
+fields and VAEs appear to be matched least reliably by AIR.
+
+---
+
 ## [3.4.1] - 2026-08-30 - "Traceable Extractions" 🏷️
 
 ### 🔍 Output now records how it was made

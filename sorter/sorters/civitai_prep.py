@@ -25,6 +25,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -71,20 +72,45 @@ def civitai_sampler_name(sampler_name: str, scheduler: str) -> str:
     return name
 
 
-def http_get_json(url: str, timeout: int = 20) -> Optional[Dict[str, Any]]:
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'SDXL-Sorter-CivitaiPrep/1.0'})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode('utf-8'))
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None
-        raise ConnectionError(f"Civitai API HTTP {e.code}")
-    except (urllib.error.URLError, TimeoutError) as e:
-        raise ConnectionError(f"Civitai API unreachable: {e}")
+def http_get_json(url: str, timeout: int = 20, retries: int = 2) -> Optional[Dict[str, Any]]:
+    """GET JSON, retrying transient network errors.
 
-# Workflow input keys that name a resource file
-CKPT_KEYS = ('ckpt_name', 'model_name', 'checkpoint', 'base_model')
+    Returns None for a genuine 404 (resource not on Civitai). Raises
+    ConnectionError only after the retries are exhausted.
+    """
+    last = None
+    for attempt in range(retries + 1):
+        try:
+            req = urllib.request.Request(
+                url, headers={'User-Agent': 'SDXL-Sorter-CivitaiPrep/1.0'})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            if e.code in (429, 500, 502, 503, 504) and attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+                last = f"HTTP {e.code}"
+                continue
+            raise ConnectionError(f"Civitai API HTTP {e.code}")
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            last = str(e)
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+    raise ConnectionError(f"Civitai API unreachable: {last}")
+
+# Workflow input keys that name a resource file.
+# 'ckpt_name'/'unet_name' are unambiguous. Generic keys like 'model_name' are
+# also used by upscalers, SAM, and YOLO detector nodes, so they only count as
+# a checkpoint when the node itself is a checkpoint/UNet loader.
+CKPT_KEYS_STRICT = ('ckpt_name', 'unet_name')
+CKPT_KEYS_GENERIC = ('model_name', 'checkpoint', 'base_model')
+CKPT_CLASS_HINTS = ('checkpointloader', 'unetloader', 'diffusionmodelloader')
+# Node classes that consume 'model_name' but never hold a checkpoint
+NON_CKPT_CLASS_HINTS = ('upscale', 'samloader', 'ultralytics', 'detector',
+                        'clipvision', 'controlnet', 'ipadapter', 'hiresfix',
+                        'facerestore', 'insightface', 'rembg')
 VAE_KEYS = ('vae_name',)
 # Any input key containing 'lora' whose value looks like a model filename
 LORA_KEY_RE = re.compile(r'lora', re.IGNORECASE)
@@ -249,10 +275,16 @@ class CivitaiLookup:
     misses are remembered in the hash cache so the API is asked only once.
     """
 
+    # Give up on the API only after this many lookups fail back to back;
+    # a single blip must not silently strip resource entries from a whole run.
+    MAX_CONSECUTIVE_FAILURES = 5
+
     def __init__(self, hash_cache: HashCache, enabled: bool = True):
         self.hash_cache = hash_cache
         self.enabled = enabled
-        self.offline = False  # trips on first connection failure
+        self.offline = False
+        self.consecutive_failures = 0
+        self.failed_lookups = 0   # resources left without a Civitai entry
 
     def enrich(self, model_path: Path, autov2: str, log=None) -> Optional[Dict[str, Any]]:
         """Return {'modelName','versionName','modelVersionId','air'?} or None."""
@@ -272,10 +304,19 @@ class CivitaiLookup:
                 if log:
                     log(f"  Civitai lookup: {model_path.name}")
                 info = http_get_json(CIVITAI_API_BY_HASH.format(autov2.upper()))
+                self.consecutive_failures = 0
             except ConnectionError as e:
-                self.offline = True
-                if log:
-                    log(f"  ⚠️ {e} — continuing hash-only")
+                self.consecutive_failures += 1
+                self.failed_lookups += 1
+                if self.consecutive_failures >= self.MAX_CONSECUTIVE_FAILURES:
+                    self.offline = True
+                    if log:
+                        log(f"  ⚠️ {e} — giving up on the API after "
+                            f"{self.consecutive_failures} consecutive failures; "
+                            f"continuing hash-only")
+                elif log:
+                    log(f"  ⚠️ lookup failed for {model_path.name} ({e}) — "
+                        f"will keep trying other resources")
                 return None
 
             if info is None:
@@ -340,10 +381,22 @@ class WorkflowResources:
             if not isinstance(inputs, dict):
                 continue
 
-            for key in CKPT_KEYS:
+            class_type = str(entry.get('class_type', '')).lower().replace(' ', '')
+
+            for key in CKPT_KEYS_STRICT:
                 v = inputs.get(key)
                 if _looks_like_model_file(v) and v not in checkpoints:
                     checkpoints.append(v)
+
+            # Generic keys only count from genuine checkpoint/UNet loaders —
+            # otherwise an upscaler or face detector gets named as the model
+            is_ckpt_node = any(h in class_type for h in CKPT_CLASS_HINTS)
+            is_other_node = any(h in class_type for h in NON_CKPT_CLASS_HINTS)
+            if is_ckpt_node and not is_other_node:
+                for key in CKPT_KEYS_GENERIC:
+                    v = inputs.get(key)
+                    if _looks_like_model_file(v) and v not in checkpoints:
+                        checkpoints.append(v)
 
             for key in VAE_KEYS:
                 v = inputs.get(key)
@@ -460,6 +513,10 @@ class CivitaiPrep:
         ckpt_candidates: List[str] = []
         primary = MetadataAnalyzer.extract_primary_checkpoint(
             metadata, Path(image_path).name) if metadata else None
+        # A filename-derived hint can be junk (e.g. "00004" from a sequence
+        # number); ignore anything that isn't plausibly a model name
+        if primary and (primary.isdigit() or len(_norm_key(primary)) < 4):
+            primary = None
         if primary:
             # Workflow entries matching the primary name outrank the primary
             # string itself (they carry the exact file path + version suffix)
@@ -566,10 +623,14 @@ class CivitaiPrep:
                 }
                 if weight is not None:
                     res['weight'] = weight
+                # Emit both identifiers plus the resource type. Different
+                # Civitai parsers key off different fields, and VAEs in
+                # particular seem to be matched less reliably by AIR alone.
+                res['modelVersionId'] = info['modelVersionId']
+                if info.get('type'):
+                    res['type'] = info['type']
                 if info.get('air'):
                     res['air'] = info['air']
-                else:
-                    res['modelVersionId'] = info['modelVersionId']
                 civitai_resources.append(res)
 
         add_resource(ckpt, 'model')
@@ -690,6 +751,13 @@ class CivitaiPrep:
         self._log(f"Civitai Prep complete: {stats['written']}/{total} written, "
                   f"{stats['resources_linked']} resource links embedded, "
                   f"{len(unresolved_names)} unresolved resource(s)")
+
+        # Network trouble means hashes were written but the stronger
+        # "Civitai resources" entries were not — say so, don't hide it
+        if enrich and self.lookup.failed_lookups:
+            self._log(f"⚠️  {self.lookup.failed_lookups} Civitai lookup(s) failed "
+                      f"(network). Those resources carry hashes but no Civitai "
+                      f"resource entry — re-run to complete them.")
         for name, kind in unresolved_names.items():
             self._log(f"  ⚠️ unresolved {kind}: {name}")
 

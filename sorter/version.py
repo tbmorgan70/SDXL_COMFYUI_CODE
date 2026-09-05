@@ -1,7 +1,7 @@
-﻿# Sorter 3.4.1 - Page Stitching & Honest Framing Release
-VERSION = "3.4.1"
-BUILD_DATE = "2026-08-30"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Page Stitching & Honest Framing"
+﻿# Sorter 3.4.2 - Resource Identification Fixes
+VERSION = "3.4.2"
+BUILD_DATE = "2026-09-05"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Resource Identification Fixes"
 
 # Features included in this build:
 FEATURES = [
@@ -23,7 +23,7 @@ FEATURES = [
     "Multi-Backend Face Detection (YOLO/Haar)",   # v3.3.0
     "PDF Page Auto-Stitching (split scan strips)",  # NEW in v3.4.0!
     "Named Face Framing Presets",                 # v3.4.0
-    "Self-Describing Output Folders + Manifests",  # NEW in v3.4.1!
+    "Self-Describing Output Folders + Manifests",  # v3.4.1
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
