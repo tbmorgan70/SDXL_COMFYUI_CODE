@@ -2,6 +2,42 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.4.3] - 2026-09-09 - "VAE Attachment & Launcher" 🎛️
+
+### 🔍 Why VAEs never auto-detect — answered from Civitai's source
+
+Civitai's `get_image_resources.sql` classifies `vae` as a **component role**:
+*"real role words that are never the resource an image was made WITH"*. This
+was added deliberately (FD 69881) because a VAE bundled beside many
+checkpoints resolves to every version hosting it, crediting images to a
+stranger's model. Three independent filters drop a VAE arriving by hash:
+
+- `WHERE irh.name != 'vae'` — kills our `Hashes: {"vae": ...}` entry by key
+- role allowlist (`resource_roles`) excludes `vae`
+- matched file type in `('VAE', 'Text Encoder', 'CLIPVision', ...)` is rejected
+
+So no amount of hash accuracy could ever have worked. **One path bypasses all
+three**: a `civitaiResources` entry carrying `modelVersionId`, which resolves
+directly and never joins on hash.
+
+- That branch reads an entry's `type` as its `name`, and the merge drops any
+  row named exactly `vae` — so component types are now **omitted** from the
+  entry, letting it survive on `modelVersionId` alone
+- Confirms AIR is never read by this pipeline; `modelVersionId` (added in
+  3.4.2) is the field that actually attaches a resource
+
+### 🎛️ One-click GUI launcher
+
+- `run_gui.bat` rewritten: locates the interpreter **by capability**, probing
+  candidates for `customtkinter`/`Pillow` rather than trusting a name. This
+  matters — `py -3` follows the launcher default (Python 3.13 here) which
+  lacks the packages, while `python` is 3.11 and has them
+- No hardcoded install path, runs from its own folder however it's invoked,
+  offers to install missing requirements, and only pauses on failure
+- New `Create Desktop Shortcut.bat` makes a real Desktop shortcut
+
+---
+
 ## [3.4.2] - 2026-09-05 - "Resource Identification Fixes" 🔧
 
 Found while investigating why VAEs never appear in Civitai's Resources panel.

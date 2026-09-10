@@ -1,7 +1,7 @@
-﻿# Sorter 3.4.2 - Resource Identification Fixes
-VERSION = "3.4.2"
-BUILD_DATE = "2026-09-05"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Resource Identification Fixes"
+﻿# Sorter 3.4.3 - VAE Attachment & Launcher
+VERSION = "3.4.3"
+BUILD_DATE = "2026-09-09"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - VAE Attachment & Launcher"
 
 # Features included in this build:
 FEATURES = [

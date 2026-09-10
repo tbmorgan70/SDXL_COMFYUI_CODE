@@ -45,6 +45,17 @@ MODEL_EXTENSIONS = {'.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.sft'}
 
 CIVITAI_API_BY_HASH = 'https://civitai.com/api/v1/model-versions/by-hash/{}'
 
+# Resource types Civitai treats as *components* rather than "the thing the
+# image was made with" (get_image_resources.sql: component_roles). Hash-based
+# detection rejects these outright — a VAE or text encoder bundled beside many
+# checkpoints would otherwise be credited to whichever version published first.
+# Only a direct modelVersionId in civitaiResources can attach them, so we take
+# care not to label those entries with a type that gets them filtered again.
+COMPONENT_RESOURCE_TYPES = {
+    'vae', 'refinervae', 'clip', 'clipvision', 'cliplmodel', 'unet',
+    'textencoder', 'text_encoder', 'upscaler', 'controlnet',
+}
+
 # ComfyUI sampler -> Civitai/A1111 display name
 # (based on civitai's constants; scheduler appended below)
 CIVITAI_SAMPLER_MAP = {
@@ -623,14 +634,24 @@ class CivitaiPrep:
                 }
                 if weight is not None:
                     res['weight'] = weight
-                # Emit both identifiers plus the resource type. Different
-                # Civitai parsers key off different fields, and VAEs in
-                # particular seem to be matched less reliably by AIR alone.
+
+                # modelVersionId is the field that actually attaches the
+                # resource: Civitai's get_image_resources.sql reads it
+                # directly from civitaiResources and skips hash matching
+                # entirely. AIR alone is never read by that pipeline.
                 res['modelVersionId'] = info['modelVersionId']
-                if info.get('type'):
-                    res['type'] = info['type']
                 if info.get('air'):
                     res['air'] = info['air']
+
+                # In that same query a civitaiResources entry's "type"
+                # becomes its `name`, and the merge drops any row whose name
+                # is exactly 'vae'. Component types are therefore omitted so
+                # the entry survives on its modelVersionId; other types are
+                # harmless and kept for readability.
+                rtype = info.get('type')
+                if rtype and rtype.strip().lower() not in COMPONENT_RESOURCE_TYPES:
+                    res['type'] = rtype
+
                 civitai_resources.append(res)
 
         add_resource(ckpt, 'model')
