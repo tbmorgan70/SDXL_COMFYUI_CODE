@@ -42,13 +42,18 @@ from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
                                      SUPPORTED_EXTENSIONS, FACE_FRAMING_PRESETS,
                                      DEFAULT_FACE_FRAMING, PDF_MODES)
 from sorters.civitai_prep import CivitaiPrep
+from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
+                              DEFAULT_UPSCALE_PRESET, TARGET_SIZES,
+                              DEFAULT_TARGET_SIZE, OUTPUT_FORMATS,
+                              resolve_preset, list_upscale_models,
+                              DEFAULT_MODELS_DIR as DEFAULT_UPSCALE_MODELS_DIR)
 
 class SorterV2:
     """Main interface for Sorter 2.0"""
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.4.3 - Advanced ComfyUI Image Organizer")
+        print("🚀 Sorter 3.5.0 - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):
@@ -60,11 +65,12 @@ class SorterV2:
             print("3. 🌈 Sort by Color")
             print("4. 📂 Flatten Image Folders")
             print("5. 📦 Extract Images from Files (PDF/EPUB/CBZ…)")
-            print("6. 🏷️ Civitai Prep (embed resource hashes for upload)")
-            print("7. 📊 View Previous Session Logs")
+            print("6. 🔍 AI Upscale (models from ComfyUI)")
+            print("7. 🏷️ Civitai Prep (embed resource hashes for upload)")
+            print("8. 📊 View Previous Session Logs")
             print("0. ❌ Exit")
 
-            choice = input("\nChoose option (0-7): ").strip()
+            choice = input("\nChoose option (0-8): ").strip()
 
             if choice == "1":
                 self.sort_by_checkpoint()
@@ -77,8 +83,10 @@ class SorterV2:
             elif choice == "5":
                 self.extract_images()
             elif choice == "6":
-                self.civitai_prep()
+                self.ai_upscale()
             elif choice == "7":
+                self.civitai_prep()
+            elif choice == "8":
                 self.view_session_logs()
             elif choice == "0":
                 print("👋 Goodbye!")
@@ -587,6 +595,18 @@ class SorterV2:
                                  "(softer images)? (y/n, default=n): ").strip().lower() == 'y'
                 max_upscale = 4.0 if allow_up else 1.0
 
+        # --- AI upscale on demand ---
+        upscaler = None
+        if crop_size and input("\n🔍 AI upscale crops whose source is too small? "
+                               "(y/n, default=n): ").strip().lower() == 'y':
+            preset = self._choose_upscale_preset()
+            model = resolve_preset(preset, DEFAULT_UPSCALE_MODELS_DIR)
+            if model is None:
+                print(f"   ⚠️ No upscale models in {DEFAULT_UPSCALE_MODELS_DIR} — continuing without AI")
+            else:
+                upscaler = Upscaler(model, log=self.logger.log_info)
+                print(f"   Using {model.name}")
+
         # --- PDF page handling ---
         pdf_keys = list(PDF_MODES.keys())
         print("\n📄 PDF PAGES (scanned pages are often stored as split strips):")
@@ -625,12 +645,19 @@ class SorterV2:
                 face_zoom=face_zoom,
                 pdf_mode=pdf_mode,
                 max_upscale=max_upscale,
+                upscaler=upscaler,
             )
-            results = extractor.process_paths(input_paths)
+            try:
+                results = extractor.process_paths(input_paths)
+            finally:
+                if upscaler is not None:
+                    upscaler.close()
 
             print(f"\n✅ EXTRACTION COMPLETE!")
             print(f"   Files processed:  {results['total_files']}")
             print(f"   Images extracted: {results['total_extracted']}")
+            if results.get('ai_upscaled'):
+                print(f"   AI-upscaled:      {results['ai_upscaled']} crop(s)")
             print(f"   Output:           {results['output_dir']}")
 
         except Exception as e:
@@ -686,6 +713,98 @@ class SorterV2:
         except Exception as e:
             print(f"⚠️ Civitai Prep failed: {e}")
             self.logger.log_error(f"Chained Civitai Prep failed: {e}", output_dir, "Civitai Prep")
+
+    def _choose_upscale_preset(self) -> str:
+        """Prompt for a content preset; returns its label."""
+        keys = list(UPSCALE_PRESETS.keys())
+        default_idx = keys.index(DEFAULT_UPSCALE_PRESET)
+        print("   Content type:")
+        for i, k in enumerate(keys):
+            print(f"     {i}. {k}{' (default)' if i == default_idx else ''}")
+        try:
+            raw = input(f"   Choose (0-{len(keys)-1}, default={default_idx}): ").strip()
+            idx = max(0, min(int(raw) if raw else default_idx, len(keys) - 1))
+        except ValueError:
+            idx = default_idx
+        return keys[idx]
+
+    def ai_upscale(self):
+        """Upscale a folder of images with the ComfyUI upscale models."""
+        print("\n🔍 AI UPSCALE")
+        print("-" * 40)
+
+        source_dir = self._get_directory_input("Enter folder of images to upscale")
+        if not source_dir:
+            return
+
+        models_dir = input(f"Models folder (Enter for {DEFAULT_UPSCALE_MODELS_DIR}): "
+                           ).strip().strip('"\'') or DEFAULT_UPSCALE_MODELS_DIR
+        models = list_upscale_models(models_dir)
+        if not models:
+            print(f"❌ No upscale models found in {models_dir}")
+            return
+
+        preset = self._choose_upscale_preset()
+        model = resolve_preset(preset, models_dir)
+        print(f"   Using {model.name}  ({len(models)} model(s) available)")
+
+        size_keys = list(TARGET_SIZES.keys())
+        default_idx = size_keys.index(DEFAULT_TARGET_SIZE)
+        print("\nTarget long edge:")
+        for i, k in enumerate(size_keys):
+            print(f"  {i}. {k}{' (default)' if i == default_idx else ''}")
+        try:
+            raw = input(f"Choose (0-{len(size_keys)-1}, default={default_idx}): ").strip()
+            target = TARGET_SIZES[size_keys[max(0, min(int(raw) if raw else default_idx,
+                                                      len(size_keys) - 1))]]
+        except ValueError:
+            target = TARGET_SIZES[DEFAULT_TARGET_SIZE]
+        if target == "custom":
+            try:
+                target = int(input("  Long edge in px (256-16384): ").strip())
+                if not 256 <= target <= 16384:
+                    raise ValueError
+            except ValueError:
+                print("❌ Invalid size")
+                return
+
+        fmt_keys = list(OUTPUT_FORMATS.keys())
+        print("\nOutput format:")
+        for i, k in enumerate(fmt_keys):
+            print(f"  {i}. {k}")
+        fmt = OUTPUT_FORMATS[fmt_keys[1]] if input(
+            "Choose (0-1, default=0): ").strip() == "1" else OUTPUT_FORMATS[fmt_keys[0]]
+
+        recursive = input("Include subfolders? (y/n, default=n): ").strip().lower() == 'y'
+        output_dir = input("Output folder (Enter for a new folder inside the source): "
+                           ).strip().strip('"\'') or None
+
+        print(f"\n📋 CONFIRMATION:")
+        print(f"   Source:    {source_dir}")
+        print(f"   Model:     {model.name}")
+        print(f"   Long edge: {target} px")
+        print(f"   Format:    {fmt.upper()}")
+        print(f"   Subfolders:{' yes' if recursive else ' no'}")
+        if input("\nProceed? (y/n): ").strip().lower() != 'y':
+            print("❌ Cancelled")
+            return
+
+        try:
+            sorter = UpscaleSorter(self.logger, model, target_long_edge=target,
+                                   output_dir=output_dir, output_format=fmt,
+                                   preset_label=preset)
+            result = sorter.process_folder(source_dir, recursive=recursive)
+            s = result['stats']
+            print(f"\n✅ UPSCALE COMPLETE!")
+            print(f"   Upscaled:      {s['upscaled']}")
+            print(f"   Already large: {s['already_large']} (copied unchanged)")
+            print(f"   Failed:        {s['failed']}")
+            print(f"   Output:        {result['output_dir']}")
+            if input("\nOpen output folder? (y/n): ").strip().lower() == 'y':
+                os.startfile(result['output_dir'])
+        except Exception as e:
+            print(f"❌ AI upscale failed: {e}")
+            self.logger.log_error(f"AI upscale failed: {e}", source_dir, "AI Upscale")
 
     def civitai_prep(self):
         """Embed Civitai-recognizable resource hashes into PNG metadata."""
@@ -810,7 +929,7 @@ def main():
         sorter = SorterV2()
         sorter.main_menu()
     except KeyboardInterrupt:
-        print("\n\n👋 Exiting Sorter 3.4.3...")
+        print("\n\n👋 Exiting Sorter 3.5.0...")
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         print("Please report this issue.")

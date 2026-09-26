@@ -18,6 +18,12 @@ py7zr>=1.0             # 7z/CB7 support
 ultralytics>=8.0
 numpy>=1.24.0
 
+# AI upscaling (optional). Loads the same models ComfyUI uses from
+# models/upscale_models (ESRGAN, SPAN, DAT, HAT, SwinIR, ...). Install a
+# CUDA build of torch for GPU speed — CPU works but is very slow:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+spandrel>=0.4.0
+
 # Development
 pytest>=7.0.0
 black>=22.0.0

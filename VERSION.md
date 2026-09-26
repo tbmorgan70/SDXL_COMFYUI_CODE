@@ -1,16 +1,23 @@
 # 📌 Version Information
 
-**Last Updated:** August 15, 2026
+**Last Updated:** September 26, 2026
 
 ---
 
-## 🎯 Repository Version: 3.5.0
+## 🎯 Repository Version: 3.6.0
 
-**Release Date:** August 15, 2026  
+**Release Date:** September 26, 2026  
 **Status:** ✅ Released  
-**Codename:** "Page Stitching"
+**Codename:** "AI Upscale"
 
-### What's New in 3.5:
+### What's New in 3.6:
+- ✅ **Sorter 3.5** — AI Upscale mode: the models already in ComfyUI's `upscale_models`, on the GPU, to a target long edge, preserving PNG metadata
+- ✅ VRAM-aware tiling that avoids Windows' silent spill-to-system-RAM slowdown
+- ✅ Extract can AI-upscale just the region around a face when the source is too small for the framing
+- ✅ Plan and evaluation of nextgenUp / RAIV: [docs/UPSCALING_PLAN.md](docs/UPSCALING_PLAN.md)
+- ✅ Also since 3.5: Sorter 3.4.1 self-describing output folders, 3.4.2 upscaler-as-checkpoint fix, 3.4.3 VAE attachment on Civitai + robust GUI launcher
+
+### What Was New in 3.5:
 - ✅ **Sorter 3.4** — PDF pages stored as tiled scan strips are reassembled automatically (no more half-page extractions)
 - ✅ Face framing moved to named presets (Close-up → Wide)
 - ✅ Extractor reports when a source lacks the resolution for the requested framing, with an opt-in upscaling override
@@ -63,10 +70,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.4.0** ✅ Production Ready
+### Main Sorter - **v3.5.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** August 15, 2026
+**Last Updated:** September 26, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -81,6 +88,8 @@
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.5:** AI Upscale mode (ComfyUI models via spandrel, VRAM-aware tiling); Extract AI-upscales too-small crops
+- **v3.4.x:** Self-describing output folders; upscaler-as-checkpoint fix; VAE attachment on Civitai; robust launcher
 - **v3.4:** PDF page auto-stitching; named face framing presets; framing-limit reporting
 - **v3.3:** YOLO-backed face crop with Haar fallback; no-upscale framing; Face zoom control
 - **v3.2:** Universal archive support (magic-byte detection, CB7/CBT/ZIP/RAR/7Z/TAR); Civitai Prep chained to any sort

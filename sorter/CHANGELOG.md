@@ -2,6 +2,66 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.5.0] - 2026-09-26 - "AI Upscale" 🔍
+
+Full plan, measurements and the evaluation of nextgenUp and RAIV:
+[docs/UPSCALING_PLAN.md](../docs/UPSCALING_PLAN.md).
+
+### 🎉 New: AI Upscale mode (GUI + CLI option 6)
+
+- Runs **any model in ComfyUI's `upscale_models` folder**, through spandrel —
+  the same loader ComfyUI uses — so ESRGAN, SPAN, DAT, HAT, SwinIR and the
+  rest work unchanged. All 9 local models verified
+- CUDA fp16 where the model supports it; torch loads lazily, so GUI
+  start-up is unaffected
+- **Target long edge** (2048 / 3072 / 4096 / custom) instead of a fixed
+  multiplier: upscales only as far as needed, lands exactly on the target,
+  and copies images already at or above it unchanged
+- **Content presets** — General, Photo, Illustration/anime, Fast — each with
+  an ordered fallback list, plus an override for a specific model
+- A second AI pass runs only when a real factor (≥ 2×) remains
+- **Preserves PNG metadata** (ComfyUI prompt/workflow, A1111 parameters) and
+  copies `.txt` sidecars, so Civitai Prep still works on upscaled generations
+- PNG or JPG q95 output; `upscaled__<size>px_<model>/` folders with an
+  `_upscale_info.txt` manifest
+
+### ⚡ VRAM-aware tiling (a Windows-specific trap)
+
+On Windows the NVIDIA driver moves an oversized tile into shared system RAM
+**instead of raising out-of-memory** — no error, just a job running 2–3×
+slower. Reacting to out-of-memory never fires, so the tile is chosen up front:
+two small probe tiles measure this model's real memory cost, which is
+compared against VRAM free at that moment.
+
+- With another app holding 4.5 GB (e.g. ComfyUI): a fixed 512 px tile took
+  **19.4 s**; auto-tiling picks 256 px and takes **9.3 s**
+- Budget is 40 % of free VRAM, because spilling began at ~59 %. A smaller
+  tile costs ~2 %; a spilling one costs ~2×
+
+### 🎯 Extract: AI upscale when needed
+
+Addresses the 3.4 finding that 95 % of Portrait face crops on ~150 DPI
+magazine scans were widened for lack of pixels.
+
+- Upscales **only** crops that would otherwise be widened (or centre crops
+  that would be stretched), and **only the region around the face** plus a
+  24 px margin — about 15× less work than upscaling the page
+- 21 real magazine pages at Portrait 1024: widened crops **18/19 → 5/19**
+  genuinely too small, with 15 crops AI-upscaled
+- **False detections held back.** Honoring the framing made the detector's
+  mistakes visible — the crop zoomed into a hand and into toy figurines.
+  Confidence separated them cleanly (real 0.75–0.87, false 0.39–0.46);
+  size did not. AI zoom requires confidence ≥ 0.6; weaker detections keep
+  the previous wide framing and are reported separately
+- Folder suffix `+ai`; the manifest records the model and AI-upscaled count
+
+### 🛠️ Other
+
+- `spandrel` added to `requirements.txt`, with CUDA torch install notes
+- CLI menu renumbered: 6 AI Upscale, 7 Civitai Prep, 8 Session Logs
+
+---
+
 ## [3.4.3] - 2026-09-09 - "VAE Attachment & Launcher" 🎛️
 
 ### 🔍 Why VAEs never auto-detect — answered from Civitai's source

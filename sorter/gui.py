@@ -35,6 +35,11 @@ from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
                                      DEFAULT_FACE_FRAMING, PDF_MODES)
 from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
 from sorters.civitai_prep import CivitaiPrep
+from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
+                              DEFAULT_UPSCALE_PRESET, TARGET_SIZES,
+                              DEFAULT_TARGET_SIZE, OUTPUT_FORMATS,
+                              resolve_preset, list_upscale_models,
+                              DEFAULT_MODELS_DIR as DEFAULT_UPSCALE_MODELS_DIR)
 from PIL import Image
 
 # Set appearance mode and color theme
@@ -628,7 +633,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.4.3 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.5.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -658,7 +663,7 @@ class SorterGUI(ctk.CTk):
         
         title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.4.3 - ComfyUI Image Organizer",
+            text="🚀 Sorter 3.5.0 - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
         title_label.pack(pady=15)
@@ -676,7 +681,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "Manual Sort (Triage)", "Civitai Prep", "Generate Metadata", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "AI Upscale", "Manual Sort (Triage)", "Civitai Prep", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -694,6 +699,7 @@ class SorterGUI(ctk.CTk):
         self.extract_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.manual_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.civitai_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.upscale_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.logs_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
 
@@ -706,6 +712,7 @@ class SorterGUI(ctk.CTk):
         self._build_extract_form()
         self._build_manual_form()
         self._build_civitai_form()
+        self._build_upscale_form()
         self._build_metadata_form()
         self._build_logs_form()
         
@@ -734,7 +741,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.4.3 initialized. Select your sorting mode and configure options.")
+        self.log_message("🚀 Sorter 3.5.0 initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -1093,6 +1100,20 @@ class SorterGUI(ctk.CTk):
         ctk.CTkCheckBox(crop_row, text="Allow upscaling",
                         variable=self.extract_upscale_var).pack(side="left")
 
+        # --- AI upscale on demand ---
+        ai_row = ctk.CTkFrame(self.extract_frame)
+        ai_row.pack(fill="x", padx=15, pady=5)
+        self.extract_ai_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(ai_row, text="🔍 AI upscale when needed:",
+                        variable=self.extract_ai_var).pack(side="left", padx=(0, 10))
+        self.extract_ai_preset_var = ctk.StringVar(value=DEFAULT_UPSCALE_PRESET)
+        ctk.CTkOptionMenu(ai_row, variable=self.extract_ai_preset_var,
+                          values=list(UPSCALE_PRESETS.keys()),
+                          width=190).pack(side="left", padx=(0, 10))
+        ctk.CTkLabel(ai_row,
+                     text="only crops whose source is too small for the framing",
+                     text_color="#888", font=ctk.CTkFont(size=10)).pack(side="left")
+
         # --- PDF handling ---
         pdf_row = ctk.CTkFrame(self.extract_frame)
         pdf_row.pack(fill="x", padx=15, pady=5)
@@ -1181,8 +1202,21 @@ class SorterGUI(ctk.CTk):
         chain = self.extract_chain_var.get()
         chain_mode = self.extract_chain_mode_var.get()
 
+        upscaler = None
+        if self.extract_ai_var.get() and crop_size:
+            model = resolve_preset(self.extract_ai_preset_var.get(),
+                                   self.upscale_models_entry.get().strip()
+                                   or DEFAULT_UPSCALE_MODELS_DIR)
+            if model is None:
+                messagebox.showerror(
+                    "Error", "AI upscale is on, but no upscale models were found.\n"
+                             "Check the models folder in the AI Upscale tab.")
+                return
+            upscaler = Upscaler(model, log=self.logger.log_info)
+
         self.log_message(f"📦 Starting extraction → {output_dir}  crop={preset_label}  "
-                         f"mode={crop_mode}  pdf={pdf_mode}")
+                         f"mode={crop_mode}  pdf={pdf_mode}"
+                         + (f"  ai={upscaler.name}" if upscaler else ""))
 
         progress_window = ProgressWindow(self, "Extracting Images", output_dir)
 
@@ -1199,6 +1233,7 @@ class SorterGUI(ctk.CTk):
                     face_zoom=face_zoom,
                     pdf_mode=pdf_mode,
                     max_upscale=max_upscale,
+                    upscaler=upscaler,
                 )
 
                 def on_progress(completed, total, filename):
@@ -1206,12 +1241,23 @@ class SorterGUI(ctk.CTk):
                     if filename:
                         progress_window.enqueue(("log", f"Processing: {filename}"))
 
-                results = extractor.process_paths(
-                    self._extract_input_paths,
-                    progress_callback=on_progress,
-                )
+                try:
+                    results = extractor.process_paths(
+                        self._extract_input_paths,
+                        progress_callback=on_progress,
+                    )
+                finally:
+                    if upscaler is not None:
+                        upscaler.close()
 
                 progress_window.enqueue(("log", f"✅ Extracted {results['total_extracted']} images from {results['total_files']} file(s)"))
+                if results.get('ai_upscaled'):
+                    progress_window.enqueue(("log", f"🔍 AI-upscaled {results['ai_upscaled']} "
+                                                    f"crop(s) that were too small for the framing"))
+                if results.get('framing_clamped'):
+                    progress_window.enqueue(("log", f"⚠️ {results['framing_clamped']}/"
+                                                    f"{results['face_crops']} face crops framed "
+                                                    f"wider than requested — see _extraction_info.txt"))
                 progress_window.enqueue(("complete", True))
 
                 # Chain to sort if requested
@@ -1319,6 +1365,181 @@ class SorterGUI(ctk.CTk):
         except Exception as e:
             progress_window.enqueue(("log", f"⚠️ Civitai Prep failed: {e}"))
             self.logger.log_error(f"Chained Civitai Prep failed: {e}", str(output_dir), "Civitai Prep")
+
+    # Sentinel for "use the preset's model" in the specific-model dropdown
+    _UPSCALE_USE_PRESET = "(use preset)"
+
+    def _build_upscale_form(self):
+        """Build the AI Upscale form."""
+        f = self.upscale_frame
+
+        src_row = ctk.CTkFrame(f)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Image Folder",
+                      command=lambda: self._choose_directory("source")).pack(side="left")
+        self.upscale_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.upscale_src_label.pack(side="left", padx=(10, 0))
+
+        out_row = ctk.CTkFrame(f)
+        out_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkButton(out_row, text="📂 Output Directory (Optional)",
+                      command=lambda: self._choose_directory("output")).pack(side="left")
+        self.upscale_out_label = ctk.CTkLabel(
+            out_row, text="Will create 'upscaled__<size>_<model>' inside the source",
+            text_color="#888")
+        self.upscale_out_label.pack(side="left", padx=(10, 0))
+
+        models_row = ctk.CTkFrame(f)
+        models_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(models_row, text="Models dir:").pack(side="left")
+        self.upscale_models_entry = ctk.CTkEntry(models_row, width=380)
+        self.upscale_models_entry.insert(0, DEFAULT_UPSCALE_MODELS_DIR)
+        self.upscale_models_entry.pack(side="left", padx=(5, 10))
+        ctk.CTkButton(models_row, text="↻", width=30,
+                      command=self._refresh_upscale_models).pack(side="left")
+
+        model_row = ctk.CTkFrame(f)
+        model_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(model_row, text="Content:").pack(side="left")
+        self.upscale_preset_var = ctk.StringVar(value=DEFAULT_UPSCALE_PRESET)
+        ctk.CTkOptionMenu(model_row, variable=self.upscale_preset_var,
+                          values=list(UPSCALE_PRESETS.keys()), width=190,
+                          command=lambda _v: self._update_upscale_model_hint()
+                          ).pack(side="left", padx=(5, 15))
+        ctk.CTkLabel(model_row, text="Model:").pack(side="left")
+        self.upscale_model_var = ctk.StringVar(value=self._UPSCALE_USE_PRESET)
+        self.upscale_model_menu = ctk.CTkOptionMenu(
+            model_row, variable=self.upscale_model_var,
+            values=[self._UPSCALE_USE_PRESET], width=240,
+            command=lambda _v: self._update_upscale_model_hint())
+        self.upscale_model_menu.pack(side="left", padx=(5, 0))
+
+        size_row = ctk.CTkFrame(f)
+        size_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(size_row, text="Long edge:").pack(side="left")
+        self.upscale_target_var = ctk.StringVar(value=DEFAULT_TARGET_SIZE)
+        self.upscale_target_menu = ctk.CTkOptionMenu(
+            size_row, variable=self.upscale_target_var,
+            values=list(TARGET_SIZES.keys()), width=120,
+            command=self._on_upscale_target_change)
+        self.upscale_target_menu.pack(side="left", padx=(5, 5))
+        self.upscale_custom_entry = ctk.CTkEntry(size_row, width=70, placeholder_text="px")
+        # packed only for "Custom..."
+        ctk.CTkLabel(size_row, text="Format:").pack(side="left", padx=(15, 0))
+        self.upscale_format_var = ctk.StringVar(value=list(OUTPUT_FORMATS.keys())[0])
+        ctk.CTkOptionMenu(size_row, variable=self.upscale_format_var,
+                          values=list(OUTPUT_FORMATS.keys()), width=230).pack(side="left", padx=(5, 10))
+        self.upscale_recursive_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(size_row, text="Include subfolders",
+                        variable=self.upscale_recursive_var).pack(side="left")
+
+        self.upscale_hint = ctk.CTkLabel(f, text="", text_color="#aaa",
+                                         font=ctk.CTkFont(size=11), justify="left")
+        self.upscale_hint.pack(padx=15, pady=(5, 15), anchor="w")
+
+        self._refresh_upscale_models()
+
+    def _on_upscale_target_change(self, value):
+        if value == "Custom...":
+            self.upscale_custom_entry.pack(side="left", padx=(0, 5),
+                                           after=self.upscale_target_menu)
+        else:
+            self.upscale_custom_entry.pack_forget()
+
+    def _refresh_upscale_models(self):
+        """Repopulate the specific-model dropdown from the models folder."""
+        models = list_upscale_models(self.upscale_models_entry.get().strip())
+        self.upscale_model_menu.configure(
+            values=[self._UPSCALE_USE_PRESET] + [m.name for m in models])
+        if self.upscale_model_var.get() not in [self._UPSCALE_USE_PRESET] + [m.name for m in models]:
+            self.upscale_model_var.set(self._UPSCALE_USE_PRESET)
+        self._update_upscale_model_hint()
+
+    def _selected_upscale_model(self):
+        """Path of the model the current settings will use, or None."""
+        models_dir = self.upscale_models_entry.get().strip()
+        choice = self.upscale_model_var.get()
+        if choice != self._UPSCALE_USE_PRESET:
+            for m in list_upscale_models(models_dir):
+                if m.name == choice:
+                    return m
+        return resolve_preset(self.upscale_preset_var.get(), models_dir)
+
+    def _update_upscale_model_hint(self):
+        model = self._selected_upscale_model()
+        n = len(list_upscale_models(self.upscale_models_entry.get().strip()))
+        if model is None:
+            text = "⚠️ No upscale models found in that folder."
+        else:
+            text = (f"🔍 Will use {model.name}  ·  {n} model(s) available.\n"
+                    f"Images already at or above the target are copied unchanged; "
+                    f"PNG metadata (prompt/workflow) is preserved.")
+        self.upscale_hint.configure(text=text)
+
+    def upscale_images(self):
+        """Run AI upscaling over the selected folder."""
+        if not self.source_dir or not os.path.isdir(self.source_dir):
+            messagebox.showerror("Error", "Please select an image folder first.")
+            return
+
+        model = self._selected_upscale_model()
+        if model is None:
+            messagebox.showerror("Error", "No upscale model found — check the models folder.")
+            return
+
+        target = TARGET_SIZES.get(self.upscale_target_var.get())
+        if target == "custom":
+            try:
+                target = int(self.upscale_custom_entry.get().strip())
+                if not 256 <= target <= 16384:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror("Error", "Custom size must be a number from 256 to 16384.")
+                return
+
+        fmt = OUTPUT_FORMATS.get(self.upscale_format_var.get(), "png")
+        recursive = self.upscale_recursive_var.get()
+        preset = self.upscale_preset_var.get() \
+            if self.upscale_model_var.get() == self._UPSCALE_USE_PRESET else None
+        out = self.output_dir or None
+        src = self.source_dir
+
+        if not messagebox.askyesno(
+                "Confirm AI Upscale",
+                f"📋 CONFIRMATION:\n"
+                f"   Source: {src}\n"
+                f"   Model: {model.name}\n"
+                f"   Long edge: {target} px\n"
+                f"   Format: {fmt.upper()}\n"
+                f"   Subfolders: {'yes' if recursive else 'no'}\n"
+                f"   Output: {out or 'new folder inside the source'}\n\n"
+                f"Proceed?"):
+            return
+
+        sorter = UpscaleSorter(self.logger, model, target_long_edge=target,
+                               output_dir=out, output_format=fmt,
+                               preset_label=preset)
+        out_dir = out or str(sorter._default_output_dir(Path(src)))
+        progress_window = ProgressWindow(self, "AI Upscale", out_dir)
+
+        def run():
+            try:
+                def on_progress(done, total, name):
+                    progress_window.enqueue(("progress", (done, total, name)))
+
+                progress_window.enqueue(("operation", f"Upscaling with {model.name}..."))
+                result = sorter.process_folder(src, recursive=recursive,
+                                               progress_callback=on_progress)
+                s = result['stats']
+                progress_window.enqueue(("log",
+                    f"✅ {s['upscaled']} upscaled, {s['already_large']} already ≥{target}px, "
+                    f"{s['failed']} failed"))
+                progress_window.enqueue(("complete", s['failed'] == 0 or s['upscaled'] > 0))
+            except Exception as e:
+                progress_window.enqueue(("error", str(e)))
+                self.logger.log_error(f"AI upscale failed: {e}", src, "AI Upscale")
+
+        Thread(target=run, daemon=True).start()
 
     def _build_civitai_form(self):
         """Build the Civitai Prep form."""
@@ -1476,6 +1697,8 @@ class SorterGUI(ctk.CTk):
                     self.manual_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Civitai Prep":
                     self.civitai_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "AI Upscale":
+                    self.upscale_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Generate Metadata":
                     self.metadata_src_label.configure(text=os.path.basename(directory))
 
@@ -1498,6 +1721,8 @@ class SorterGUI(ctk.CTk):
                     self.lora_out_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Extract Images":
                     self.extract_out_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "AI Upscale":
+                    self.upscale_out_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Generate Metadata":
                     self.metadata_out_label.configure(text=os.path.basename(directory))
 
@@ -1506,7 +1731,7 @@ class SorterGUI(ctk.CTk):
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.manual_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.upscale_frame, self.manual_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -1529,6 +1754,9 @@ class SorterGUI(ctk.CTk):
         elif mode == "Extract Images":
             self.extract_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("📦 Extract images mode selected")
+        elif mode == "AI Upscale":
+            self.upscale_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("🔍 AI upscale mode selected")
         elif mode == "Manual Sort (Triage)":
             self.manual_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🖼️ Manual sort (triage) mode selected")
@@ -1564,6 +1792,8 @@ class SorterGUI(ctk.CTk):
             self.flatten_images()
         elif mode == "Extract Images":
             self.extract_images()
+        elif mode == "AI Upscale":
+            self.upscale_images()
         elif mode == "Manual Sort (Triage)":
             self.manual_sort()
         elif mode == "Civitai Prep":

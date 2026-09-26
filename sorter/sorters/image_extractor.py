@@ -10,6 +10,7 @@ Supports auto-crop to standard aspect ratios with optional face-centered croppin
 """
 
 import io
+import math
 import os
 import shutil
 import tarfile
@@ -282,7 +283,8 @@ class ImageExtractorSorter:
                  output_dir="extracted_images", folder_prefix="",
                  crop_size=None, crop_mode="center", face_model_path=None,
                  face_zoom=2.2, max_upscale=1.0,
-                 pdf_mode="stitch", pdf_render_dpi=200):
+                 pdf_mode="stitch", pdf_render_dpi=200,
+                 upscaler=None):
         """
         Parameters
         ----------
@@ -305,6 +307,10 @@ class ImageExtractorSorter:
                       embedded image separately (old behaviour);
                       "render" rasterizes each page as it appears
         pdf_render_dpi : resolution used by pdf_mode="render"
+        upscaler    : optional sorters.upscaler.Upscaler. When set, a crop
+                      that would otherwise be framed wider than requested
+                      (source too small) is AI-upscaled instead — only the
+                      region around the subject, only when needed
         """
         self.logger = logger
         self.min_width = min_width
@@ -318,6 +324,7 @@ class ImageExtractorSorter:
         self.max_upscale = max_upscale  # never enlarge past this x native
         self.pdf_mode = pdf_mode        # "stitch" | "raw" | "render"
         self.pdf_render_dpi = pdf_render_dpi
+        self.upscaler = upscaler if crop_size else None
 
         self.total_extracted = 0
         self.current_source_dir = None
@@ -325,6 +332,8 @@ class ImageExtractorSorter:
         self._face_crops = 0
         self._framing_clamped = 0
         self._stitched_pages = 0
+        self._ai_upscaled = 0
+        self._ai_skipped_lowconf = 0
 
         self._face_detector = None
         if self.crop_mode == "face":
@@ -359,6 +368,8 @@ class ImageExtractorSorter:
                 s += f"-{self._framing_label()}"
                 if self.max_upscale > 1.0:
                     s += "+up"
+            if self.upscaler is not None:
+                s += "+ai"
             parts.append(s)
         if self.pdf_mode != "stitch":
             parts.append(f"pdf-{self.pdf_mode}")
@@ -395,6 +406,14 @@ class ImageExtractorSorter:
         """Scale to fill target, then center-crop the overflow."""
         src_w, src_h = img.size
         scale = max(target_w / src_w, target_h / src_h)
+
+        # Source smaller than the target: AI-upscale it rather than stretch it
+        if self.upscaler is not None and scale > max(1.0, self.max_upscale) + 0.01:
+            img = self.upscaler.upscale(img)
+            self._ai_upscaled += 1
+            src_w, src_h = img.size
+            scale = max(target_w / src_w, target_h / src_h)
+
         new_w = int(src_w * scale)
         new_h = int(src_h * scale)
         img = img.resize((new_w, new_h), Image.LANCZOS)
@@ -430,12 +449,25 @@ class ImageExtractorSorter:
         # a wider sharp crop beats a tight blurry one for training data.
         fill_scale = max(target_w / src_w, target_h / src_h)
         framing_scale = target_h / (face_h * self.face_zoom)
-        scale = min(framing_scale, max(fill_scale, self.max_upscale))
-        scale = max(scale, fill_scale)
+        native_cap = max(fill_scale, self.max_upscale)
+
+        self._face_crops += 1
+        if len(faces) > 1:
+            self._log(f"    ({len(faces)} faces, using largest @ {conf:.2f})")
+
+        # Source lacks the pixels for this framing: AI-upscale just the region
+        # around the face, rather than widening the shot to fit what's there
+        if self.upscaler is not None and framing_scale > native_cap + 0.01:
+            if conf >= self.AI_MIN_CONFIDENCE:
+                return self._face_crop_ai(img, face_cx, face_cy, framing_scale,
+                                          fill_scale, target_w, target_h)
+            # Probably not a face: keep the wide framing rather than zoom in
+            self._ai_skipped_lowconf += 1
+
+        scale = max(min(framing_scale, native_cap), fill_scale)
 
         # Track when the source simply lacks the pixels for the requested
         # framing, so the summary can say so instead of silently ignoring it
-        self._face_crops += 1
         if framing_scale > scale + 0.01:
             self._framing_clamped += 1
 
@@ -451,10 +483,54 @@ class ImageExtractorSorter:
         left = max(0, min(cx - target_w // 2, new_w - target_w))
         top = max(0, min(cy - target_h // 2, new_h - target_h))
 
-        if len(faces) > 1:
-            self._log(f"    ({len(faces)} faces, using largest @ {conf:.2f})")
-
         return img_scaled.crop((left, top, left + target_w, top + target_h))
+
+    # Source pixels kept around the face window before AI-upscaling it, so the
+    # model's edge artefacts fall outside the part that is actually kept
+    AI_REGION_MARGIN = 24
+
+    # Detection confidence required before AI-zooming to the requested framing.
+    # Without AI, a small detection is framed wide, which hides false positives;
+    # zooming in exposes them. On a 1965 magazine sample, real faces scored
+    # 0.75-0.87 while false ones (a hand, toy figurines) scored 0.39-0.46.
+    # Face SIZE did not separate them: the hand was as large as a real face.
+    AI_MIN_CONFIDENCE = 0.6
+
+    def _face_crop_ai(self, img: Image.Image, face_cx: float, face_cy: float,
+                      framing_scale: float, fill_scale: float,
+                      target_w: int, target_h: int) -> Image.Image:
+        """Face crop at the requested framing, AI-upscaling only the window.
+
+        Upscaling the whole page 4x to keep one 1024px crop wastes ~15x the
+        work; cropping the window first keeps it to the pixels that survive.
+        """
+        self.upscaler.load()
+        s = max(1, self.upscaler.scale or 1)
+        src_w, src_h = img.size
+
+        # AI provides s x natively; "Allow upscaling" stretches past that
+        cap = s * max(1.0, self.max_upscale)
+        scale = max(min(framing_scale, cap), fill_scale)
+        if framing_scale > scale + 0.01:
+            self._framing_clamped += 1      # tiny face: even AI can't reach it
+
+        # Window in source pixels, eyes biased toward the upper third
+        win_w, win_h = target_w / scale, target_h / scale
+        left = min(max(face_cx - win_w / 2, 0.0), src_w - win_w)
+        top = min(max(face_cy - (target_h * 0.08) / scale - win_h / 2, 0.0), src_h - win_h)
+
+        m = self.AI_REGION_MARGIN
+        rx0, ry0 = max(0, int(left - m)), max(0, int(top - m))
+        rx1 = min(src_w, int(math.ceil(left + win_w + m)))
+        ry1 = min(src_h, int(math.ceil(top + win_h + m)))
+        region = self.upscaler.upscale(img.crop((rx0, ry0, rx1, ry1)))
+        self._ai_upscaled += 1
+
+        wx0, wy0 = (left - rx0) * s, (top - ry0) * s
+        box = (max(0, round(wx0)), max(0, round(wy0)),
+               min(region.width, round(wx0 + win_w * s)),
+               min(region.height, round(wy0 + win_h * s)))
+        return region.crop(box).resize((target_w, target_h), Image.LANCZOS)
 
     def _apply_crop(self, img: Image.Image) -> Image.Image:
         if not self.crop_size:
@@ -808,6 +884,11 @@ class ImageExtractorSorter:
                     lines.append(f"Face backend  : {backend or 'none (center crop)'}")
                 else:
                     lines.append(f"Crop mode     : {self.crop_mode}")
+                if self.upscaler is not None:
+                    up = self.upscaler
+                    arch = f" ({up.arch} {up.scale}x)" if up.arch else ""
+                    lines.append(f"AI upscale    : {up.model_path.name}{arch} "
+                                 f"— only when the source is too small")
             else:
                 lines.append("Crop          : none (original size kept)")
             if source.suffix.lower() == '.pdf':
@@ -819,6 +900,8 @@ class ImageExtractorSorter:
             if stats.get('stitched'):
                 lines.append(f"Pages restitched : {stats['stitched']} "
                              f"(split scan strips reassembled)")
+            if self.upscaler is not None:
+                lines.append(f"AI upscaled    : {stats.get('ai_upscaled', 0)}")
             if stats.get('face_crops'):
                 clamped = stats.get('clamped', 0)
                 pct = 100 * clamped / max(1, stats['face_crops'])
@@ -836,6 +919,7 @@ class ImageExtractorSorter:
         ext = filepath.suffix.lower()
         before_faces, before_clamped = self._face_crops, self._framing_clamped
         before_stitched = self._stitched_pages
+        before_ai = self._ai_upscaled
 
         if ext == '.pdf':
             saved = self.extract_from_pdf(filepath)
@@ -852,6 +936,7 @@ class ImageExtractorSorter:
             'face_crops': self._face_crops - before_faces,
             'clamped': self._framing_clamped - before_clamped,
             'stitched': self._stitched_pages - before_stitched,
+            'ai_upscaled': self._ai_upscaled - before_ai,
         })
         return saved
 
@@ -893,15 +978,32 @@ class ImageExtractorSorter:
 
         # Be explicit when the requested framing couldn't be honoured — the
         # source simply lacked pixels, and silently ignoring it looks like a bug
+        if self._ai_upscaled:
+            self._log(f"🔍 AI-upscaled {self._ai_upscaled} crop(s) whose source "
+                      f"was too small for the requested framing.")
+        if self._ai_skipped_lowconf:
+            self._log(f"    {self._ai_skipped_lowconf} low-confidence detection(s) "
+                      f"(<{self.AI_MIN_CONFIDENCE}, likely not faces) kept at wide "
+                      f"framing instead of being zoomed into.")
         if self._framing_clamped:
             pct = 100 * self._framing_clamped / max(1, self._face_crops)
-            self._log(
-                f"⚠️  {self._framing_clamped}/{self._face_crops} face crops ({pct:.0f}%) "
-                f"were framed wider than requested — the source lacks the resolution "
-                f"for this framing at {self.crop_size[0]}×{self.crop_size[1]}.")
-            self._log(
-                "    Fix: choose a smaller crop size, a wider framing preset, "
-                "or enable 'Allow upscaling' to accept softer images.")
+            if self.upscaler is not None:
+                # Low-confidence skips are clamped by choice, not by size
+                too_small = self._framing_clamped - self._ai_skipped_lowconf
+                if too_small > 0:
+                    self._log(
+                        f"⚠️  {too_small}/{self._face_crops} face crops were still framed "
+                        f"wider than requested — those faces are too small even after "
+                        f"{self.upscaler.scale or 4}x AI upscaling.")
+                    self._log("    Fix: a wider framing preset or a smaller crop size.")
+            else:
+                self._log(
+                    f"⚠️  {self._framing_clamped}/{self._face_crops} face crops ({pct:.0f}%) "
+                    f"were framed wider than requested — the source lacks the resolution "
+                    f"for this framing at {self.crop_size[0]}×{self.crop_size[1]}.")
+                self._log(
+                    "    Fix: enable 'AI upscale when needed', choose a smaller crop "
+                    "size or a wider framing preset.")
 
         return {
             "total_files":     total,
@@ -909,4 +1011,5 @@ class ImageExtractorSorter:
             "output_dir":      str(self.output_dir.absolute()),
             "face_crops":      self._face_crops,
             "framing_clamped": self._framing_clamped,
+            "ai_upscaled":     self._ai_upscaled,
         }
