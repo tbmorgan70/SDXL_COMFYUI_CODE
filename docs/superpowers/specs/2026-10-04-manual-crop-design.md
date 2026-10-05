@@ -46,8 +46,10 @@ signal whenever the crop lacks the native pixels for the chosen size.
 - **Bounds:** the frame always lies entirely inside the image (no padding or letterboxing).
   The smallest allowed crop is 64 source pixels on its short side.
 - **Starting frame:** largest detected face, framed at 2.2 face-heights (Extract's "Portrait"),
-  eyes biased toward the upper third (same 0.08 frame-height bias as Extract), clamped into the
-  image and shrunk to fit if needed. No face → largest centred frame.
+  with the face-box centre placed 42% of the frame height from the top so the eyes sit toward
+  the upper third; clamped into the image and shrunk to fit if needed. No face → largest centred
+  frame. (Extract's own 0.08 bias is applied with the opposite sign — the face lands at 58% —
+  so it is not reused; that is noted for the user separately.)
 
 ### Keys in crop mode
 
@@ -125,8 +127,9 @@ Red is a warning only; saving is still allowed.
   images (per the Tkinter threading rule). The next image is prefetched the same way.
 - **Rendering:** one canvas image item shows only the visible region of the proxy, scaled to
   the canvas — `Image.BILINEAR` during drag/zoom, `Image.LANCZOS` ~150 ms after motion stops.
-  The dim mask (four rectangles around the frame), frame outline, thirds lines and face box are
-  canvas vector items that are only moved, never re-rasterised.
+  Tk canvas items have no alpha, so the dimming is applied to that rendered bitmap (outside the
+  frame darkened to 45%); the frame outline, thirds lines and face box are canvas vector items
+  that are only moved, never re-rasterised.
 - **Saving:** a single save-worker thread consumes a queue of save jobs sequentially (no GPU
   contention); the badge shows "Saving…" until the job completes. Errors go to the status line
   and the session log.
