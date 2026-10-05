@@ -107,6 +107,7 @@ class CropEditor(ctk.CTkFrame):
         self._requested = set()
         self._pending = 0
         self._closed = False
+        self._host_gone = False
         self._drag_from = None
         self._sharpen_job = None
         self._photo = None
@@ -355,6 +356,8 @@ class CropEditor(ctk.CTkFrame):
     def _deliver_save(self, item):
         path, result, error = item
         self._pending -= 1
+        if self._host_gone:
+            return      # the host is being torn down; its widgets may be gone
         if error:
             self._set_status(error)
             self._log(f"✗ {error}")
@@ -417,9 +420,14 @@ class CropEditor(ctk.CTkFrame):
         while not self._save_results.empty():
             self._deliver_save(self._save_results.get_nowait())
         while not self._log_q.empty():
-            self._log(self._log_q.get_nowait())
+            msg = self._log_q.get_nowait()
+            if not self._host_gone:
+                self._log(msg)
 
     def destroy(self):
+        # Reached when a parent window is destroyed: queued saves still
+        # finish, but nothing is reported back to widgets that may be gone
+        self._host_gone = True
         self.shutdown()
         super().destroy()
 
@@ -494,11 +502,15 @@ class CropEditor(ctk.CTkFrame):
             mx, my = pad * cw / scale, pad * ch / scale
             region = (max(sx0 - mx, 0.0), max(sy0 - my, 0.0),
                       min(sx1 + mx, src_w), min(sy1 + my, src_h))
-            k = self._proxy.width / src_w
+            # Per-axis: thumbnail() rounds each side, so one factor would
+            # overrun the proxy's short side by up to a pixel
+            pw, ph = self._proxy.size
+            kx, ky = pw / src_w, ph / src_h
             size = (max(1, round((region[2] - region[0]) * scale)),
                     max(1, round((region[3] - region[1]) * scale)))
-            img = self._proxy.resize(size, Image.LANCZOS if sharp else Image.BILINEAR,
-                                     box=tuple(v * k for v in region))
+            box = (region[0] * kx, region[1] * ky,
+                   min(region[2] * kx, pw), min(region[3] * ky, ph))
+            img = self._proxy.resize(size, Image.LANCZOS if sharp else Image.BILINEAR, box=box)
             self._photo = ImageTk.PhotoImage(img)
             c.itemconfigure(self._img_item, image=self._photo)
             buf = self._buf = (region, scale, sharp)

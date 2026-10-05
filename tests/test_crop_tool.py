@@ -273,3 +273,38 @@ def test_real_comfyui_png_metadata_roundtrip(tmp_path):
     assert a["prompts"]["positive"] and a["prompts"]["positive"] == b["prompts"]["positive"]
     assert (a["checkpoint"] or {}).get("name") == (b["checkpoint"] or {}).get("name")
     assert [x["name"] for x in a["loras"]] == [x["name"] for x in b["loras"]]
+
+
+# ================================================================ review fixes
+
+AWKWARD_SIZES = [(1344, 768), (1536, 640), (3000, 4000), (1360, 768), (768, 1360),
+                 (1328, 1944), (2432, 1664), (6000, 4000)]
+
+
+@pytest.mark.parametrize("size", AWKWARD_SIZES)
+def test_largest_fit_stays_inside_image_for_every_preset(size):
+    w, h = size
+    for preset in (v for v in CROP_SIZE_PRESETS.values() if isinstance(v, tuple)):
+        ar = preset[0] / preset[1]
+        for r in (largest_fit(w, h, ar), clamp(largest_fit(w, h, ar), w, h, ar),
+                  zoom_at(largest_fit(w, h, ar), 10.0, w / 2, h / 2, w, h, ar)):
+            assert r.x >= 0 and r.y >= 0, (size, preset, r)
+            assert r.x + r.w <= w and r.y + r.h <= h, (size, preset, r)
+
+
+@pytest.mark.parametrize("size,out", [((1344, 768), (1080, 1350)), ((1536, 640), (1920, 1080)),
+                                      ((3000, 4000), (768, 1344))])
+def test_save_largest_frame_on_awkward_sizes(tmp_path, size, out):
+    src = make_png(tmp_path / "w.png", size)
+    rect = clamp(largest_fit(*size, out[0] / out[1]), *size, out[0] / out[1])
+    res = save_crop(src, rect, *out)
+    assert Image.open(res.path).size == out
+
+
+def test_mpo_phone_jpeg_saved_as_jpeg(tmp_path):
+    src = tmp_path / "phone.jpg"
+    a = Image.new("RGB", (800, 600), (200, 50, 50))
+    a.save(src, "MPO", save_all=True, append_images=[Image.new("RGB", (200, 150))])
+    assert Image.open(src).format == "MPO"
+    res = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    assert res.path.suffix == ".jpg" and Image.open(res.path).format == "JPEG"

@@ -271,3 +271,33 @@ def test_shutdown_waits_for_pending_saves(root, make_editor, tmp_path):
     ed.shutdown()
     assert ed.pending_saves() == 0 and len(rec.saved) == 2
     assert all(r.method == "AI stub" for _, r in rec.saved)
+
+
+# ---------------------------------------------------------------- review fixes
+
+@pytest.mark.parametrize("size", [(2432, 1664), (1792, 2304), (6000, 4000)])
+def test_large_non_square_images_render(root, make_editor, tmp_path, size):
+    ed, _ = make_editor()
+    loaded(root, ed, png(tmp_path / "big.png", size))
+    ed.render(sharp=True)                    # must not raise
+    ed.on_wheel(SimpleNamespace(x=300, y=300, delta=-120 * 5))   # zoom out to the edge
+    ed.render(sharp=True)
+    assert ed.canvas.itemcget(ed._img_item, "state") == "normal"
+
+
+def test_destroying_host_with_pending_saves_does_not_raise(root, tmp_path):
+    host = ctk.CTkToplevel(root)
+    label = ctk.CTkLabel(host, text="")      # created first, so destroyed first
+    label.pack()
+    up = StubUpscaler(delay=0.3)
+    ed = CropEditor(host, preset_label=DEFAULT_CROP_PRESET, ai_enabled=True,
+                    model_path=Path("stub.pth"), face_detector_factory=lambda: FakeDetector([]),
+                    upscaler_factory=lambda p: up,
+                    on_saved=lambda p, r: label.configure(text=r.path.name))
+    ed.pack(fill="both", expand=True)
+    loaded(root, ed, png(tmp_path / "s.png", (600, 600)))
+    ed.handle_key(key("Return", 0x1))
+    ed.handle_key(key("Return", 0x1))
+    host.destroy()                           # must not raise
+    root.update()
+    assert len(list((tmp_path / "cropped__1024x1024").glob("s*.png"))) == 2

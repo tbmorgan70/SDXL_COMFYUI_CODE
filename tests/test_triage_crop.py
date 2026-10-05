@@ -60,7 +60,7 @@ def key(k, state=0):
     return SimpleNamespace(keysym=k, char=k, state=state)
 
 
-def make_images(folder, n=3, size=(1600, 1200)):
+def make_images(folder, n=3, size=(600, 600)):
     for name in "abcdefgh"[:n]:
         info = PngInfo()
         info.add_text("parameters", f"prompt {name}\nSteps: 20, Size: {size[0]}x{size[1]}")
@@ -214,3 +214,20 @@ def test_manual_crop_mode_switches_form():
     done = subprocess.run([sys.executable, "-c", MODE_CHECK], cwd=sorter_dir,
                           capture_output=True, text=True, timeout=120)
     assert "MODE-OK" in done.stdout, done.stderr[-2000:]
+
+
+def test_execute_waits_for_pending_crop_saves(root, open_window, tmp_path, monkeypatch):
+    import gui
+    monkeypatch.setattr(gui.messagebox, "askyesno", lambda *a, **k: True)
+    monkeypatch.setattr(gui.messagebox, "showinfo", lambda *a, **k: None)
+    win = open_window(upscaler=StubUpscaler(delay=0.5), n=2)
+    win._open_viewer(0)
+    win._on_keypress(key("c"))
+    pump_until_loaded(root, win)
+    first = win.sorter.images[0]
+    win._on_keypress(key("Return", 0x1))     # save & stay (AI, slow)
+    win._on_keypress(key("1"))               # then Keep
+    win._execute()
+    assert first.exists()                    # not moved while its crop is queued
+    assert pump(root, lambda: (tmp_path / "Keep" / first.name).exists())
+    assert (tmp_path / "cropped__1024x1024" / first.name).exists()

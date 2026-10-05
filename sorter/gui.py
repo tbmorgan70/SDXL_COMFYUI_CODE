@@ -299,6 +299,7 @@ class TriageWindow(ctk.CTkToplevel):
         self.crop_counts = {}               # Path -> crops saved this session
         self.crop_saved_total = 0
         self._badges = {}                   # Path -> badge label, current page only
+        self._execute_waiting = False
 
         if crop_only:
             self.title(f"✂️ Manual Crop — {sorter.source_dir.name}  ({len(sorter.images)} images)")
@@ -713,6 +714,15 @@ class TriageWindow(ctk.CTkToplevel):
             messagebox.showinfo("Nothing to do", "No images have been assigned to buckets yet.", parent=self)
             return
 
+        # A queued crop still reads its source; moving it first would fail the crop
+        pending = self.crop_editor.pending_saves() if self.crop_editor is not None else 0
+        if pending:
+            self.status_label.configure(text=f"Waiting for {pending} crop saves…")
+            if not self._execute_waiting:
+                self._execute_waiting = True
+                self.after(200, self._execute_retry)
+            return
+
         counts = self.sorter.counts()
         summary = "\n".join(
             f"   {b}: {counts[b]} images" for b in self.sorter.buckets if counts[b] > 0)
@@ -730,6 +740,10 @@ class TriageWindow(ctk.CTkToplevel):
             self.after(0, self._on_executed, results)
 
         Thread(target=run, daemon=True).start()
+
+    def _execute_retry(self):
+        self._execute_waiting = False
+        self._execute()
 
     def _on_executed(self, results):
         moved_total = sum(results["moved"].values())

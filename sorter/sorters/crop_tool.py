@@ -86,7 +86,7 @@ class CropRect:
 def largest_fit(src_w: int, src_h: int, ar: float) -> CropRect:
     """The biggest frame of aspect ratio `ar` (w/h) that fits, centred."""
     w = min(float(src_w), src_h * ar)
-    h = w / ar
+    h = min(w / ar, float(src_h))      # w / ar can overshoot src_h by one ulp
     return CropRect((src_w - w) / 2, (src_h - h) / 2, w, h)
 
 
@@ -102,11 +102,13 @@ def clamp(rect: CropRect, src_w: int, src_h: int, ar: float) -> CropRect:
     big = largest_fit(src_w, src_h, ar)
     min_w = MIN_CROP_SIDE * ar if ar >= 1 else MIN_CROP_SIDE
     w = max(min(rect.w, big.w), min(min_w, big.w))
-    h = w / ar
+    # w / ar can land one ulp past the image edge on a full-height frame;
+    # cap it, and never let the position go negative because of it
+    h = min(w / ar, float(src_h))
     cx = rect.x + rect.w / 2
     cy = rect.y + rect.h / 2
-    x = min(max(cx - w / 2, 0.0), src_w - w)
-    y = min(max(cy - h / 2, 0.0), src_h - h)
+    x = max(0.0, min(cx - w / 2, src_w - w))
+    y = max(0.0, min(cy - h / 2, src_h - h))
     return CropRect(x, y, w, h)
 
 
@@ -207,7 +209,7 @@ def save_with_metadata(img: Image.Image, src_img: Image.Image, dest_stem: Path) 
     Returns the path written; a clash becomes <stem>_2, <stem>_3, ..."""
     fmt = (src_img.format or "PNG").upper()
     kwargs = {}
-    if fmt == "JPEG":
+    if fmt in ("JPEG", "MPO"):        # MPO = phone JPEG carrying extra pictures
         ext, pil_fmt = ".jpg", "JPEG"
         kwargs.update(quality=95, subsampling=0)
         if img.mode not in ("RGB", "L"):
@@ -270,7 +272,8 @@ def save_crop(src_path: Path, rect: CropRect, out_w: int, out_h: int,
     orig, img = open_oriented(src_path)
     img = workable(img)
     factor = out_w / rect.w
-    box = (rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
+    box = (max(0.0, rect.x), max(0.0, rect.y),
+           min(float(img.width), rect.x + rect.w), min(float(img.height), rect.y + rect.h))
 
     if factor <= 1.0:
         result, method = img.resize((out_w, out_h), Image.LANCZOS, box=box), "native"
