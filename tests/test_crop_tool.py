@@ -112,3 +112,164 @@ def test_presets_have_sdxl_sizes_custom_and_no_duplicate_sizes():
     assert len(sizes) == len(set(sizes))
     assert CROP_SIZE_PRESETS["Custom..."] == "custom"
     assert DEFAULT_CROP_PRESET in CROP_SIZE_PRESETS
+
+
+# ================================================================ saving
+
+from pathlib import Path  # noqa: E402
+
+from PIL import Image, ImageCms  # noqa: E402
+from PIL.PngImagePlugin import PngInfo  # noqa: E402
+
+from sorters.crop_tool import AI_REGION_MARGIN, save_crop  # noqa: E402
+
+
+def make_png(path, size, chunks=None, mode="RGB", color=(128, 128, 128)):
+    img = Image.new(mode, size, color if mode != "I;16" else 1000)
+    info = None
+    if chunks:
+        info = PngInfo()
+        for k, v in chunks.items():
+            info.add_text(k, v)
+    img.save(path, "PNG", pnginfo=info)
+    return Path(path)
+
+
+def make_split(path, size, fmt="PNG", **save_kw):
+    """Left half red, right half blue."""
+    w, h = size
+    img = Image.new("RGB", size, (0, 0, 255))
+    img.paste((255, 0, 0), (0, 0, w // 2, h))
+    img.save(path, fmt, **save_kw)
+    return Path(path)
+
+
+class StubUpscaler:
+    name = "stub"
+
+    def __init__(self, scale=2, fail=None):
+        self.scale, self.fail, self.calls = scale, fail, []
+
+    def upscale(self, img):
+        self.calls.append(img.size)
+        if self.fail:
+            raise RuntimeError(self.fail)
+        return img.resize((img.width * self.scale, img.height * self.scale), Image.NEAREST)
+
+
+def test_png_exact_size_and_text_chunks(tmp_path):
+    src = make_png(tmp_path / "a.png", (1600, 1200),
+                   {"parameters": "p", "prompt": "{}", "workflow": "{}"})
+    res = save_crop(src, CropRect(100, 0, 821, 1200), 832, 1216)
+    out = Image.open(res.path)
+    assert out.size == (832, 1216) and res.path.parent.name == "cropped__832x1216"
+    assert {k: out.info[k] for k in ("parameters", "prompt", "workflow")} == \
+        {"parameters": "p", "prompt": "{}", "workflow": "{}"}
+
+
+def test_jpeg_keeps_format_and_exif(tmp_path):
+    exif = Image.Exif()
+    exif[270] = "hello"
+    src = make_split(tmp_path / "j.jpg", (800, 600), "JPEG", exif=exif.tobytes())
+    res = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    assert res.path.suffix == ".jpg"
+    assert Image.open(res.path).getexif()[270] == "hello"
+
+
+def test_icc_profile_preserved(tmp_path):
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    src = tmp_path / "icc.png"
+    Image.new("RGB", (600, 600), (10, 20, 30)).save(src, "PNG", icc_profile=icc)
+    res = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    assert Image.open(res.path).info["icc_profile"] == icc
+
+
+def test_exif_rotated_jpeg_crops_what_is_shown(tmp_path):
+    exif = Image.Exif()
+    exif[274] = 6                       # displays rotated 90° clockwise: red on top
+    src = make_split(tmp_path / "rot.jpg", (400, 200), "JPEG", exif=exif.tobytes(), quality=95)
+    res = save_crop(src, CropRect(0, 0, 200, 200), 128, 128)   # top half of the 200x400 view
+    out = Image.open(res.path)
+    assert out.getexif().get(274) == 1
+    r, g, b = out.convert("RGB").getpixel((64, 64))
+    assert r > 200 and b < 60
+
+
+def test_rgba_and_16bit_sources_save(tmp_path):
+    rgba = Image.new("RGBA", (300, 300), (255, 0, 0, 255))
+    rgba.paste((0, 0, 0, 0), (0, 0, 120, 120))
+    rgba.save(tmp_path / "alpha.png")
+    out = Image.open(save_crop(tmp_path / "alpha.png", CropRect(0, 0, 300, 300), 300, 300).path)
+    assert out.mode == "RGBA" and out.getpixel((10, 10))[3] == 0
+
+    deep = make_png(tmp_path / "deep.png", (300, 300), mode="I;16")
+    assert Image.open(save_crop(deep, CropRect(0, 0, 300, 300), 256, 256).path).mode == "RGB"
+
+
+def test_gif_source_written_as_png(tmp_path):
+    src = tmp_path / "g.gif"
+    Image.new("P", (300, 300), 3).save(src)
+    assert save_crop(src, CropRect(0, 0, 300, 300), 256, 256).path.suffix == ".png"
+
+
+def test_name_clash_appends_2(tmp_path):
+    src = make_png(tmp_path / "c.png", (600, 600))
+    save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    second = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    assert second.path.stem.endswith("_2")
+
+
+def test_manifest_header_once_one_line_per_crop_utf8(tmp_path):
+    src = make_png(tmp_path / "Feelin' Lucky ✨.png", (1200, 1200))
+    save_crop(src, CropRect(0, 0, 1200, 1200), 1024, 1024)
+    save_crop(src, CropRect(0, 0, 1200, 1200), 1024, 1024)
+    text = (tmp_path / "cropped__1024x1024" / "_crop_info.txt").read_text(encoding="utf-8")
+    assert text.count("=== CROP INFO ===") == 1
+    assert text.count("Feelin' Lucky ✨.png |") == 2
+
+
+def test_native_when_factor_le_1_skips_upscaler(tmp_path):
+    up = StubUpscaler()
+    src = make_png(tmp_path / "n.png", (2048, 2048))
+    res = save_crop(src, CropRect(0, 0, 2048, 2048), 1024, 1024, up)
+    assert res.method == "native" and up.calls == []
+
+
+def test_resize_without_upscaler(tmp_path):
+    src = make_png(tmp_path / "s.png", (600, 600))
+    res = save_crop(src, CropRect(0, 0, 600, 600), 1024, 1024)
+    assert res.method == "resize" and Image.open(res.path).size == (1024, 1024)
+
+
+def test_ai_path_upscales_region_and_lands_exact(tmp_path):
+    src = make_split(tmp_path / "ai.png", (800, 400))
+    up = StubUpscaler()
+    res = save_crop(src, CropRect(300, 100, 200, 200), 1024, 1024, up)
+    assert res.method == "AI stub" and Image.open(res.path).size == (1024, 1024)
+    assert up.calls == [(200 + 2 * AI_REGION_MARGIN, 200 + 2 * AI_REGION_MARGIN)]
+    out = Image.open(res.path).convert("RGB")
+    assert out.getpixel((100, 512)) == (255, 0, 0)
+    assert out.getpixel((924, 512)) == (0, 0, 255)
+
+
+def test_ai_failure_falls_back_to_resize(tmp_path):
+    src = make_png(tmp_path / "f.png", (600, 600))
+    res = save_crop(src, CropRect(0, 0, 300, 300), 1024, 1024, StubUpscaler(fail="CUDA OOM"))
+    assert res.method == "resize (AI failed: CUDA OOM)"
+    assert Image.open(res.path).size == (1024, 1024)
+
+
+def test_real_comfyui_png_metadata_roundtrip(tmp_path):
+    src = Path(r"D:\ComfyUI_windows_portable\ComfyUI\output\New Vintage Girls_Posted"
+               r"\unposted\NEW_TEST__00160_.png")
+    if not src.exists():
+        pytest.skip("user's ComfyUI output not available")
+    from sorters.civitai_prep import CivitaiPrep
+    w, h = Image.open(src).size
+    res = save_crop(src, largest_fit(w, h, 832 / 1216), 832, 1216, out_dir=tmp_path)
+    prep = CivitaiPrep(None, r"D:\ComfyUI_windows_portable\ComfyUI\models", api_lookup=False)
+    a = prep.analyze_image(str(src), compute_hashes=False)
+    b = prep.analyze_image(str(res.path), compute_hashes=False)
+    assert a["prompts"]["positive"] and a["prompts"]["positive"] == b["prompts"]["positive"]
+    assert (a["checkpoint"] or {}).get("name") == (b["checkpoint"] or {}).get("name")
+    assert [x["name"] for x in a["loras"]] == [x["name"] for x in b["loras"]]

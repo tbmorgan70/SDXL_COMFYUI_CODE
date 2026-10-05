@@ -7,8 +7,16 @@ crop_editor.py; everything here works in float *source* pixels so it can
 be tested without a window.
 """
 
+import io
+import math
 from dataclasses import dataclass
-from typing import Dict, Tuple, Union
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, Optional, Tuple, Union
+
+import numpy as np
+from PIL import Image, ImageOps
+from PIL.PngImagePlugin import PngInfo
 
 from sorters.image_extractor import CROP_PRESETS
 
@@ -148,3 +156,144 @@ def grade(rect: CropRect, out_w: int, out_h: int, ai_enabled: bool) -> Grade:
         return Grade("soft", factor, f"{factor:.1f}x — will be soft, widen the frame")
     method = "AI upscale" if ai_enabled else "resize"
     return Grade("upscale", factor, f"{factor:.1f}x — {method}")
+
+
+# ----------------------------------------------------------------------
+# Saving
+# ----------------------------------------------------------------------
+
+MANIFEST_NAME = "_crop_info.txt"
+EXIF_ORIENTATION = 274
+
+
+@dataclass(frozen=True)
+class SaveResult:
+    path: Path
+    factor: float
+    method: str     # "native" | "resize" | "AI <model>" | "resize (AI failed: ...)"
+
+
+def output_dir_for(source_dir: Path, out_w: int, out_h: int) -> Path:
+    return Path(source_dir) / f"cropped__{out_w}x{out_h}"
+
+
+def open_oriented(path: Path) -> Tuple[Image.Image, Image.Image]:
+    """(as opened, as displayed). The first keeps .format and .info for the
+    metadata; the second has EXIF rotation applied, which is what the editor
+    shows and what crop rects refer to. Read from memory so no file handle
+    stays open (Triage may move the file afterwards)."""
+    orig = Image.open(io.BytesIO(Path(path).read_bytes()))
+    orig.load()
+    return orig, ImageOps.exif_transpose(orig)
+
+
+def _workable(img: Image.Image) -> Image.Image:
+    """A mode Lanczos resizing and every output format can handle, keeping alpha."""
+    if img.mode.startswith("I") or img.mode == "F":
+        arr = np.asarray(img, dtype=np.float64)
+        if arr.max(initial=0) > 255:
+            arr = arr / 257.0
+        return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "L").convert("RGB")
+    if img.mode == "P":
+        return img.convert("RGBA" if "transparency" in img.info else "RGB")
+    if img.mode in ("1", "CMYK", "YCbCr", "LAB", "HSV"):
+        return img.convert("RGB")
+    return img
+
+
+def save_with_metadata(img: Image.Image, src_img: Image.Image, dest_stem: Path) -> Path:
+    """Write `img` next to `dest_stem` in the source's format family, carrying
+    its PNG text chunks, EXIF (orientation reset) and ICC profile.
+    Returns the path written; a clash becomes <stem>_2, <stem>_3, ..."""
+    fmt = (src_img.format or "PNG").upper()
+    kwargs = {}
+    if fmt == "JPEG":
+        ext, pil_fmt = ".jpg", "JPEG"
+        kwargs.update(quality=95, subsampling=0)
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+    elif fmt == "WEBP":
+        ext, pil_fmt = ".webp", "WEBP"
+        kwargs["lossless"] = True
+    else:
+        ext, pil_fmt = ".png", "PNG"
+        texts = {k: v for k, v in src_img.info.items() if isinstance(v, str)}
+        if texts:
+            info = PngInfo()
+            for k, v in texts.items():
+                info.add_text(k, v)
+            kwargs["pnginfo"] = info
+
+    icc = src_img.info.get("icc_profile")
+    if icc:
+        kwargs["icc_profile"] = icc
+    exif = src_img.getexif()
+    if len(exif):
+        if EXIF_ORIENTATION in exif:
+            exif[EXIF_ORIENTATION] = 1      # pixels are already upright
+        kwargs["exif"] = exif.tobytes()
+
+    dest = Path(str(dest_stem) + ext)
+    n = 2
+    while dest.exists():
+        dest = Path(f"{dest_stem}_{n}{ext}")
+        n += 1
+    img.save(dest, pil_fmt, **kwargs)
+    return dest
+
+
+def _append_manifest(out_dir: Path, out_w: int, out_h: int, src: Path,
+                     rect: CropRect, factor: float, method: str, dest: Path):
+    path = out_dir / MANIFEST_NAME
+    lines = []
+    if not path.exists():
+        lines += ["=== CROP INFO ===",
+                  f"Output size : {out_w}x{out_h}",
+                  f"Created     : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                  "",
+                  "source | crop rect (x,y,w,h) | factor | method | output"]
+    lines.append(f"{src.name} | {round(rect.x)},{round(rect.y)},{round(rect.w)},{round(rect.h)}"
+                 f" | {factor:.2f}x | {method} | {dest.name}")
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def save_crop(src_path: Path, rect: CropRect, out_w: int, out_h: int,
+              upscaler=None, out_dir: Optional[Path] = None) -> SaveResult:
+    """Cut `rect` (displayed-orientation source pixels) out of the full-
+    resolution original and write it at exactly out_w x out_h.
+
+    Enlarging uses the AI upscaler when one is given — on the crop plus a
+    small margin only — falling back to Lanczos if it fails.
+    """
+    src_path = Path(src_path)
+    orig, img = open_oriented(src_path)
+    img = _workable(img)
+    factor = out_w / rect.w
+    box = (rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
+
+    if factor <= 1.0:
+        result, method = img.resize((out_w, out_h), Image.LANCZOS, box=box), "native"
+    elif upscaler is None:
+        result, method = img.resize((out_w, out_h), Image.LANCZOS, box=box), "resize"
+    else:
+        try:
+            m = AI_REGION_MARGIN
+            rx0, ry0 = max(0, math.floor(rect.x - m)), max(0, math.floor(rect.y - m))
+            rx1 = min(img.width, math.ceil(rect.x + rect.w + m))
+            ry1 = min(img.height, math.ceil(rect.y + rect.h + m))
+            up = upscaler.upscale(img.crop((rx0, ry0, rx1, ry1)))
+            s = up.width / (rx1 - rx0)
+            up_box = ((rect.x - rx0) * s, (rect.y - ry0) * s,
+                      (rect.x - rx0 + rect.w) * s, (rect.y - ry0 + rect.h) * s)
+            result = up.resize((out_w, out_h), Image.LANCZOS, box=up_box)
+            method = f"AI {upscaler.name}"
+        except Exception as e:
+            result = img.resize((out_w, out_h), Image.LANCZOS, box=box)
+            method = f"resize (AI failed: {e})"
+
+    out_dir = Path(out_dir) if out_dir else output_dir_for(src_path.parent, out_w, out_h)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dest = save_with_metadata(result, orig, out_dir / src_path.stem)
+    _append_manifest(out_dir, out_w, out_h, src_path, rect, factor, method, dest)
+    return SaveResult(dest, factor, method)
