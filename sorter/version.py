@@ -1,7 +1,7 @@
-# Sorter 3.5.0 - AI Upscale
-VERSION = "3.5.0"
-BUILD_DATE = "2026-09-26"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - AI Upscale"
+# Sorter 3.6.0 - Manual Crop
+VERSION = "3.6.0"
+BUILD_DATE = "2026-10-04"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Manual Crop"
 
 # Features included in this build:
 FEATURES = [
@@ -24,8 +24,9 @@ FEATURES = [
     "PDF Page Auto-Stitching (split scan strips)",  # v3.4.0
     "Named Face Framing Presets",                 # v3.4.0
     "Self-Describing Output Folders + Manifests",  # v3.4.1
-    "AI Upscale (ComfyUI models via spandrel)",   # NEW in v3.5.0!
-    "Extract: AI Upscale When Needed",            # NEW in v3.5.0!
+    "AI Upscale (ComfyUI models via spandrel)",   # v3.5.0
+    "Extract: AI Upscale When Needed",            # v3.5.0
+    "Manual Crop (fixed frame, exact presets, metadata kept)",  # NEW in v3.6.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -36,5 +37,5 @@ FEATURES = [
     "Empty Folder Cleanup"          # Enhanced in v2.4.0
 ]
 
-# Upscale with the models already in ComfyUI, and only where it's needed
-NOTES = "AI Upscale mode runs any model in ComfyUI's upscale_models folder on the GPU, landing on a target long edge and preserving PNG metadata. Extract can AI-upscale just the region around a face when the source is too small for the requested framing."
+# Crop by hand without leaving Triage
+NOTES = ("Manual Crop: a fixed frame at an exact preset size with the image floating underneath. Drag, scroll, and Enter saves a metadata-preserving copy and moves on. Press C in Manual Sort (Triage), or use the Manual Crop mode.")

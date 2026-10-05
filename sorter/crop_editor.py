@@ -10,6 +10,7 @@ saving run on worker threads, and only the main thread (an after() poller)
 touches Tk objects — including log calls, which can reach the GUI.
 """
 
+import gc
 import queue
 import re
 import threading
@@ -118,6 +119,12 @@ class CropEditor(ctk.CTkFrame):
         self._save_q, self._save_results = queue.Queue(), queue.Queue()
 
         self._build_ui()
+        # Closed windows leave cyclic garbage that holds Tk objects. If one of
+        # our worker threads' allocations triggers the collection, each Tk
+        # __del__ runs on that thread and must wait for the main thread (up to
+        # 1 s apiece outside mainloop). Collect it here, on the main thread,
+        # before the workers start.
+        gc.collect()
         self._loader_thread = threading.Thread(target=self._loader, daemon=True)
         self._saver_thread = threading.Thread(target=self._saver, daemon=True)
         self._loader_thread.start()

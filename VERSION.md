@@ -1,16 +1,22 @@
 # 📌 Version Information
 
-**Last Updated:** September 26, 2026
+**Last Updated:** October 4, 2026
 
 ---
 
-## 🎯 Repository Version: 3.6.0
+## 🎯 Repository Version: 3.7.0
 
-**Release Date:** September 26, 2026  
+**Release Date:** October 4, 2026  
 **Status:** ✅ Released  
-**Codename:** "AI Upscale"
+**Codename:** "Manual Crop"
 
-### What's New in 3.6:
+### What's New in 3.7:
+- ✅ **Sorter 3.6** — Manual Crop: a fixed frame at an exact preset size with the image floating underneath; press C in Triage or use the Manual Crop mode
+- ✅ Resolution badge (native / AI-upscale / too soft) and AI upscale of just the cropped region when needed
+- ✅ Crops are metadata-preserving copies in `cropped__<W>x<H>/` — originals are never touched
+- ✅ Design and plan: [docs/superpowers/specs/2026-10-04-manual-crop-design.md](docs/superpowers/specs/2026-10-04-manual-crop-design.md)
+
+### What Was New in 3.6:
 - ✅ **Sorter 3.5** — AI Upscale mode: the models already in ComfyUI's `upscale_models`, on the GPU, to a target long edge, preserving PNG metadata
 - ✅ VRAM-aware tiling that avoids Windows' silent spill-to-system-RAM slowdown
 - ✅ Extract can AI-upscale just the region around a face when the source is too small for the framing

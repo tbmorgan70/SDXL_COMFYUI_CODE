@@ -2,6 +2,41 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.6.0] - 2026-10-04 - "Manual Crop" ✂️
+
+Design and plan: [docs/superpowers/specs/2026-10-04-manual-crop-design.md](../docs/superpowers/specs/2026-10-04-manual-crop-design.md).
+
+### 🎉 New: Manual Crop
+
+- **Fixed frame, floating image** — the frame stays put at the preset's exact
+  shape; drag the image under it and scroll to zoom (around the cursor).
+  Outside the frame is dimmed, with a rule-of-thirds grid inside
+- **Inside Triage**: press **C** in the full-size viewer to crop while you
+  sort. Bucket keys keep working; ←/→ still navigate
+- **Manual Crop mode** in the main menu for cropping alone (no buckets)
+- **Keys**: Enter = save & next, Shift+Enter = save & stay (another size of
+  the same image), Shift+arrows nudge (Ctrl+Shift for big steps), +/− zoom,
+  F = snap to face, R = reset
+- **Exact-size presets**: Extract's sizes plus the SDXL training buckets
+  (896×1152, 832×1216, 768×1344, 640×1536 and their landscape twins) and Custom
+- **Starts on the face** (your face_yolov8m model, Portrait framing, eyes
+  toward the upper third); largest centred frame when there's no face
+- **Resolution badge**: green = native pixels, amber = 1–2× enlarging,
+  red = over 2× (will be soft — a warning, never a block)
+- **AI upscale when needed**: enlarging uses your ComfyUI upscale model on
+  just the cropped region (plain resize if it's off or fails)
+- **Saves a copy, never touches the original**: `cropped__<W>x<H>/` next to
+  the source, same format, with PNG text chunks (prompt/workflow/parameters),
+  EXIF and colour profile carried over — Civitai Prep still reads them.
+  EXIF-rotated photos are cropped as shown. `_crop_info.txt` logs each crop
+- Gallery thumbnails show a ✂ badge with the crop count
+
+### ⚡ Smooth on big screens
+
+Panning moves an already-drawn image instead of redrawing the canvas: about
+0.03 ms per drag step on a 2045×1309 canvas, versus ~30 ms for a full redraw.
+Images load and save on background threads, and the next image is preloaded.
+
 ## [3.5.0] - 2026-09-26 - "AI Upscale" 🔍
 
 Full plan, measurements and the evaluation of nextgenUp and RAIV:

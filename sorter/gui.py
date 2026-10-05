@@ -34,6 +34,8 @@ from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
                                      SUPPORTED_EXTENSIONS, FACE_FRAMING_PRESETS,
                                      DEFAULT_FACE_FRAMING, PDF_MODES)
 from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
+from sorters.crop_tool import CROP_SIZE_PRESETS, DEFAULT_CROP_PRESET
+from crop_editor import CropEditor
 from sorters.civitai_prep import CivitaiPrep
 from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
                               DEFAULT_UPSCALE_PRESET, TARGET_SIZES,
@@ -272,7 +274,10 @@ class ProgressWindow(ctk.CTkToplevel):
 
 class TriageWindow(ctk.CTkToplevel):
     """Visual triage: thumbnail gallery + full-size viewer with keyboard-driven
-    bucket assignment. Executes moves into bucket subfolders on demand."""
+    bucket assignment. Executes moves into bucket subfolders on demand.
+
+    C turns the viewer into the crop editor (Manual Crop); crop_only opens
+    the same window for cropping alone, without buckets."""
 
     PAGE_SIZE = 60
     COLS = 6
@@ -280,12 +285,25 @@ class TriageWindow(ctk.CTkToplevel):
     BUCKET_COLORS = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"]
     TRASH_COLOR = "#F44336"
 
-    def __init__(self, parent, sorter: ManualSorter, log_fn):
+    BADGE_COLOR = "#00838F"
+
+    def __init__(self, parent, sorter: ManualSorter, log_fn,
+                 crop_only: bool = False, crop_defaults: dict = None):
         super().__init__(parent)
         self.sorter = sorter
         self.log_fn = log_fn
+        self.crop_only = crop_only
+        self.crop_defaults = dict(crop_defaults or {})
+        self.crop_mode = crop_only
+        self.crop_editor = None
+        self.crop_counts = {}               # Path -> crops saved this session
+        self.crop_saved_total = 0
+        self._badges = {}                   # Path -> badge label, current page only
 
-        self.title(f"🖼️ Manual Sort — {sorter.source_dir.name}  ({len(sorter.images)} images)")
+        if crop_only:
+            self.title(f"✂️ Manual Crop — {sorter.source_dir.name}  ({len(sorter.images)} images)")
+        else:
+            self.title(f"🖼️ Manual Sort — {sorter.source_dir.name}  ({len(sorter.images)} images)")
         self.geometry("1240x880")
 
         self.page = 0
@@ -311,16 +329,8 @@ class TriageWindow(ctk.CTkToplevel):
         self._show_gallery()
         self._render_page()
 
-        # Keyboard bindings
-        self.bind("<Right>", lambda e: self._nav(1))
-        self.bind("<Left>", lambda e: self._nav(-1))
-        self.bind("<Escape>", lambda e: self._show_gallery())
-        self.bind("<Delete>", lambda e: self._assign_key(len(self.sorter.buckets)))
-        self.bind("<Key-0>", lambda e: self._assign_key(0))
-        for i in range(1, len(self.sorter.buckets) + 1):
-            self.bind(f"<Key-{i}>", lambda e, n=i: self._assign_key(n))
-        self.bind("<Prior>", lambda e: self._change_page(-1))   # PgUp
-        self.bind("<Next>", lambda e: self._change_page(1))     # PgDn
+        # One key handler: in crop mode the editor gets first refusal
+        self.bind("<KeyPress>", self._on_keypress)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(200, self.focus_force)
 
@@ -332,25 +342,28 @@ class TriageWindow(ctk.CTkToplevel):
         top.pack(fill="x", padx=10, pady=(10, 5))
 
         self.bucket_buttons = {}
-        for i, bucket in enumerate(self.sorter.buckets):
-            btn = ctk.CTkButton(
-                top,
-                text=f"[{i+1}] {bucket} (0)",
-                fg_color=self.bucket_colors[bucket],
-                hover_color=self.bucket_colors[bucket],
-                width=140,
-                command=lambda b=bucket: self._assign_current(b),
-            )
-            btn.pack(side="left", padx=4, pady=8)
-            self.bucket_buttons[bucket] = btn
-
-        ctk.CTkButton(top, text="[0] Clear", fg_color="#555", width=80,
-                      command=lambda: self._assign_current(None)).pack(side="left", padx=4)
-
         self.execute_btn = ctk.CTkButton(
             top, text="🚀 Execute Sort", fg_color="green", hover_color="darkgreen",
             width=130, command=self._execute)
-        self.execute_btn.pack(side="right", padx=8)
+        if not self.crop_only:
+            for i, bucket in enumerate(self.sorter.buckets):
+                btn = ctk.CTkButton(
+                    top,
+                    text=f"[{i+1}] {bucket} (0)",
+                    fg_color=self.bucket_colors[bucket],
+                    hover_color=self.bucket_colors[bucket],
+                    width=140,
+                    command=lambda b=bucket: self._assign_current(b),
+                )
+                btn.pack(side="left", padx=4, pady=8)
+                self.bucket_buttons[bucket] = btn
+
+            ctk.CTkButton(top, text="[0] Clear", fg_color="#555", width=80,
+                          command=lambda: self._assign_current(None)).pack(side="left", padx=4)
+            self.execute_btn.pack(side="right", padx=8)
+        else:
+            ctk.CTkLabel(top, text="✂️ Manual Crop", font=ctk.CTkFont(size=14, weight="bold")
+                         ).pack(side="left", padx=10, pady=8)
 
         self.status_label = ctk.CTkLabel(top, text="", font=ctk.CTkFont(size=12))
         self.status_label.pack(side="right", padx=10)
@@ -364,8 +377,13 @@ class TriageWindow(ctk.CTkToplevel):
         self.page_label.pack(side="left", padx=10)
         ctk.CTkButton(self.page_bar, text="Next ▶", width=70,
                       command=lambda: self._change_page(1)).pack(side="left", padx=4)
-        ctk.CTkLabel(self.page_bar,
-                     text="Click a thumbnail to view • ←/→ navigate • 1-4 assign • 0 clear • Del = Trash • Esc = gallery",
+        if self.crop_only:
+            hint = ("Click a thumbnail to crop • drag/scroll to frame • Enter save & next • "
+                    "Shift+Enter save & stay • F face • R reset • Esc = gallery")
+        else:
+            hint = ("Click a thumbnail to view • ←/→ navigate • 1-4 assign • 0 clear • "
+                    "Del = Trash • C crop • Esc = gallery")
+        ctk.CTkLabel(self.page_bar, text=hint,
                      text_color="#888", font=ctk.CTkFont(size=11)).pack(side="right", padx=10)
 
         # --- Body: gallery + viewer (swapped) ---
@@ -405,6 +423,7 @@ class TriageWindow(ctk.CTkToplevel):
         for w in self.gallery.winfo_children():
             w.destroy()
         self.thumb_widgets = {}
+        self._badges = {}
 
         start = self.page * self.PAGE_SIZE
         page_paths = self.sorter.images[start:start + self.PAGE_SIZE]
@@ -423,6 +442,7 @@ class TriageWindow(ctk.CTkToplevel):
                 w.bind("<Button-1>", lambda e, idx=start + i: self._open_viewer(idx))
 
             self.thumb_widgets[path] = (cell, lbl)
+            self._refresh_badge(path)
 
         # Load PIL thumbnails in a worker thread; a main-thread poller creates
         # the CTkImages (Tk image objects must be touched from the main thread only).
@@ -492,12 +512,56 @@ class TriageWindow(ctk.CTkToplevel):
         self.gallery.pack_forget()
         self.page_bar.pack_forget()
         self.viewer.pack(fill="both", expand=True)
+        self._pack_viewer_body()
         self._show_current()
+
+    def _pack_viewer_body(self):
+        """Show either the plain image label or the crop editor in the viewer."""
+        if self.crop_mode:
+            self._ensure_editor()
+            self.viewer_label.pack_forget()
+            if not self.crop_editor.winfo_manager():
+                self.crop_editor.pack(fill="both", expand=True, before=self.viewer_info)
+        else:
+            if self.crop_editor is not None:
+                self.crop_editor.pack_forget()
+            if not self.viewer_label.winfo_manager():
+                self.viewer_label.pack(fill="both", expand=True, pady=(5, 0), before=self.viewer_info)
+
+    def _ensure_editor(self):
+        if self.crop_editor is not None:
+            return
+        d = self.crop_defaults
+        self.crop_editor = CropEditor(
+            self.viewer,
+            preset_label=d.get("preset", DEFAULT_CROP_PRESET),
+            ai_enabled=d.get("ai", True),
+            model_path=d.get("model"),
+            face_detector_factory=d.get("face_detector_factory"),
+            upscaler_factory=d.get("upscaler_factory"),
+            on_saved=self._on_crop_saved,
+            on_error=self._on_crop_error,
+            on_advance=lambda: self._nav(1),
+            log=self.log_fn,
+        )
+
+    def _set_crop_mode(self, on: bool):
+        self.crop_mode = on
+        if self.current_index is not None:
+            self._pack_viewer_body()
+            self._show_current()
 
     def _show_current(self):
         if self.current_index is None or not self.sorter.images:
             return
         path = self.sorter.images[self.current_index]
+
+        if self.crop_mode:
+            n = len(self.sorter.images)
+            nxt = self.sorter.images[(self.current_index + 1) % n] if n > 1 else None
+            self.crop_editor.load(path, prefetch=nxt)
+            self._update_viewer_info(path)
+            return
 
         try:
             img = Image.open(path).convert("RGB")
@@ -513,12 +577,21 @@ class TriageWindow(ctk.CTkToplevel):
 
         self._viewer_img = ctk.CTkImage(light_image=img, size=size)
         self.viewer_label.configure(image=self._viewer_img, text="")
+        self._update_viewer_info(path)
 
+    def _update_viewer_info(self, path):
+        crops = self.crop_counts.get(path, 0)
+        cut = f"   ✂ {crops}" if crops else ""
+        if self.crop_only:
+            self.viewer_info.configure(
+                text=f"{self.current_index + 1} / {len(self.sorter.images)}   {path.name}{cut}",
+                text_color="#aaa")
+            return
         bucket = self.sorter.get_assignment(path)
         tag = f"  →  {bucket}" if bucket else "  →  (unassigned)"
         color = self.bucket_colors.get(bucket, "#aaa") if bucket else "#aaa"
         self.viewer_info.configure(
-            text=f"{self.current_index + 1} / {len(self.sorter.images)}   {path.name}{tag}",
+            text=f"{self.current_index + 1} / {len(self.sorter.images)}   {path.name}{tag}{cut}",
             text_color=color,
         )
 
@@ -530,6 +603,66 @@ class TriageWindow(ctk.CTkToplevel):
             return
         self.current_index = (self.current_index + delta) % n
         self._show_current()
+
+    # ------------------------------------------------------------------ keys + crops
+
+    def _on_keypress(self, event):
+        k = event.keysym
+        if (self.crop_mode and self.current_index is not None
+                and self.crop_editor is not None and self.crop_editor.handle_key(event)):
+            return "break"
+        if k == "Right":
+            self._nav(1)
+        elif k == "Left":
+            self._nav(-1)
+        elif k == "Escape":
+            if self.crop_mode and not self.crop_only and self.current_index is not None:
+                self._set_crop_mode(False)
+            else:
+                self._show_gallery()
+        elif k in ("c", "C"):
+            if not self.crop_only and self.current_index is not None:
+                self._set_crop_mode(not self.crop_mode)
+        elif k == "Prior":
+            self._change_page(-1)
+        elif k == "Next":
+            self._change_page(1)
+        elif self.crop_only:
+            return None
+        elif k == "Delete":
+            self._assign_key(len(self.sorter.buckets))
+        elif k.isdigit():
+            self._assign_key(int(k))
+        else:
+            return None
+        return "break"
+
+    def _on_crop_saved(self, path, result):
+        self.crop_counts[path] = self.crop_counts.get(path, 0) + 1
+        self.crop_saved_total += 1
+        self._refresh_badge(path)
+        self._update_counts()
+        if self.current_index is not None and self.sorter.images[self.current_index] == path:
+            self._update_viewer_info(path)
+        self.log_fn(f"✂ Cropped {path.name} → {result.path.parent.name}/{result.path.name}"
+                    f" ({result.method})")
+
+    def _on_crop_error(self, path, message):
+        self.log_fn(f"✗ {message}")
+
+    def _refresh_badge(self, path):
+        n = self.crop_counts.get(path, 0)
+        pair = self.thumb_widgets.get(path)
+        if not n or pair is None or not pair[0].winfo_exists():
+            return
+        badge = self._badges.get(path)
+        if badge is not None and badge.winfo_exists():
+            badge.configure(text=f"✂ {n}")
+            return
+        badge = ctk.CTkLabel(pair[0], text=f"✂ {n}", fg_color=self.BADGE_COLOR, text_color="white",
+                             corner_radius=4, height=18, font=ctk.CTkFont(size=11, weight="bold"))
+        badge.place(relx=1.0, rely=0.0, x=-6, y=6, anchor="ne")
+        self._badges[path] = badge
 
     # ------------------------------------------------------------------ assignment
 
@@ -560,12 +693,18 @@ class TriageWindow(ctk.CTkToplevel):
             self._show_current()
 
     def _update_counts(self):
+        n = self.crop_saved_total
+        crops = f"{n} crop{'' if n == 1 else 's'}"
+        if self.crop_only:
+            self.status_label.configure(text=f"{crops} saved")
+            return
         counts = self.sorter.counts()
         for i, bucket in enumerate(self.sorter.buckets):
             self.bucket_buttons[bucket].configure(text=f"[{i+1}] {bucket} ({counts[bucket]})")
         assigned = len(self.sorter.assignments)
+        cut = f"  •  ✂ {crops}" if n else ""
         self.status_label.configure(
-            text=f"{assigned} assigned / {counts['unassigned']} remaining")
+            text=f"{assigned} assigned / {counts['unassigned']} remaining{cut}")
 
     # ------------------------------------------------------------------ execute
 
@@ -615,6 +754,11 @@ class TriageWindow(ctk.CTkToplevel):
         self._render_page()
 
     def _on_close(self):
+        pending = self.crop_editor.pending_saves() if self.crop_editor is not None else 0
+        if pending:
+            self.status_label.configure(text=f"Finishing {pending} saves…")
+            self.after(200, self._on_close)
+            return
         if self.sorter.assignments:
             if not messagebox.askyesno(
                     "Unsaved assignments",
@@ -623,6 +767,8 @@ class TriageWindow(ctk.CTkToplevel):
                     parent=self):
                 return
         self._closing = True
+        if self.crop_editor is not None:
+            self.crop_editor.shutdown()
         self.destroy()
 
 
@@ -633,7 +779,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.5.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.6.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -681,7 +827,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "AI Upscale", "Manual Sort (Triage)", "Civitai Prep", "Generate Metadata", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "AI Upscale", "Manual Sort (Triage)", "Manual Crop", "Civitai Prep", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -698,6 +844,7 @@ class SorterGUI(ctk.CTk):
         self.flatten_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.extract_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.manual_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.crop_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.civitai_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.upscale_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
@@ -711,6 +858,7 @@ class SorterGUI(ctk.CTk):
         self._build_flatten_form()
         self._build_extract_form()
         self._build_manual_form()
+        self._build_crop_form()
         self._build_civitai_form()
         self._build_upscale_form()
         self._build_metadata_form()
@@ -1330,7 +1478,68 @@ class SorterGUI(ctk.CTk):
             return
 
         self.log_message(f"🖼️ Opening triage: {len(sorter.images)} images, buckets: {', '.join(sorter.buckets)}")
-        TriageWindow(self, sorter, self.log_message)
+        TriageWindow(self, sorter, self.log_message, crop_defaults=self._crop_defaults())
+
+    def _build_crop_form(self):
+        """Build the Manual Crop form (its settings also apply to C in Triage)."""
+        f = self.crop_frame
+
+        src_row = ctk.CTkFrame(f)
+        src_row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkButton(src_row, text="📁 Select Image Folder",
+                      command=lambda: self._choose_directory("source")).pack(side="left")
+        self.crop_src_label = ctk.CTkLabel(src_row, text="No folder selected", text_color="#888")
+        self.crop_src_label.pack(side="left", padx=(10, 0))
+
+        preset_row = ctk.CTkFrame(f)
+        preset_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(preset_row, text="Size:").pack(side="left")
+        self.crop_preset_var = ctk.StringVar(value=DEFAULT_CROP_PRESET)
+        ctk.CTkOptionMenu(preset_row, variable=self.crop_preset_var, width=260,
+                          values=[k for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)]
+                          ).pack(side="left", padx=(5, 0))
+
+        ai_row = ctk.CTkFrame(f)
+        ai_row.pack(fill="x", padx=15, pady=5)
+        self.crop_ai_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(ai_row, text="AI upscale when needed",
+                        variable=self.crop_ai_var).pack(side="left")
+        ctk.CTkLabel(ai_row, text="Model:").pack(side="left", padx=(15, 0))
+        self._crop_models = {p.stem: p for p in list_upscale_models(DEFAULT_UPSCALE_MODELS_DIR)}
+        default_model = resolve_preset(DEFAULT_UPSCALE_PRESET, DEFAULT_UPSCALE_MODELS_DIR)
+        names = list(self._crop_models) or ["(no models found)"]
+        self.crop_model_var = ctk.StringVar(
+            value=default_model.stem if default_model else names[0])
+        ctk.CTkOptionMenu(ai_row, variable=self.crop_model_var, values=names,
+                          width=220).pack(side="left", padx=(5, 0))
+
+        ctk.CTkLabel(
+            f,
+            text="✂ Frame stays fixed — drag the image under it, scroll to zoom. "
+                 "Enter saves a copy to cropped__<size>/ and moves on.\n"
+                 "These settings also apply when you press C in Manual Sort (Triage).",
+            text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
+        ).pack(padx=15, pady=(5, 15))
+
+    def _crop_defaults(self) -> dict:
+        return {"preset": self.crop_preset_var.get(),
+                "ai": bool(self.crop_ai_var.get()),
+                "model": self._crop_models.get(self.crop_model_var.get())}
+
+    def manual_crop(self):
+        """Open the crop-only triage window for the selected folder."""
+        if not self.source_dir or not os.path.isdir(self.source_dir):
+            messagebox.showerror("Error", "Please select an image folder first.")
+            return
+        sorter = ManualSorter(self.logger, self.source_dir, ["Keep"])
+        if not sorter.images:
+            messagebox.showerror("Error", "No images found in the selected folder.\n"
+                                 f"Supported: {', '.join(sorted(IMAGE_EXTENSIONS))}")
+            return
+        self.log_message(f"✂️ Opening manual crop: {len(sorter.images)} images, "
+                         f"size {self.crop_preset_var.get()}")
+        TriageWindow(self, sorter, self.log_message, crop_only=True,
+                     crop_defaults=self._crop_defaults())
 
     def _chain_civitai_prep(self, output_dir, progress_window):
         """Run Civitai Prep in-place over a sorted output tree.
@@ -1695,6 +1904,8 @@ class SorterGUI(ctk.CTk):
                     self.lora_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Manual Sort (Triage)":
                     self.manual_src_label.configure(text=os.path.basename(directory))
+                elif self.mode_var.get() == "Manual Crop":
+                    self.crop_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "Civitai Prep":
                     self.civitai_src_label.configure(text=os.path.basename(directory))
                 elif self.mode_var.get() == "AI Upscale":
@@ -1731,7 +1942,7 @@ class SorterGUI(ctk.CTk):
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.upscale_frame, self.manual_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.upscale_frame, self.manual_frame, self.crop_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -1760,6 +1971,9 @@ class SorterGUI(ctk.CTk):
         elif mode == "Manual Sort (Triage)":
             self.manual_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🖼️ Manual sort (triage) mode selected")
+        elif mode == "Manual Crop":
+            self.crop_frame.pack(fill="x", padx=0, pady=0)
+            self.log_message("✂️ Manual crop mode selected")
         elif mode == "Civitai Prep":
             self.civitai_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🏷️ Civitai Prep mode selected")
@@ -1796,6 +2010,8 @@ class SorterGUI(ctk.CTk):
             self.upscale_images()
         elif mode == "Manual Sort (Triage)":
             self.manual_sort()
+        elif mode == "Manual Crop":
+            self.manual_crop()
         elif mode == "Civitai Prep":
             self.civitai_prep()
         elif mode == "Generate Metadata":

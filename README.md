@@ -14,6 +14,7 @@ This unified repository contains these tools:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
 - **v3.0** 📦 Extract Images - Pull images from PDF/EPUB/MOBI/CBR/CBZ with auto-crop presets and face-centered cropping
 - **v3.0** 🖼️ Manual Sort (Triage) - Visual gallery with keyboard-driven bucket sorting
+- **v3.6** ✂️ Manual Crop - Fixed frame at exact preset sizes, image floats underneath; press C in Triage
 - **v3.0** 🌈 New Color Engine - HSV pixel voting with intuitive tuning sliders
 - **v2.4** 🗂️ Automatic Metadata Preservation - PNG images move with their .txt files
 - **v2.3+** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations

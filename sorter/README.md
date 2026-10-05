@@ -9,6 +9,7 @@
 
 - **📦 Extract Images** — pull images out of PDF/EPUB/MOBI/CBR/CBZ files with auto-crop presets (SDXL training sizes, social ratios, and more) and optional face-centered cropping; chain straight into sorting
 - **🖼️ Manual Sort (Triage)** — keyboard-driven visual gallery: view full-size, press 1-4 to bucket each image into custom-named folders (plus Trash), then execute the moves
+- **✂️ Manual Crop (3.6)** — press C in Triage (or use the Manual Crop mode): a fixed frame at an exact preset size with the image floating underneath; drag, scroll, Enter saves a metadata-preserving copy to `cropped__<W>x<H>/`
 - **🌈 Color engine rewrite** — HSV pixel voting with chromatic priority; dark images classify correctly and four intuitive sliders replace the old dark threshold
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
