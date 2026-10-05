@@ -125,11 +125,14 @@ Red is a warning only; saving is still allowed.
 - **Loading:** a worker thread decodes a proxy (long edge ≤ 2048 px) and runs face detection;
   results go through a queue drained by a main-thread `after()` poller, which alone creates Tk
   images (per the Tkinter threading rule). The next image is prefetched the same way.
-- **Rendering:** one canvas image item shows only the visible region of the proxy, scaled to
-  the canvas — `Image.BILINEAR` during drag/zoom, `Image.LANCZOS` ~150 ms after motion stops.
-  Tk canvas items have no alpha, so the dimming is applied to that rendered bitmap (outside the
-  frame darkened to 45%); the frame outline, thirds lines and face box are canvas vector items
-  that are only moved, never re-rasterised.
+- **Rendering:** panning moves an already-drawn canvas image item instead of re-uploading
+  pixels. That item holds the view plus a 25% margin at the current zoom (scaled from the proxy,
+  `Image.BILINEAR` while moving, `Image.LANCZOS` ~150 ms after motion stops) and is redrawn only
+  when the view leaves it, the zoom changes, or a sharp pass is due; zoom steps redraw just the
+  view. The dimming outside the frame (to 45%) is a semi-transparent RGBA image that only
+  changes with the canvas size or preset; the frame outline, thirds lines and face box are
+  canvas vector items. (Measured: per-frame re-upload of a 2045×1309 canvas cost ~30 ms;
+  moving the item costs ~0.03 ms.)
 - **Saving:** a single save-worker thread consumes a queue of save jobs sequentially (no GPU
   contention); the badge shows "Saving…" until the job completes. Errors go to the status line
   and the session log.

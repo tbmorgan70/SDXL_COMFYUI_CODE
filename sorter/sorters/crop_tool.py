@@ -187,7 +187,7 @@ def open_oriented(path: Path) -> Tuple[Image.Image, Image.Image]:
     return orig, ImageOps.exif_transpose(orig)
 
 
-def _workable(img: Image.Image) -> Image.Image:
+def workable(img: Image.Image) -> Image.Image:
     """A mode Lanczos resizing and every output format can handle, keeping alpha."""
     if img.mode.startswith("I") or img.mode == "F":
         arr = np.asarray(img, dtype=np.float64)
@@ -268,7 +268,7 @@ def save_crop(src_path: Path, rect: CropRect, out_w: int, out_h: int,
     """
     src_path = Path(src_path)
     orig, img = open_oriented(src_path)
-    img = _workable(img)
+    img = workable(img)
     factor = out_w / rect.w
     box = (rect.x, rect.y, rect.x + rect.w, rect.y + rect.h)
 
