@@ -2,6 +2,39 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.6.2] - 2026-10-20 - "Custom Sampler Tracing" 🧭
+
+### 🐛 Fixed: empty prompt for custom-sampler workflows
+
+Workflows built on `SamplerCustomAdvanced` (KREA2, Flux and friends) came out
+of Civitai Prep and the .txt reports with **no prompt and no settings**, and
+the seed was whichever `RandomNoise` node happened to come first. Workflow
+tracing only knew `KSampler`/`KSamplerAdvanced`; it now also follows the
+custom-sampler family to the nodes that hold each setting:
+
+- **Prompt**: guider → `CLIPTextEncode` → text, including text linked from
+  `PrimitiveStringMultiline` and other string nodes. Guiders: `CFGGuider`
+  (positive/negative), `BasicGuider` (one conditioning, no negative),
+  `DualCFGGuider` (cond1 + negative); `SamplerCustom` (non-advanced) holds its
+  conditioning itself
+- **Steps / scheduler / denoise** from `BasicScheduler` (through `SplitSigmas`);
+  `KarrasScheduler`/`ExponentialScheduler`/`BetaSamplingScheduler` report
+  their curve name
+- **Sampler** from `KSamplerSelect`, **seed** from `RandomNoise.noise_seed`,
+  **CFG** from `CFGGuider` (`cfg_conds` for `DualCFGGuider`)
+- **Base pass wins** as before: a latent-upscale pass (denoise < 1) or a run on
+  the low half of `SplitSigmas` counts as a later pass, not the base
+
+### 🐛 Fixed: zeroed negative showed the positive prompt
+
+A `ConditioningZeroOut` negative (the usual "no negative" for distilled
+models) was traced through to the positive's encoder, so the negative prompt
+repeated the positive. It is now empty, for KSampler workflows too.
+
+KSampler workflows are otherwise unchanged: re-traced all 6,242 KSampler
+PNGs in the ComfyUI output folder with identical results; all 24
+custom-sampler PNGs now trace. Tests: `tests/test_workflow_trace.py`.
+
 ## [3.6.1] - 2026-10-20 - Manual Crop follow-ups
 
 - **Tab / Shift+Tab** step through the sizes while cropping, staying in

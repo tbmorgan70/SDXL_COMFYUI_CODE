@@ -374,6 +374,13 @@ class WorkflowTrace:
     refiner/detail passes. Shared by the metadata formatter and Civitai Prep.
     """
 
+    SAMPLER_CLASSES = ('KSampler', 'KSamplerAdvanced')
+    CUSTOM_SAMPLER_CLASSES = ('SamplerCustom', 'SamplerCustomAdvanced')
+    # Sigma schedulers whose curve is the node itself, not a 'scheduler' input
+    SCHEDULER_NODE_NAMES = {'KarrasScheduler': 'karras',
+                            'ExponentialScheduler': 'exponential',
+                            'BetaSamplingScheduler': 'beta'}
+
     @staticmethod
     def deref(metadata: Dict[str, Any], value: Any,
               key_hint: Optional[str] = None) -> Any:
@@ -439,6 +446,11 @@ class WorkflowTrace:
         if not isinstance(inputs, dict):
             return None
 
+        # Zeroed conditioning (the usual "no negative" for distilled models)
+        # holds no prompt — following it would surface the positive's text
+        if node.get('class_type') == 'ConditioningZeroOut':
+            return None
+
         if 'text' in inputs:
             t = cls.deref(metadata, inputs['text'], key_hint='text')
             if isinstance(t, str) and t.strip():
@@ -460,11 +472,100 @@ class WorkflowTrace:
                 return found
         return None
 
+    @staticmethod
+    def _linked_node(metadata: Dict[str, Any], link: Any) -> Optional[Dict[str, Any]]:
+        """The node a [node_id, slot] link points at, if it has inputs."""
+        if not (isinstance(link, list) and len(link) == 2):
+            return None
+        node = metadata.get(str(link[0]))
+        if isinstance(node, dict) and isinstance(node.get('inputs'), dict):
+            return node
+        return None
+
+    @classmethod
+    def _sampler_inputs(cls, metadata: Dict[str, Any],
+                        entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """A sampler node's settings in KSampler terms (None if not a sampler).
+
+        KSampler/KSamplerAdvanced hold them directly. The custom-sampler
+        family spreads them over helper nodes: noise (RandomNoise.noise_seed),
+        guider (CFGGuider/DualCFGGuider/BasicGuider: conditioning + cfg),
+        sampler (KSamplerSelect) and sigmas (BasicScheduler: steps, scheduler,
+        denoise). Values may still be links for deref()/trace_text().
+        """
+        class_type = entry.get('class_type', '')
+        inputs = entry.get('inputs', {})
+        if not isinstance(inputs, dict):
+            return None
+        if class_type in cls.SAMPLER_CLASSES:
+            return inputs
+        if class_type not in cls.CUSTOM_SAMPLER_CLASSES:
+            return None
+
+        # SamplerCustom carries conditioning, cfg and seed itself
+        view = {k: inputs[k] for k in ('positive', 'negative', 'cfg', 'noise_seed')
+                if k in inputs}
+
+        guider = cls._linked_node(metadata, inputs.get('guider'))
+        if guider:
+            g = guider['inputs']
+            # BasicGuider has one 'conditioning' and no negative/cfg;
+            # DualCFGGuider's main prompt is cond1
+            for k in ('positive', 'conditioning', 'cond1'):
+                if k in g:
+                    view['positive'] = g[k]
+                    break
+            if 'negative' in g:
+                view['negative'] = g['negative']
+            for k in ('cfg', 'cfg_conds'):
+                if k in g:
+                    view['cfg'] = g[k]
+                    break
+
+        noise = cls._linked_node(metadata, inputs.get('noise'))
+        if noise and 'noise_seed' in noise['inputs']:
+            view['noise_seed'] = noise['inputs']['noise_seed']
+
+        sampler = cls._linked_node(metadata, inputs.get('sampler'))
+        if sampler and 'sampler_name' in sampler['inputs']:
+            view['sampler_name'] = sampler['inputs']['sampler_name']
+
+        # Walk sigmas back to the scheduler through SplitSigmas-style nodes;
+        # running on a split's low half (output 1) means starting mid-schedule
+        link = inputs.get('sigmas')
+        for _ in range(8):
+            node = cls._linked_node(metadata, link)
+            if node is None:
+                break
+            s = node['inputs']
+            if 'steps' in s:
+                view['steps'] = s['steps']
+                if 'scheduler' in s:
+                    view['scheduler'] = s['scheduler']
+                elif node.get('class_type') in cls.SCHEDULER_NODE_NAMES:
+                    view['scheduler'] = cls.SCHEDULER_NODE_NAMES[node['class_type']]
+                if 'denoise' in s:
+                    view['denoise'] = s['denoise']
+                break
+            if link[1] == 1:
+                view['start_at_step'] = 1
+            link = s.get('sigmas')
+        return view
+
+    @classmethod
+    def _samplers(cls, metadata: Dict[str, Any]):
+        """Yield (node, settings) for every sampler node in the graph."""
+        for entry in metadata.values():
+            if not isinstance(entry, dict):
+                continue
+            inputs = cls._sampler_inputs(metadata, entry)
+            if inputs is not None:
+                yield entry, inputs
+
     @classmethod
     def _sampler_score(cls, metadata: Dict[str, Any], entry: Dict[str, Any],
-                       pos_class: str = '') -> int:
+                       inputs: Dict[str, Any], pos_class: str = '') -> int:
         """Higher = more likely the base pass (vs refiner/detail pass)."""
-        inputs = entry.get('inputs', {})
         score = 0
         denoise = cls.deref(metadata, inputs.get('denoise'), key_hint='denoise')
         if isinstance(denoise, (int, float)) and denoise < 1.0:
@@ -487,17 +588,12 @@ class WorkflowTrace:
             return prompts
 
         candidates = []
-        for entry in metadata.values():
-            if not isinstance(entry, dict):
-                continue
-            if entry.get('class_type', '') not in ('KSampler', 'KSamplerAdvanced'):
-                continue
-            inputs = entry.get('inputs', {})
+        for entry, inputs in cls._samplers(metadata):
             pos = cls.trace_text(metadata, inputs.get('positive'), role='positive')
             if pos is None:
                 continue
             neg = cls.trace_text(metadata, inputs.get('negative'), role='negative')
-            score = cls._sampler_score(metadata, entry, pos[1])
+            score = cls._sampler_score(metadata, entry, inputs, pos[1])
             candidates.append((score, pos[0], neg[0] if neg else ''))
 
         if candidates:
@@ -512,12 +608,7 @@ class WorkflowTrace:
             return {}
 
         candidates = []
-        for entry in metadata.values():
-            if not isinstance(entry, dict):
-                continue
-            if entry.get('class_type', '') not in ('KSampler', 'KSamplerAdvanced'):
-                continue
-            inputs = entry.get('inputs', {})
+        for entry, inputs in cls._samplers(metadata):
             params = {}
             for key, hint in (('steps', 'steps'), ('cfg', 'cfg'),
                               ('sampler_name', 'sampler_name'),
@@ -528,7 +619,7 @@ class WorkflowTrace:
                     params[key] = v
             if not params:
                 continue
-            score = cls._sampler_score(metadata, entry)
+            score = cls._sampler_score(metadata, entry, inputs)
             candidates.append((score, params))
 
         if not candidates:
@@ -610,16 +701,11 @@ class WorkflowTrace:
         if not metadata:
             return None
         candidates = []
-        for entry in metadata.values():
-            if not isinstance(entry, dict):
-                continue
-            if entry.get('class_type', '') not in ('KSampler', 'KSamplerAdvanced'):
-                continue
-            inputs = entry.get('inputs', {})
+        for entry, inputs in cls._samplers(metadata):
             for key in ('seed', 'noise_seed'):
                 v = cls.deref(metadata, inputs.get(key), key_hint=key)
                 if isinstance(v, (int, float)):
-                    candidates.append((cls._sampler_score(metadata, entry), int(v)))
+                    candidates.append((cls._sampler_score(metadata, entry, inputs), int(v)))
                     break
         if candidates:
             candidates.sort(key=lambda c: c[0], reverse=True)

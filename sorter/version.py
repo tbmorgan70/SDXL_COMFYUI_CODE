@@ -1,7 +1,7 @@
-# Sorter 3.6.1 - Manual Crop
-VERSION = "3.6.1"
+# Sorter 3.6.2 - Custom Sampler Tracing
+VERSION = "3.6.2"
 BUILD_DATE = "2026-10-20"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Manual Crop"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Custom Sampler Tracing"
 
 # Features included in this build:
 FEATURES = [
