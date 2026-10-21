@@ -66,6 +66,8 @@ CIVITAI_SAMPLER_MAP = {
     'dpmpp_3m_sde': 'DPM++ 3M SDE', 'dpm_fast': 'DPM fast',
     'dpm_adaptive': 'DPM adaptive', 'ddim': 'DDIM', 'plms': 'PLMS',
     'uni_pc_bh2': 'UniPC', 'uni_pc': 'UniPC', 'lcm': 'LCM',
+    # Not in civitai's list (shown as free text), but readable beats er_sde_beta
+    'er_sde': 'ER SDE',
 }
 
 

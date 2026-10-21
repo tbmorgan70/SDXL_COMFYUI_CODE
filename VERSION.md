@@ -1,6 +1,6 @@
 # 📌 Version Information
 
-**Last Updated:** October 4, 2026
+**Last Updated:** October 20, 2026
 
 ---
 
@@ -15,6 +15,7 @@
 - ✅ Resolution badge (native / AI-upscale / too soft) and AI upscale of just the cropped region when needed
 - ✅ Crops are metadata-preserving copies in `cropped__<W>x<H>/` — originals are never touched
 - ✅ Design and plan: [docs/superpowers/specs/2026-10-04-manual-crop-design.md](docs/superpowers/specs/2026-10-04-manual-crop-design.md)
+- ✅ Since 3.7.0: Sorter 3.6.1 crop size keys and more portrait sizes, 3.6.2 custom-sampler (Krea2/Flux) tracing, 3.6.3 "ER SDE" sampler label
 
 ### What Was New in 3.6:
 - ✅ **Sorter 3.5** — AI Upscale mode: the models already in ComfyUI's `upscale_models`, on the GPU, to a target long edge, preserving PNG metadata
@@ -76,10 +77,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.5.0** ✅ Production Ready
+### Main Sorter - **v3.6.3** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** September 26, 2026
+**Last Updated:** October 20, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
@@ -90,10 +91,14 @@
 - Extract Images from PDF/EPUB/MOBI/CBR/CBZ with auto-crop + face crop (v3.0)
 - Manual Sort — visual triage with custom buckets (v3.0)
 - Color sorting via HSV pixel voting with tuning sliders (v3.0)
+- Civitai Prep — resource hashes for auto-detection on upload (v3.1)
+- AI Upscale with ComfyUI upscale models (v3.5)
+- Manual Crop at exact preset sizes (v3.6)
 - Search & Sort by Metadata
 - Both GUI and CLI interfaces
 
 #### Recent Changes:
+- **v3.6.x:** Manual Crop (fixed frame, metadata-preserving copies, AI upscale of the region); Tab/O size keys; custom-sampler workflow tracing; "ER SDE" sampler label
 - **v3.5:** AI Upscale mode (ComfyUI models via spandrel, VRAM-aware tiling); Extract AI-upscales too-small crops
 - **v3.4.x:** Self-describing output folders; upscaler-as-checkpoint fix; VAE attachment on Civitai; robust launcher
 - **v3.4:** PDF page auto-stitching; named face framing presets; framing-limit reporting

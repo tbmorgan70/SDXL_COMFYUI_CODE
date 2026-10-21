@@ -383,7 +383,7 @@ def test_civitai_parameters_for_custom_sampler_png(tmp_path):
     first, settings = text.split("\n")
     assert first == LION
     assert "Negative prompt" not in text
-    assert settings.startswith("Steps: 4, Sampler: er_sde_beta, CFG scale: 1.0, "
+    assert settings.startswith("Steps: 4, Sampler: ER SDE, CFG scale: 1.0, "
                                "Seed: 556122404112518, Size: 64x96")
     assert "Model: krea2Turbo" in settings
     assert 'Lora hashes: "filmGrain: ' in settings and "detailTweaker: " in settings
@@ -405,4 +405,4 @@ def test_real_krea2_png(tmp_path):
         w, h = im.size
     text = CivitaiPrep.build_parameters(a, w, h)
     assert text.startswith(LION + "\n")
-    assert f"Steps: 4, Sampler: er_sde_beta, CFG scale: 1.0, Seed: 556122404112518, Size: {w}x{h}" in text
+    assert f"Steps: 4, Sampler: ER SDE, CFG scale: 1.0, Seed: 556122404112518, Size: {w}x{h}" in text

@@ -1,5 +1,5 @@
-# Sorter 3.6.2 - Custom Sampler Tracing
-VERSION = "3.6.2"
+# Sorter 3.6.3 - Custom Sampler Tracing
+VERSION = "3.6.3"
 BUILD_DATE = "2026-10-20"
 DESCRIPTION = "Advanced ComfyUI Image Organizer - Custom Sampler Tracing"
 

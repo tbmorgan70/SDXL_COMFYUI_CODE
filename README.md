@@ -1,7 +1,7 @@
 # 🎯 SDXL ComfyUI Code - Complete Toolkit
 **The ultimate collection of tools for managing, sorting, and optimizing AI image generation workflows.**
 
-> 🆕 **Version 3.1 - Sorter 3.0 Released!** Extract images from documents, triage visually with keyboard-driven buckets, and sort by color with the new HSV voting engine — all inside the main Sorter.
+> 🆕 **Version 3.7 - Sorter 3.6.3** (October 2026): Manual Crop at exact preset sizes, Civitai Prep that reads custom-sampler workflows (Krea2, Flux), and AI Upscale with your ComfyUI models — all inside the main Sorter.
 
 📚 **[Knowledge Index](KNOWLEDGE_INDEX.md)** | 📋 **[Version Info](VERSION.md)** | 🔀 **[Git Workflow](GIT_WORKFLOW.md)** | 🗺️ **[Roadmap](ROADMAP.md)**
 
@@ -9,12 +9,14 @@
 
 This unified repository contains these tools:
 
-### 1. **🎯 Main Sorter v3.0** (`sorter/`) - *Production Ready*
+### 1. **🎯 Main Sorter v3.6** (`sorter/`) - *Production Ready*
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
-- **v3.0** 📦 Extract Images - Pull images from PDF/EPUB/MOBI/CBR/CBZ with auto-crop presets and face-centered cropping
+- **v3.6** ✂️ Manual Crop - Fixed frame at exact preset sizes, image floats underneath; press C in Triage, Tab cycles sizes, O flips orientation
+- **v3.5** 🔍 AI Upscale - Your ComfyUI upscale models on the GPU, to a target long edge, metadata kept
+- **v3.1** 🏷️ Civitai Prep - Embeds checkpoint/LoRA/VAE/embedding hashes so Civitai auto-detects resources on upload; traces KSampler and custom-sampler (Krea2, Flux) workflows
+- **v3.0** 📦 Extract Images - Pull images from PDF/EPUB/MOBI/CBR/CBZ and other archives with auto-crop presets and face-centered cropping
 - **v3.0** 🖼️ Manual Sort (Triage) - Visual gallery with keyboard-driven bucket sorting
-- **v3.6** ✂️ Manual Crop - Fixed frame at exact preset sizes, image floats underneath; press C in Triage
 - **v3.0** 🌈 New Color Engine - HSV pixel voting with intuitive tuning sliders
 - **v2.4** 🗂️ Automatic Metadata Preservation - PNG images move with their .txt files
 - **v2.3+** 🧬 Sort by LoRA Stack - Group images by identical LoRA combinations
@@ -43,7 +45,7 @@ This unified repository contains these tools:
 
 ## 🚀 Quick Start Guide
 
-### **Recommended: Sorter 3.0 (Most Users)**
+### **Recommended: Sorter 3.6 (Most Users)**
 ```bash
 # Navigate to the main sorter
 cd sorter/
@@ -61,12 +63,6 @@ python main.py
 python unified_sorter.py
 ```
 
-### **CivitAI Converter**
-```bash
-cd civitai_converter/
-python comfyui_to_civitai_converter.py
-```
-
 ### **Prerequisites**
 - Python 3.7 or higher
 - pip (Python package manager)
@@ -76,19 +72,19 @@ python comfyui_to_civitai_converter.py
 pip install -r requirements.txt
 
 # Or install for specific tools:
-pip install -r sorter/requirements.txt        # For Sorter 3.0
+pip install -r sorter/requirements.txt        # For the Sorter
 ```
 
 ### **📁 Repository Structure**
 ```
 SDXL_COMFYUI_CODE/
-├── 🎯 sorter/                 # Main Sorter 3.0 (Production)
+├── 🎯 sorter/                 # Main Sorter 3.6 (Production)
 │   ├── gui.py                 # GUI interface
 │   ├── main.py                # CLI interface
 │   ├── core/                  # Core sorting logic
 │   └── sorters/               # Individual sorting modules
-├── 🔄 civitai_converter/      # ComfyUI to CivitAI converter
 ├── 🌐 builder/                # HTML interface builders
+├── 🧩 modular_builder/        # CSV-driven prompt builder (server)
 ├── 📝 unified_sorter.py       # Legacy unified sorter
 ├── 🧪 tests/                  # Unit tests
 ├── 📦 archive/                # Legacy versions (reference)
@@ -100,37 +96,36 @@ SDXL_COMFYUI_CODE/
 | **Use Case** | **Recommended Tool** | **Why** |
 |--------------|---------------------|---------|
 | **Sort ComfyUI images by checkpoint** | `sorter/` | Most advanced, GUI, fastest |
-| **Group images by LoRA combinations** | `sorter/` | 🧬 NEW! LoRA Stack sorting |
-| **Extract metadata without moving files** | `sorter/` | 📄 NEW! Metadata-only mode |
+| **Group images by LoRA combinations** | `sorter/` | LoRA Stack sorting |
+| **Extract metadata without moving files** | `sorter/` | Metadata-only mode |
 | **Organize by colors and metadata** | `sorter/` | Full feature set, visual previews |
-| **Convert workflows for CivitAI** | `civitai_converter/` | Specialized tool |
+| **Prep images for Civitai upload** | `sorter/` → Civitai Prep | Resources auto-detected on upload |
+| **Crop to exact training/print sizes** | `sorter/` → Manual Crop | Fixed frame, metadata kept |
+| **Upscale with ComfyUI models** | `sorter/` → AI Upscale | GPU, VRAM-aware tiling |
 | **Build custom HTML interfaces** | `builder/` | Interactive dashboards |
 | **Quick text file organization** | `unified_sorter.py` | Simple, lightweight |
 
 ---
 
-## 🆕 What's New in Version 2.3.0 (October 2025)
+## 🆕 What's New in Sorter 3.6 (October 2026)
 
-### 🧬 LoRA Stack Sorting
-The most requested feature! Group your images by **identical LoRA combinations** - perfect for finding images with the same style effects regardless of checkpoint used.
+### ✂️ Manual Crop (3.6.0, 3.6.1)
+A fixed frame at an exact preset size with the image floating underneath: drag to pan, scroll to zoom, Enter to save. Press **C** in Triage to crop while you sort. Tab / Shift+Tab step through sizes, **O** flips portrait ↔ landscape, and the resolution badge warns when a crop would be soft. Crops are metadata-preserving copies; originals are never touched.
 
-### � Metadata-Only Mode  
-Extract comprehensive metadata without moving files. Perfect for cataloging and analysis workflows.
-
-### 📁 Auto-Open Results
-Every operation now ends with a handy "Open Output Folder" button for instant access to your organized images.
+### 🧭 Custom-sampler workflows (3.6.2, 3.6.3)
+Civitai Prep and the .txt reports now follow `SamplerCustomAdvanced` graphs (Krea2, Flux) to their prompt, seed, steps, sampler and CFG. `er_sde` is labelled "ER SDE".
 
 **See full details in [Sorter Changelog](sorter/CHANGELOG.md)**
 
 ---
 
-## �📚 Documentation & Guides
+## 📚 Documentation & Guides
 
 - **✨ [Sorter Changelog](sorter/CHANGELOG.md)** - Latest features and improvements
 - **📖 [Migration Guide](MIGRATION_GUIDE.md)** - Switching from old repos/versions
 - **🗺️ [Development Roadmap](ROADMAP.md)** - Future plans and priorities
-- **🔧 [Sorter 3.0 Guide](sorter/README.md)** - Detailed sorter documentation
-- **🔄 [Converter Guide](civitai_converter/COMFYUI_TO_CIVITAI_README.md)** - CivitAI conversion help
+- **🔧 [Sorter Guide](sorter/README.md)** - Detailed sorter documentation
+- **🔍 [Upscaling Plan](docs/UPSCALING_PLAN.md)** - AI Upscale design and the restoration phase still to come
 - **🌐 [Builder Guide](builder/README.md)** - HTML interface documentation
 
 ## 🤝 Contributing
@@ -142,13 +137,6 @@ We welcome contributions! Whether it's:
 - 💻 **Code contributions** - Submit pull requests
 
 See our [Roadmap](ROADMAP.md) for current development priorities.
-├── color_sorter.py            # 🌈 Color sorting engine
-├── text_file_sorter.py        # 📝 Text file organizer
-├── final_batch_rename_sort.py # 🖼️ ComfyUI batch processor
-├── demo_color_sorter.py       # 🧪 Color sorting demo
-├── requirements.txt           # 📦 Dependencies
-└── README.md                  # 📖 Documentation
-```
 
 ## 🎯 Color Sorter Features
 
@@ -351,7 +339,6 @@ These prompt builders are provided for creative and educational use. Please resp
 ### Tool-Specific Docs
 - [Sorter Documentation](sorter/README.md)
 - [Builder Suite](builder/README.md)
-- [CivitAI Converter](civitai_converter/COMFYUI_TO_CIVITAI_README.md)
 - [Modular Builder](modular_builder/README.md)
 
 ---

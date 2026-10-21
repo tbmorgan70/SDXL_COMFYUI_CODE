@@ -2,6 +2,14 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.6.3] - 2026-10-20 - Sampler label + docs
+
+- **Civitai Prep labels `er_sde` as "ER SDE"** (Karras/Exponential appended
+  like the other samplers). Krea2 images used to say `Sampler: er_sde_beta`.
+  Civitai has no ER SDE in its own list, so it shows as plain text either way.
+  Tests: `tests/test_civitai_sampler_name.py`
+- README, ROADMAP and VERSION brought up to date with 3.6.x
+
 ## [3.6.2] - 2026-10-20 - "Custom Sampler Tracing" 🧭
 
 ### 🐛 Fixed: empty prompt for custom-sampler workflows
