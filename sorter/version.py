@@ -1,6 +1,6 @@
-# Sorter 3.6.0 - Manual Crop
-VERSION = "3.6.0"
-BUILD_DATE = "2026-10-04"
+# Sorter 3.6.1 - Manual Crop
+VERSION = "3.6.1"
+BUILD_DATE = "2026-10-20"
 DESCRIPTION = "Advanced ComfyUI Image Organizer - Manual Crop"
 
 # Features included in this build:

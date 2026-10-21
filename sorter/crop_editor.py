@@ -24,6 +24,7 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 
 from sorters.crop_tool import (CROP_SIZE_PRESETS, GRADE_COLORS, CropRect, clamp, face_seed,
+                               flipped, step_preset,
                                grade, largest_fit, open_oriented, pan, save_crop, workable,
                                zoom_at)
 from sorters.upscaler import DEFAULT_MODELS_DIR, list_upscale_models
@@ -41,6 +42,7 @@ CANVAS_BG = (32, 32, 32)
 FACE_COLOR = "#EF9F27"
 NO_MODEL = "(no model)"
 _ARROWS = {"Left": (-1, 0), "Right": (1, 0), "Up": (0, -1), "Down": (0, 1)}
+_SKIPPED = object()        # loader result marker: the image was navigated past
 
 
 class _UnavailableUpscaler:
@@ -105,6 +107,7 @@ class CropEditor(ctk.CTkFrame):
         self._proxy = None
         self._cache = OrderedDict()          # path -> load result
         self._requested = set()
+        self._wanted = frozenset()           # paths the loader should still bother with
         self._pending = 0
         self._closed = False
         self._host_gone = False
@@ -235,14 +238,32 @@ class CropEditor(ctk.CTkFrame):
             if answer:
                 self._set_status("Enter a size like 1200x1500")
             return
-        w, h = int(m.group(1)), int(m.group(2))
+        self.set_preset(self._custom_label(int(m.group(1)), int(m.group(2))))
+
+    def _custom_label(self, w: int, h: int) -> str:
+        """A 'Custom W×H' preset, added to the menu if it isn't there yet."""
         label = f"Custom {w}×{h}"
         self._custom_sizes[label] = (w, h)
         values = list(self.preset_menu.cget("values"))
         if label not in values:
             values.insert(len(values) - 1, label)
             self.preset_menu.configure(values=values)
-        self.set_preset(label)
+        return label
+
+    def _all_sizes(self):
+        sizes = {k: v for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)}
+        sizes.update(self._custom_sizes)
+        return sizes
+
+    def step_preset(self, step: int) -> None:
+        """Tab / Shift+Tab: the next size of the same orientation."""
+        self.set_preset(step_preset(self._all_sizes(), self.preset_label, step))
+
+    def flip_orientation(self) -> None:
+        """O: the same size turned portrait ↔ landscape."""
+        target = flipped(self.out_size)
+        label = next((k for k, v in self._all_sizes().items() if v == target), None)
+        self.set_preset(label or self._custom_label(*target))
 
     def _on_ai_toggle(self):
         self.ai_enabled = bool(self.ai_var.get())
@@ -255,6 +276,8 @@ class CropEditor(ctk.CTkFrame):
 
     def load(self, path: Path, prefetch: Optional[Path] = None) -> None:
         self.path = Path(path)
+        # Anything still queued that isn't this image or the next is skipped
+        self._wanted = frozenset(p for p in (self.path, Path(prefetch) if prefetch else None) if p)
         self.rect = self.src_size = self.face_box = self._proxy = None
         self.current_grade = None
         cached = self._cache.get(self.path)
@@ -277,6 +300,9 @@ class CropEditor(ctk.CTkFrame):
             path = self._load_q.get()
             if path is None:
                 return
+            if path not in self._wanted:
+                self._load_results.put((path, None, None, None, _SKIPPED))
+                continue
             try:
                 _orig, img = open_oriented(path)
                 src_size = img.size
@@ -379,6 +405,10 @@ class CropEditor(ctk.CTkFrame):
                     break
                 path = result[0]
                 self._requested.discard(path)
+                if result[4] is _SKIPPED:
+                    if path == self.path and self.rect is None:
+                        self._request(path)     # navigated back to it meanwhile
+                    continue
                 self._cache[path] = result
                 self._cache.move_to_end(path)
                 while len(self._cache) > CACHE_SIZE:
@@ -579,6 +609,12 @@ class CropEditor(ctk.CTkFrame):
         shift, ctrl = bool(state & SHIFT), bool(state & CONTROL)
         if k in ("Return", "KP_Enter"):
             self.save(advance=not shift)
+            return True
+        if k in ("Tab", "ISO_Left_Tab"):
+            self.step_preset(-1 if (shift or k == "ISO_Left_Tab") else 1)
+            return True
+        if k in ("o", "O"):
+            self.flip_orientation()
             return True
         if self.rect is None:
             return False

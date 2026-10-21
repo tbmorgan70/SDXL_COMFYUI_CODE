@@ -301,3 +301,83 @@ def test_destroying_host_with_pending_saves_does_not_raise(root, tmp_path):
     host.destroy()                           # must not raise
     root.update()
     assert len(list((tmp_path / "cropped__1024x1024").glob("s*.png"))) == 2
+
+
+# ---------------------------------------------------------------- 3.6.1: Tab / O / fast navigation
+
+from sorters.crop_tool import CROP_SIZE_PRESETS, step_preset  # noqa: E402
+
+SIZED = {k: v for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)}
+PORTRAIT_2_3 = next(k for k, v in SIZED.items() if v == (832, 1216))
+
+
+def test_tab_and_shift_tab_step_presets(root, make_editor, tmp_path):
+    ed, _ = make_editor(boxes=[FACE], preset=PORTRAIT_2_3)
+    loaded(root, ed, png(tmp_path / "a.png"))
+    c0 = (ed.rect.x + ed.rect.w / 2, ed.rect.y + ed.rect.h / 2)
+    assert ed.handle_key(key("Tab")) is True
+    assert ed.preset_label == step_preset(SIZED, PORTRAIT_2_3, +1)
+    assert ed.preset_menu.get() == ed.preset_label
+    c1 = (ed.rect.x + ed.rect.w / 2, ed.rect.y + ed.rect.h / 2)
+    assert c1 == pytest.approx(c0, abs=1.0)
+    assert ed.handle_key(key("Tab", 0x1)) is True            # Shift+Tab
+    assert ed.preset_label == PORTRAIT_2_3
+    assert ed.handle_key(key("ISO_Left_Tab")) is True
+    assert ed.preset_label == step_preset(SIZED, PORTRAIT_2_3, -1)
+
+
+def test_tab_works_while_loading(root, make_editor, tmp_path):
+    ed, _ = make_editor(preset=PORTRAIT_2_3)
+    ed.load(png(tmp_path / "a.png"))
+    assert ed.handle_key(key("Tab")) is True                 # not left to focus traversal
+    assert ed.preset_label != PORTRAIT_2_3
+
+
+def test_o_flips_to_existing_landscape_preset(root, make_editor, tmp_path):
+    ed, _ = make_editor(boxes=[FACE], preset=PORTRAIT_2_3)
+    loaded(root, ed, png(tmp_path / "a.png"))
+    assert ed.handle_key(key("o")) is True
+    assert ed.out_size == (1216, 832)
+    assert ed.preset_label in SIZED
+
+
+def test_o_adds_custom_when_flipped_size_is_not_a_preset(root, make_editor, tmp_path):
+    a4 = next(k for k, v in SIZED.items() if v == (1086, 1536))
+    ed, _ = make_editor(boxes=[FACE], preset=a4)
+    loaded(root, ed, png(tmp_path / "a.png"))
+    ed.handle_key(key("O"))
+    assert ed.out_size == (1536, 1086)
+    assert ed.preset_label == "Custom 1536×1086"
+    assert ed.preset_label in ed.preset_menu.cget("values")
+    ed.handle_key(key("o"))
+    assert ed.out_size == (1086, 1536) and ed.preset_label == a4
+
+
+class SlowDetector(FakeDetector):
+    def __init__(self, delay):
+        super().__init__([])
+        self.delay, self.calls = delay, 0
+
+    def detect(self, img):
+        self.calls += 1
+        time.sleep(self.delay)
+        return []
+
+
+def test_skipped_images_are_not_loaded(root, tmp_path):
+    det = SlowDetector(0.25)
+    ed = CropEditor(root, preset_label=DEFAULT_CROP_PRESET, ai_enabled=False, model_path=None,
+                    face_detector_factory=lambda: det)
+    ed.pack(fill="both", expand=True)
+    try:
+        paths = [png(tmp_path / f"{i:02d}.png", (800, 600)) for i in range(12)]
+        for i, p in enumerate(paths):                         # holding → through 12 images
+            ed.load(p, prefetch=paths[(i + 1) % len(paths)])
+        t0 = time.time()
+        assert pump(root, lambda: ed.rect is not None)
+        assert ed.path == paths[-1]
+        assert time.time() - t0 < 1.5                         # not 12 x 0.25 s
+        assert det.calls <= 4
+    finally:
+        ed.shutdown()
+        ed.destroy()

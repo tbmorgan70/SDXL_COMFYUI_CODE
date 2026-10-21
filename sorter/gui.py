@@ -6,6 +6,7 @@ Built on the rock-solid command-line backend for maximum reliability.
 """
 
 import os
+import subprocess
 import sys
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -297,6 +298,7 @@ class TriageWindow(ctk.CTkToplevel):
         self.crop_mode = crop_only
         self.crop_editor = None
         self.crop_counts = {}               # Path -> crops saved this session
+        self.crop_paths = {}                # Path -> saved crop files, oldest first
         self.crop_saved_total = 0
         self._badges = {}                   # Path -> badge label, current page only
         self._execute_waiting = False
@@ -380,10 +382,11 @@ class TriageWindow(ctk.CTkToplevel):
                       command=lambda: self._change_page(1)).pack(side="left", padx=4)
         if self.crop_only:
             hint = ("Click a thumbnail to crop • drag/scroll to frame • Enter save & next • "
-                    "Shift+Enter save & stay • F face • R reset • Esc = gallery")
+                    "Shift+Enter save & stay • Tab size • O flip • F face • R reset • "
+                    "✂ = show crops • Esc = gallery")
         else:
             hint = ("Click a thumbnail to view • ←/→ navigate • 1-4 assign • 0 clear • "
-                    "Del = Trash • C crop • Esc = gallery")
+                    "Del = Trash • C crop (Tab size, O flip) • ✂ = show crops • Esc = gallery")
         ctk.CTkLabel(self.page_bar, text=hint,
                      text_color="#888", font=ctk.CTkFont(size=11)).pack(side="right", padx=10)
 
@@ -640,6 +643,7 @@ class TriageWindow(ctk.CTkToplevel):
 
     def _on_crop_saved(self, path, result):
         self.crop_counts[path] = self.crop_counts.get(path, 0) + 1
+        self.crop_paths.setdefault(path, []).append(result.path)
         self.crop_saved_total += 1
         self._refresh_badge(path)
         self._update_counts()
@@ -661,9 +665,20 @@ class TriageWindow(ctk.CTkToplevel):
             badge.configure(text=f"✂ {n}")
             return
         badge = ctk.CTkLabel(pair[0], text=f"✂ {n}", fg_color=self.BADGE_COLOR, text_color="white",
-                             corner_radius=4, height=18, font=ctk.CTkFont(size=11, weight="bold"))
+                             corner_radius=4, height=18, font=ctk.CTkFont(size=11, weight="bold"),
+                             cursor="hand2")
         badge.place(relx=1.0, rely=0.0, x=-6, y=6, anchor="ne")
+        badge.bind("<Button-1>", lambda e, p=path: self._show_crops(p))
         self._badges[path] = badge
+
+    def _show_crops(self, path):
+        """Open Explorer on this image's most recent crop."""
+        crops = [c for c in self.crop_paths.get(path, []) if c.exists()]
+        if crops:
+            subprocess.Popen(["explorer", "/select,", str(crops[-1])])
+        else:
+            self.log_fn(f"✂ No saved crops of {path.name} were found on disk")
+        return "break"
 
     # ------------------------------------------------------------------ assignment
 
@@ -793,7 +808,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.6.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.6.1 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window

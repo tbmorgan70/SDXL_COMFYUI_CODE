@@ -51,23 +51,73 @@ SDXL_SIZE_PRESETS: Dict[str, Tuple[int, int]] = {
     "1536×640 — SDXL extra wide":     (1536, 640),
 }
 
+# More portrait shapes (3.6.1), sized near 1.5 MP so most crops stay native
+PORTRAIT_PRESETS: Dict[str, Tuple[int, int]] = {
+    "1152×1536 — 3:4 Photo":               (1152, 1536),
+    "1024×1536 — 2:3 Photo / print":       (1024, 1536),
+    "1080×1512 — 5:7 Print":               (1080, 1512),
+    "1100×1400 — 11:14 Print":             (1100, 1400),
+    "1086×1536 — A4 (1:1.41)":             (1086, 1536),
+    "1344×1728 — SDXL 7:9 hi-res":         (1344, 1728),
+    "1248×1824 — SDXL 2:3 hi-res":         (1248, 1824),
+    "1152×2016 — SDXL 4:7 hi-res":         (1152, 2016),
+    "960×2304 — SDXL extra tall hi-res":   (960, 2304),
+}
+
+
+def orientation(size: Tuple[int, int]) -> str:
+    w, h = size
+    return "square" if w == h else ("portrait" if h > w else "landscape")
+
+
+def flipped(size: Tuple[int, int]) -> Tuple[int, int]:
+    return size[1], size[0]
+
+
+def _shape_order(item):
+    """Squares, then portraits tallest→squarest, then landscapes widest→squarest;
+    equal shapes largest first."""
+    (w, h) = item[1]
+    group = {"square": 0, "portrait": 1, "landscape": 2}[orientation((w, h))]
+    shape = w / h if group < 2 else -(w / h)
+    return group, shape, -(w * h)
+
 
 def _build_presets() -> Dict[str, Union[Tuple[int, int], str]]:
-    presets: Dict[str, Union[Tuple[int, int], str]] = {}
-    for label, size in CROP_PRESETS.items():
-        if isinstance(size, tuple):
-            presets[label] = size
-    seen = set(presets.values())
-    for label, size in SDXL_SIZE_PRESETS.items():
-        if size not in seen:
-            presets[label] = size
-            seen.add(size)
+    sized: Dict[str, Tuple[int, int]] = {}
+    seen = set()
+    for source in (CROP_PRESETS, SDXL_SIZE_PRESETS, PORTRAIT_PRESETS):
+        for label, size in source.items():
+            if isinstance(size, tuple) and size not in seen:
+                sized[label] = size
+                seen.add(size)
+    presets: Dict[str, Union[Tuple[int, int], str]] = dict(
+        sorted(sized.items(), key=_shape_order))
     presets["Custom..."] = "custom"
     return presets
 
 
 CROP_SIZE_PRESETS = _build_presets()
 DEFAULT_CROP_PRESET = "1024×1024 — SDXL native"
+
+
+def step_preset(sizes: Dict[str, Tuple[int, int]], current: str, step: int) -> str:
+    """The preset `step` places along from `current` (Tab / Shift+Tab).
+
+    Stays in one orientation: portraits tallest→squarest then the squares,
+    or landscapes widest→squarest then the squares; wraps around. From a
+    square it uses the portrait cycle.
+    """
+    kind = orientation(sizes[current]) if current in sizes else "portrait"
+    side = "landscape" if kind == "landscape" else "portrait"
+    cycle = [label for label, size in sorted(sizes.items(), key=_shape_order)
+             if orientation(size) == side]
+    cycle += [label for label, size in sorted(sizes.items(), key=_shape_order)
+              if orientation(size) == "square"]
+    if not cycle:
+        return current
+    i = cycle.index(current) if current in cycle else -1
+    return cycle[(i + step) % len(cycle)]
 
 
 # ----------------------------------------------------------------------

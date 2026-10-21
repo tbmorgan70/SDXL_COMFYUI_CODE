@@ -2,6 +2,22 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.6.1] - 2026-10-20 - Manual Crop follow-ups
+
+- **Tab / Shift+Tab** step through the sizes while cropping, staying in
+  the same orientation (portraits tallest → squarest, then the squares;
+  landscapes widest → squarest). The frame keeps its centre
+- **O** flips the current size portrait ↔ landscape (added as a Custom
+  size when the flipped one isn't a preset)
+- **9 more portrait sizes**: 3:4 1152×1536, 2:3 1024×1536, 5:7 1080×1512,
+  11:14 1100×1400, A4 1086×1536, and SDXL hi-res 1344×1728, 1248×1824,
+  1152×2016, 960×2304. The size list is now grouped Square → Portrait →
+  Landscape
+- **Click the ✂ badge** on a thumbnail to open Explorer on that image's
+  latest crop
+- **Holding → no longer queues up**: images you skip past aren't loaded,
+  so the one you stop on appears straight away
+
 ## [3.6.0] - 2026-10-04 - "Manual Crop" ✂️
 
 Design and plan: [docs/superpowers/specs/2026-10-04-manual-crop-design.md](../docs/superpowers/specs/2026-10-04-manual-crop-design.md).

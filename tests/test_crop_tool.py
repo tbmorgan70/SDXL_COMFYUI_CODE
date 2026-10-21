@@ -259,10 +259,25 @@ def test_ai_failure_falls_back_to_resize(tmp_path):
     assert Image.open(res.path).size == (1024, 1024)
 
 
+def _a_real_comfyui_png():
+    """Any ComfyUI output PNG carrying both the workflow and Image Saver's
+    A1111 `parameters` text (so the original is known to have a prompt)."""
+    root = Path(r"D:\ComfyUI_windows_portable\ComfyUI\output")
+    if not root.is_dir():
+        return None
+    for path in sorted(root.rglob("*.png"))[:3000]:
+        try:
+            with Image.open(path) as im:
+                if "prompt" in im.info and "parameters" in im.info:
+                    return path
+        except OSError:
+            continue
+    return None
+
+
 def test_real_comfyui_png_metadata_roundtrip(tmp_path):
-    src = Path(r"D:\ComfyUI_windows_portable\ComfyUI\output\New Vintage Girls_Posted"
-               r"\unposted\NEW_TEST__00160_.png")
-    if not src.exists():
+    src = _a_real_comfyui_png()
+    if src is None:
         pytest.skip("user's ComfyUI output not available")
     from sorters.civitai_prep import CivitaiPrep
     w, h = Image.open(src).size
@@ -308,3 +323,69 @@ def test_mpo_phone_jpeg_saved_as_jpeg(tmp_path):
     assert Image.open(src).format == "MPO"
     res = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
     assert res.path.suffix == ".jpg" and Image.open(res.path).format == "JPEG"
+
+
+# ================================================================ 3.6.1: more portraits, Tab cycling
+
+from sorters.crop_tool import flipped, orientation, step_preset  # noqa: E402
+
+NEW_PORTRAITS = [(1152, 1536), (1024, 1536), (1080, 1512), (1100, 1400), (1086, 1536),
+                 (1344, 1728), (1248, 1824), (1152, 2016), (960, 2304)]
+
+
+def sized():
+    return {k: v for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)}
+
+
+def test_new_portrait_presets_present():
+    sizes = list(sized().values())
+    for size in NEW_PORTRAITS:
+        assert size in sizes, size
+
+
+def test_dropdown_grouped_square_portrait_landscape():
+    kinds = [orientation(v) for v in sized().values()]
+    first_portrait, first_landscape = kinds.index("portrait"), kinds.index("landscape")
+    assert set(kinds[:first_portrait]) == {"square"}
+    assert set(kinds[first_portrait:first_landscape]) == {"portrait"}
+    assert set(kinds[first_landscape:]) == {"landscape"}
+    portraits = [w / h for w, h in sized().values() if h > w]
+    assert portraits == sorted(portraits)                     # tallest first
+    assert list(CROP_SIZE_PRESETS)[-1] == "Custom..."
+
+
+def label_of(size):
+    return next(k for k, v in sized().items() if v == size)
+
+
+def test_tab_steps_portraits_tallest_to_squarest_then_squares_and_wraps():
+    presets = sized()
+    first = next(k for k, v in presets.items() if orientation(v) == "portrait")
+    order, label = [], first
+    for _ in range(40):
+        order.append(presets[label])
+        label = step_preset(presets, label, +1)
+        if label == first:
+            break
+    portraits = [s for s in order if s[1] > s[0]]
+    squares = [s for s in order if s[0] == s[1]]
+    assert order[:len(portraits)] == portraits and order[len(portraits):] == squares
+    assert all(orientation(s) != "landscape" for s in order)
+    assert len(portraits) == sum(1 for v in presets.values() if v[1] > v[0])
+
+
+def test_shift_tab_goes_back():
+    presets = sized()
+    start = label_of((832, 1216))
+    assert step_preset(presets, step_preset(presets, start, +1), -1) == start
+
+
+def test_tab_from_square_enters_portraits_and_landscape_stays_landscape():
+    presets = sized()
+    assert orientation(presets[step_preset(presets, label_of((1024, 1024)), +1)]) != "landscape"
+    nxt = step_preset(presets, label_of((1920, 1080)), +1)
+    assert orientation(presets[nxt]) in ("landscape", "square")
+
+
+def test_flipped_swaps_sides():
+    assert flipped((832, 1216)) == (1216, 832)

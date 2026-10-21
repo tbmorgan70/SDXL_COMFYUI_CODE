@@ -231,3 +231,37 @@ def test_execute_waits_for_pending_crop_saves(root, open_window, tmp_path, monke
     assert first.exists()                    # not moved while its crop is queued
     assert pump(root, lambda: (tmp_path / "Keep" / first.name).exists())
     assert (tmp_path / "cropped__1024x1024" / first.name).exists()
+
+
+def test_badge_click_shows_latest_crop_in_explorer(root, open_window, tmp_path, monkeypatch):
+    import gui
+    calls = []
+    monkeypatch.setattr(gui.subprocess, "Popen", lambda args, **kw: calls.append(args))
+    win = open_window()
+    win._open_viewer(0)
+    win._on_keypress(key("c"))
+    pump_until_loaded(root, win)
+    first = win.sorter.images[0]
+    win._on_keypress(key("Return", 0x1))                 # save twice, stay
+    win._on_keypress(key("Return", 0x1))
+    assert pump(root, lambda: win.crop_counts.get(first) == 2)
+    win._show_gallery()
+    win._render_page()
+    root.update()
+    badge = win._badges[first]
+    assert badge.cget("cursor") == "hand2"
+    badge._label.event_generate("<Button-1>", x=3, y=3)  # click on the badge's text
+    root.update()
+    latest = tmp_path / "cropped__1024x1024" / f"{first.stem}_2.png"
+    assert calls == [["explorer", "/select,", str(latest)]]
+
+
+def test_tab_in_crop_mode_changes_size_instead_of_focus(root, open_window):
+    win = open_window()
+    win._open_viewer(0)
+    win._on_keypress(key("c"))
+    pump_until_loaded(root, win)
+    before = win.crop_editor.preset_label
+    assert win._on_keypress(key("Tab")) == "break"
+    assert win.crop_editor.preset_label != before
+    assert win._on_keypress(key("o")) == "break"
