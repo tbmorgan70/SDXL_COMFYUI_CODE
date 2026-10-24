@@ -939,16 +939,34 @@
   // Dynamic Category System
   let availableCategories = [];
 
+  // Recursively collect cat_*.csv paths (relative to categories/) from directory listings
+  async function scanCategoryDir(relDir, depth = 0) {
+    const response = await fetch('categories/' + relDir.split('/').map(encodeURIComponent).join('/'));
+    if (!response.ok) return [];
+    const html = await response.text();
+    const hrefs = [...html.matchAll(/href="([^"?#]+)"/g)].map(m => decodeURIComponent(m[1]));
+    let found = [];
+    for (const href of new Set(hrefs)) {
+      if (href.startsWith('/') || href.startsWith('.') || href.includes('://')) continue;
+      if (href.endsWith('/')) {
+        if (depth < 8) found = found.concat(await scanCategoryDir(relDir + href, depth + 1));
+      } else if (href.startsWith('cat_') && href.endsWith('.csv')) {
+        found.push(relDir + href.slice(0, -4));
+      }
+    }
+    return found;
+  }
+
   // Fetch available category files from server
   async function loadAvailableCategories() {
     try {
-      const response = await fetch('categories/');
-      if (response.ok) {
-        const html = await response.text();
-        // Extract CSV filenames from directory listing
-        const csvFiles = html.match(/cat_[^"]*\.csv/g) || [];
-        // Remove duplicates and convert to category names
-        availableCategories = [...new Set(csvFiles.map(file => file.replace('.csv', '')))];
+      const found = await scanCategoryDir('');
+      if (found.length) {
+        // Top-level files first, then subfolders in path order
+        availableCategories = [...new Set(found)].sort((a, b) => {
+          const da = a.includes('/'), db = b.includes('/');
+          return da !== db ? (da ? 1 : -1) : a.localeCompare(b);
+        });
         console.log('Available categories:', availableCategories);
         populateAllDropdowns();
       }
@@ -975,19 +993,31 @@
       // Clear existing options except "default"
       select.innerHTML = '<option value="default">Current (Default)</option>';
       
-      // Add all available categories to every dropdown
+      // Add all available categories to every dropdown, grouping subfolder files by folder
+      const groups = {};
       availableCategories.forEach(catFile => {
-        const parts = catFile.split('_');
+        const slash = catFile.lastIndexOf('/');
+        const folder = slash >= 0 ? catFile.slice(0, slash) : '';
+        const parts = catFile.slice(slash + 1).split('_');
         if (parts.length >= 3) {
           const attribute = parts[1];
           // Capture everything from the third part onward
           const focus = parts.slice(2).join(' ');
           const displayName = `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} - ${focus.charAt(0).toUpperCase() + focus.slice(1)}`;
-          
+
           const option = document.createElement('option');
           option.value = catFile;
           option.textContent = displayName;
-          select.appendChild(option);
+          if (folder) {
+            if (!groups[folder]) {
+              groups[folder] = document.createElement('optgroup');
+              groups[folder].label = folder.replace(/\//g, ' / ');
+              select.appendChild(groups[folder]);
+            }
+            groups[folder].appendChild(option);
+          } else {
+            select.appendChild(option);
+          }
         }
       });
       
@@ -1006,7 +1036,7 @@
     
     try {
       console.log(`Attempting to load: categories/${csvFile}.csv`);
-      const response = await fetch(`categories/${csvFile}.csv`);
+      const response = await fetch(`categories/${csvFile.split('/').map(encodeURIComponent).join('/')}.csv`);
       
       if (!response.ok) {
         console.error(`HTTP Error: ${response.status} - ${response.statusText}`);
