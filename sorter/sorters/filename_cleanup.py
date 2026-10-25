@@ -9,6 +9,8 @@ import re
 import shutil
 from pathlib import Path
 from typing import List, Tuple, Dict
+
+from core.image_index import walk_skipping_trash
 import json
 
 class FilenameCleanup:
@@ -58,7 +60,7 @@ class FilenameCleanup:
             # Find all files to process
             files_to_process = []
             
-            for root, dirs, files in os.walk(source_dir):
+            for root, dirs, files in walk_skipping_trash(source_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
                     files_to_process.append(file_path)

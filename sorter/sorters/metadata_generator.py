@@ -24,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from core.diagnostics import SortLogger
+from core.image_index import in_duplicates_trash
 
 class MetadataGenerator:
     """Generate metadata text files for images without moving them"""
@@ -124,12 +125,12 @@ class MetadataGenerator:
         if include_subdirectories:
             # Recursive search
             for png_file in source_path.rglob("*.png"):
-                if png_file.is_file():
+                if png_file.is_file() and not in_duplicates_trash(png_file):
                     rel_path = png_file.relative_to(source_path)
                     png_files.append((str(png_file), str(rel_path)))
             
             for png_file in source_path.rglob("*.PNG"):
-                if png_file.is_file():
+                if png_file.is_file() and not in_duplicates_trash(png_file):
                     rel_path = png_file.relative_to(source_path)
                     png_files.append((str(png_file), str(rel_path)))
         else:

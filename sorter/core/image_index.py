@@ -19,8 +19,10 @@ import hashlib
 import io
 import os
 import sqlite3
+import stat
 import threading
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -49,6 +51,19 @@ _BATCH = 200
 _META_KEYS = ("prompt", "workflow", "parameters")
 _EXIF_IFD, _USER_COMMENT = 0x8769, 37510
 _EXIF_MAKE, _EXIF_MODEL = 0x010F, 0x0110       # where ComfyUI puts the workflow in WEBP/JPEG
+
+
+def in_duplicates_trash(path) -> bool:
+    """True for anything inside a _duplicates_trash folder. Every other Sorter
+    mode skips these, so trashed duplicates stay put until Restore or Empty."""
+    return TRASH_DIR in Path(path).parts
+
+
+def walk_skipping_trash(top):
+    """os.walk that never descends into a _duplicates_trash folder."""
+    for dirpath, dirnames, filenames in os.walk(top):
+        dirnames[:] = [d for d in dirnames if d != TRASH_DIR]
+        yield dirpath, dirnames, filenames
 
 
 def is_excluded_dir(name: str) -> bool:
@@ -139,6 +154,19 @@ def _has_meta(img: Image.Image) -> bool:
     return False
 
 
+def hash_failure(path: str, error: str) -> dict:
+    """The row recorded for a file that couldn't be hashed."""
+    out = {"path": path, "size": 0, "mtime": 0.0, "width": 0, "height": 0,
+           "file_sha256": None, "pixel_sha256": None, "dhash": None,
+           "has_meta": False, "parameters": None, "thumb": None, "error": error}
+    try:
+        st = os.stat(path)
+        out["size"], out["mtime"] = st.st_size, st.st_mtime
+    except OSError:
+        pass
+    return out
+
+
 def hash_image(path: str) -> dict:
     """Everything the index stores about one file. Never raises."""
     out = {"path": path, "size": 0, "mtime": 0.0, "width": 0, "height": 0,
@@ -190,12 +218,27 @@ def _under(path: str, root: str) -> bool:
     return path == root or path.startswith(root.rstrip("\\/") + os.sep)
 
 
+def _is_link(path: str) -> bool:
+    """Symlink or Windows junction/reparse point. os.walk follows junctions on
+    Python 3.11 (islink is False for them), which would index one file under
+    two paths — and make it look like a duplicate of itself."""
+    try:
+        st = os.lstat(path)
+    except OSError:
+        return True
+    if stat.S_ISLNK(st.st_mode):
+        return True
+    return bool(getattr(st, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+
+
 def walk_images(folder: str) -> Iterator[str]:
     for dirpath, dirnames, filenames in os.walk(folder):
-        dirnames[:] = [d for d in dirnames if not is_excluded_dir(d)]
+        dirnames[:] = [d for d in dirnames
+                       if not is_excluded_dir(d) and not _is_link(os.path.join(dirpath, d))]
         for name in filenames:
-            if os.path.splitext(name)[1].lower() in IMAGE_EXTS:
-                yield os.path.join(dirpath, name)
+            path = os.path.join(dirpath, name)
+            if os.path.splitext(name)[1].lower() in IMAGE_EXTS and not _is_link(path):
+                yield path
 
 
 _SCHEMA = """
@@ -248,7 +291,8 @@ class ImageIndex:
 
     def scan(self, folders: List[str], progress: Optional[Callable[[int, int, str], None]] = None,
              cancel: Optional[Callable[[], bool]] = None,
-             workers: Optional[int] = None) -> ScanStats:
+             workers: Optional[int] = None,
+             hasher: Callable[[str], dict] = hash_image) -> ScanStats:
         roots = sorted({_norm(f) for f in folders}, key=len)
         missing = tuple(r for r in roots if not os.path.isdir(r))
         outer: List[str] = []
@@ -257,22 +301,30 @@ class ImageIndex:
                 outer.append(r)
 
         files: Dict[str, Tuple[str, os.stat_result]] = {}
+        seen_ids: Set[Tuple[int, int]] = set()      # one physical file, one row
         for root in outer:
             for path in walk_images(root):
                 try:
-                    files[path] = (root, os.stat(path))
+                    st = os.stat(path)
                 except OSError:
                     continue
+                file_id = (st.st_dev, st.st_ino)
+                if st.st_ino and file_id in seen_ids:
+                    continue
+                seen_ids.add(file_id)
+                files[path] = (root, st)
 
         with self._lock:
             known = {row[0]: row[1:] for row in self._conn.execute(
-                "SELECT path, size, mtime, root FROM images")}
+                "SELECT path, size, mtime, root, error FROM images")}
         known = {p: v for p, v in known.items() if any(_under(p, r) for r in outer)}
 
         todo, cached, reroot = [], 0, []
         for path, (root, st) in files.items():
             prev = known.get(path)
-            if prev and prev[0] == st.st_size and prev[1] == st.st_mtime:
+            # Rows that failed last time are read again: the failure may have
+            # been transient (a lock, a drive waking up)
+            if prev and prev[0] == st.st_size and prev[1] == st.st_mtime and not prev[3]:
                 cached += 1
                 if prev[2] != root:
                     reroot.append((root, path))
@@ -305,32 +357,90 @@ class ImageIndex:
 
         workers = workers or default_workers()
         total = len(todo)
-        if workers <= 1 or total <= 1:
-            for path in todo:
-                store(hash_image(path))
-                if progress:
-                    progress(hashed, total, os.path.basename(path))
-                if cancel and cancel():
-                    cancelled = True
-                    break
-        else:
-            pool = ProcessPoolExecutor(max_workers=min(workers, total))
-            try:
-                futures = [pool.submit(hash_image, p) for p in todo]
-                for fut in as_completed(futures):
-                    result = fut.result()
-                    store(result)
-                    if progress:
-                        progress(hashed, total, os.path.basename(result["path"]))
-                    if cancel and cancel():
+
+        def report(result: dict) -> bool:
+            """Store one result; True when the scan should stop."""
+            store(result)
+            if progress:
+                progress(hashed, total, os.path.basename(result["path"]))
+            return bool(cancel and cancel())
+
+        try:
+            if workers <= 1 or total <= 1:
+                for path in todo:
+                    if report(hasher(path)):
                         cancelled = True
                         break
-            finally:
-                pool.shutdown(wait=True, cancel_futures=True)
-        self._flush(batch)
+            else:
+                cancelled = self._hash_in_pool(todo, hasher, workers, report)
+        finally:
+            self._flush(batch)
 
         return ScanStats(found=len(files), hashed=hashed, cached=cached, errors=errors,
                          removed=len(gone), missing_folders=missing, cancelled=cancelled)
+
+    @staticmethod
+    def _hash_in_pool(paths: List[str], hasher, workers: int, report) -> bool:
+        """Hash `paths` in worker processes, at most 2 per worker in flight (so
+        results don't pile up and a cancel stops promptly). Returns True when
+        cancelled.
+
+        If a worker dies (BrokenProcessPool), the files it may have been on are
+        set aside and the rest continue in a fresh pool; each set-aside file is
+        then retried alone, so only the one that really kills a worker ends up
+        recorded as "worker crashed"."""
+        pending = list(paths)
+        suspects: List[str] = []
+        while pending:
+            pool = ProcessPoolExecutor(max_workers=min(workers, len(pending)))
+            inflight: Dict = {}
+            queue_iter = iter(pending)
+            pending = []
+            try:
+                while True:
+                    for path in queue_iter:
+                        inflight[pool.submit(hasher, path)] = path
+                        if len(inflight) >= 2 * workers:
+                            break
+                    if not inflight:
+                        break
+                    done, _ = wait(inflight, return_when=FIRST_COMPLETED)
+                    broken = False
+                    for fut in done:
+                        path = inflight.pop(fut)
+                        try:
+                            result = fut.result()
+                        except BrokenProcessPool:
+                            broken = True
+                            suspects.append(path)
+                            continue
+                        if report(result):
+                            return True
+                    if broken:
+                        suspects.extend(inflight.values())
+                        pending = list(queue_iter)
+                        break
+            finally:
+                pool.shutdown(wait=True, cancel_futures=True)
+
+        for path in suspects:                       # one at a time, to find the culprit
+            pool = ProcessPoolExecutor(max_workers=1)
+            try:
+                result = pool.submit(hasher, path).result()
+            except BrokenProcessPool:
+                result = hash_failure(path, "worker crashed while reading this file")
+            finally:
+                pool.shutdown(wait=True, cancel_futures=True)
+            if report(result):
+                return True
+        return False
+
+    def error_rows(self, folders: List[str]) -> List[Tuple[str, str]]:
+        roots = [_norm(f) for f in folders]
+        with self._lock:
+            found = self._conn.execute(
+                "SELECT path, error FROM images WHERE error IS NOT NULL").fetchall()
+        return [(p, e) for p, e in found if any(_under(p, r) for r in roots)]
 
     def _flush(self, batch: List[tuple]) -> None:
         if not batch:

@@ -22,11 +22,15 @@ import customtkinter as ctk
 from PIL import Image
 
 from core.image_index import ImageIndex, ImageRow
-from sorters.duplicate_finder import DupSet, TrashResult, trash_sets, with_keeper
+from sorters.duplicate_finder import (DupSet, TrashResult, extras_by_folder, trash_sets,
+                                      with_keeper)
 
 KEEPER_COLOR = "#4CAF50"
 THUMB_SIZE = 150
 POLL_MS = 40
+# A single click waits this long so a double-click can cancel it (the single
+# click re-renders the row, which would swallow the second click)
+CLICK_DELAY_MS = 250
 
 
 def _gb(n: int) -> float:
@@ -56,6 +60,8 @@ class DuplicatesWindow(ctk.CTkToplevel):
         self._done_q: "queue.Queue" = queue.Queue()
         self._loader_q: "queue.Queue" = queue.Queue()
         self._closed = False
+        self._click_job = None
+        self.thumb_labels: Dict[tuple, ctk.CTkLabel] = {}   # (set index, path) -> label
 
         self.title("🔍 Duplicates")
         self.geometry("1280x900")
@@ -106,11 +112,20 @@ class DuplicatesWindow(ctk.CTkToplevel):
         start = self.page * self.PAGE_SIZE
         return list(range(start, min(start + self.PAGE_SIZE, len(self.probable))))
 
+    def _refuse_while_busy(self) -> bool:
+        if self._busy:
+            self.status_label.configure(text="Wait for the move to finish")
+        return self._busy
+
     def set_keeper(self, set_index: int, row: ImageRow) -> None:
+        if self._refuse_while_busy():
+            return
         self.probable[set_index] = with_keeper(self.probable[set_index], row)
         self._render()
 
     def mark_not_duplicates(self, set_index: int) -> None:
+        if self._refuse_while_busy():
+            return
         s = self.probable[set_index]
         for extra in s.extras:
             self.index.mark_not_duplicates(s.keeper.pixel_sha256, extra.pixel_sha256)
@@ -144,9 +159,11 @@ class DuplicatesWindow(ctk.CTkToplevel):
         if not sets or self._busy:
             return
         n, size = sum(len(s.extras) for s in sets), sum(s.reclaim_bytes for s in sets)
+        sources = "\n".join(f"   {count} × {folder}" for folder, count in extras_by_folder(sets))
         if confirm and not messagebox.askyesno(
                 "Trash certain duplicates",
                 f"Move {n} identical copies ({_gb(size):.2f} GB) to _duplicates_trash?\n\n"
+                f"Most come from:\n{sources}\n\n"
                 "The best copy of each stays where it is. You can restore them later.",
                 parent=self):
             return
@@ -185,29 +202,34 @@ class DuplicatesWindow(ctk.CTkToplevel):
 
     def _finish_trash(self, kind: str, sets: List[DupSet], indices: List[int],
                       result: TrashResult) -> None:
-        moved = set(result.moved)
-        self.index.drop(result.moved)
-        keep: Dict[int, DupSet] = {}
-        for i, s in zip(indices, sets):
-            left = [e for e in s.extras if e.path not in moved]
-            if left:
-                keep[i] = DupSet(s.kind, s.keeper, left, s.distance, s.pretick)
-        if kind == "certain":
-            self.certain = [keep[i] for i in sorted(keep)]
-        else:
-            for i, s in keep.items():
-                self.probable[i] = s
-            self._remove_probable(set(indices) - set(keep))
-            if self.page and self.page * self.PAGE_SIZE >= len(self.probable):
-                self.page -= 1
-        self.log_fn(f"🗑 Trashed {len(result.moved)} files ({_gb(result.bytes):.2f} GB)")
-        for path, reason in result.skipped:
-            self.log_fn(f"  ⚠ Skipped {Path(path).name}: {reason}")
-        self._busy = False
-        self.action_btn.configure(state="normal")
-        self.status_label.configure(
-            text=f"Trashed {len(result.moved)}" + (f", skipped {len(result.skipped)}"
-                                                   if result.skipped else ""))
+        try:
+            moved = set(result.moved)
+            self.index.drop(result.moved)
+            keep: Dict[int, DupSet] = {}
+            for i, s in zip(indices, sets):
+                left = [e for e in s.extras if e.path not in moved]
+                if left:
+                    keep[i] = DupSet(s.kind, s.keeper, left, s.distance, s.pretick)
+            if kind == "certain":
+                self.certain = [keep[i] for i in sorted(keep)]
+            else:
+                for i, s in keep.items():
+                    self.probable[i] = s
+                self._remove_probable(set(indices) - set(keep))
+                if self.page and self.page * self.PAGE_SIZE >= len(self.probable):
+                    self.page -= 1
+            self.log_fn(f"🗑 Trashed {len(result.moved)} files ({_gb(result.bytes):.2f} GB)")
+            for path, reason in result.skipped:
+                self.log_fn(f"  ⚠ Skipped {Path(path).name}: {reason}")
+            self.status_label.configure(
+                text=f"Trashed {len(result.moved)}" + (f", skipped {len(result.skipped)}"
+                                                       if result.skipped else ""))
+        except Exception as e:
+            self.log_fn(f"⚠ Duplicates window: {e}")
+            self.status_label.configure(text=f"Problem after moving: {e}")
+        finally:
+            self._busy = False
+            self.action_btn.configure(state="normal")
         self._refresh()
 
     def _remove_probable(self, gone) -> None:
@@ -234,6 +256,7 @@ class DuplicatesWindow(ctk.CTkToplevel):
         for w in self.body.winfo_children():
             w.destroy()
         self._waiting.clear()
+        self.thumb_labels = {}
         if self._tab == "Certain":
             self._render_certain()
         else:
@@ -317,14 +340,32 @@ class DuplicatesWindow(ctk.CTkToplevel):
         caption = (f"{member.width}×{member.height} · {member.size / 1e6:.1f} MB · "
                    f"{Path(member.path).parent.name}")
         ctk.CTkLabel(cell, text=caption, font=ctk.CTkFont(size=10)).pack(padx=3, pady=(0, 3))
+        if set_index is not None:
+            self.thumb_labels[(set_index, member.path)] = label
         if set_index is not None and not is_keeper:
-            label.bind("<Button-1>", lambda e, i=set_index, r=member: self.set_keeper(i, r))
-        label.bind("<Double-Button-1>", lambda e, p=member.path: self.open_image(p))
+            label.bind("<Button-1>", lambda e, i=set_index, r=member: self._click(i, r))
+        label.bind("<Double-Button-1>", lambda e, p=member.path: self._double_click(p))
         if img is None:
             self._waiting.setdefault(member.path, []).append(label)
             if member.path not in self._requested:
                 self._requested.add(member.path)
                 self._loader_q.put(member.path)
+
+    def _click(self, set_index: int, row: ImageRow) -> None:
+        if self._click_job is not None:
+            self.after_cancel(self._click_job)
+        self._click_job = self.after(CLICK_DELAY_MS, lambda: self._run_click(set_index, row))
+
+    def _run_click(self, set_index: int, row: ImageRow) -> None:
+        self._click_job = None
+        if set_index < len(self.probable):
+            self.set_keeper(set_index, row)
+
+    def _double_click(self, path: str) -> None:
+        if self._click_job is not None:
+            self.after_cancel(self._click_job)
+            self._click_job = None
+        self.open_image(path)
 
     # ------------------------------------------------------------------ threads
 

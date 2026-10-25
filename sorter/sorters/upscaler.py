@@ -26,6 +26,8 @@ import numpy as np
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
+from core.image_index import in_duplicates_trash
+
 DEFAULT_MODELS_DIR = r"D:\ComfyUI_windows_portable\ComfyUI\models\upscale_models"
 MODEL_EXTENSIONS = {'.pth', '.safetensors', '.pt', '.ckpt'}
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff'}
@@ -324,6 +326,15 @@ def _png_text_chunks(img: Image.Image) -> Optional[PngInfo]:
     return info
 
 
+def list_images(source: Path, recursive: bool, exclude: Path) -> List[Path]:
+    """Images to upscale, leaving out the output folder and the Duplicate
+    Finder's _duplicates_trash."""
+    pattern = Path(source).rglob('*') if recursive else Path(source).glob('*')
+    return sorted(p for p in pattern
+                  if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+                  and exclude not in p.parents and not in_duplicates_trash(p))
+
+
 class UpscaleSorter:
     """Upscale every image in a folder to a target long edge."""
 
@@ -385,10 +396,7 @@ class UpscaleSorter:
         out_root = Path(self.output_dir) if self.output_dir else \
             self._default_output_dir(source)
 
-        pattern = source.rglob('*') if recursive else source.glob('*')
-        files = sorted(p for p in pattern
-                       if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-                       and out_root not in p.parents)
+        files = list_images(source, recursive, out_root)
         total = len(files)
         self._log(f"AI Upscale: {total} image(s) -> {out_root}  "
                   f"(target {self.target}px)")

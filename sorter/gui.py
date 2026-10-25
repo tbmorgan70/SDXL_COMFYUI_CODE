@@ -819,6 +819,8 @@ class SorterGUI(ctk.CTk):
         
         # Configure window - compact size like unified_sorter
         self.title("🚀 Sorter 3.7.0 - Advanced ComfyUI Image Organizer")
+        self._app_closing = False
+        self.protocol("WM_DELETE_WINDOW", self._on_app_close)
         self.geometry("750x700")
         
         # Center window
@@ -1641,9 +1643,23 @@ class SorterGUI(ctk.CTk):
             self.dup_listbox.insert("end", folder)
 
     def _dup_refresh_trash(self) -> None:
-        files, size = trash_summary(self.dup_folders)
+        try:
+            files, size = trash_summary(self.dup_folders)
+        except OSError as e:
+            self.dup_trash_label.configure(text="🗑 Duplicates trash: couldn't read the trash log")
+            self.log_message(f"⚠ Duplicates trash: {e}")
+            return
         self.dup_trash_label.configure(
             text=f"🗑 Duplicates trash: {files} files · {size / 1e9:.1f} GB")
+
+    def _dup_should_cancel(self, progress_window) -> bool:
+        return bool(getattr(progress_window, "cancelled", False) or self._app_closing)
+
+    def _on_app_close(self) -> None:
+        """Closing Sorter stops a running duplicate scan instead of leaving its
+        worker processes running hidden until the scan would have finished."""
+        self._app_closing = True
+        self.destroy()
 
     def _dup_add_folder(self) -> None:
         start = self.dup_folders[-1] if self.dup_folders else r"D:\ComfyUI_windows_portable\ComfyUI\output"
@@ -1721,7 +1737,7 @@ class SorterGUI(ctk.CTk):
                 stats = index.scan(
                     folders,
                     progress=lambda d, t, n: progress_window.enqueue(("progress", (d, t, n))),
-                    cancel=lambda: progress_window.cancelled)
+                    cancel=lambda: self._dup_should_cancel(progress_window))
                 for missing in stats.missing_folders:
                     progress_window.enqueue(("log", f"⚠ Folder not found: {missing}"))
                 summary = (f"🔍 Indexed {stats.found} images ({stats.hashed} read, "

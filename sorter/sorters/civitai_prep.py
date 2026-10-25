@@ -40,6 +40,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer, WorkflowTrace
+from core.image_index import in_duplicates_trash
 
 MODEL_EXTENSIONS = {'.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.sft'}
 
@@ -458,6 +459,15 @@ class WorkflowResources:
         return candidates[0] if candidates else 1.0
 
 
+def list_pngs(source: Path, recursive: bool) -> List[Path]:
+    """PNGs to prep. Recursive runs skip civitai_ready copies and the
+    Duplicate Finder's _duplicates_trash."""
+    if not recursive:
+        return sorted(Path(source).glob('*.png'))
+    return sorted(p for p in Path(source).rglob('*.png')
+                  if 'civitai_ready' not in p.parts and not in_duplicates_trash(p))
+
+
 class CivitaiPrep:
     """Phase 1: analyze a folder of images — resolve every resource to a
     local model file and produce AutoV2 hashes."""
@@ -712,10 +722,7 @@ class CivitaiPrep:
         source = Path(source_dir)
         if recursive:
             in_place = True  # copies would flatten/duplicate the sorted tree
-            png_files = sorted(p for p in source.rglob('*.png')
-                               if 'civitai_ready' not in p.parts)
-        else:
-            png_files = sorted(source.glob('*.png'))
+        png_files = list_pngs(source, recursive)
         total = len(png_files)
 
         out_dir = source if in_place else source / 'civitai_ready'

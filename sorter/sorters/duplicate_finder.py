@@ -5,14 +5,18 @@ Certain   identical pixels (identical bytes included): safe to handle in bulk.
 Probable  look-alikes by 64-bit difference hash, shapes matching within 3%:
           shown for a quick human check, closest first.
 
-Each set keeps one image — the most pixels, then the copy that carries its
-generation metadata, then the bigger file, then the older one — and the
-rest are "extras". No UI here; the review window lives in duplicates_window.py.
+Each set keeps one image — never one from a REJECT folder if any other copy
+exists, then the most pixels, then a copy in a "posted" folder, then the
+copy that carries its generation metadata, then the bigger file, then the
+older one — and the rest are "extras". No UI here; the review window lives
+in duplicates_window.py.
 """
 
+import glob
 import json
 import os
-from collections import defaultdict
+import threading
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +24,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 import numpy as np
 
-from core.image_index import TRASH_DIR, ImageRow
+from core.image_index import IMAGE_EXTS, TRASH_DIR, ImageRow
 
 STRICTNESS = {"Strict": 4, "Normal": 6, "Loose": 10}
 ASPECT_TOLERANCE = 0.03
@@ -46,9 +50,34 @@ class DupSet:
         return sum(r.size for r in self.extras)
 
 
+def in_reject(path: str) -> bool:
+    """Any folder on the path with "reject" in its name (REJECT, rejects, Rejected …)."""
+    return any("reject" in part.lower() for part in Path(path).parent.parts)
+
+
+def is_posted(path: str) -> bool:
+    """The nearest folder that says posted/unposted decides: 'Posted Projects\\…\\unposted'
+    is not posted, 'new_batch13_POSTED' is."""
+    for part in reversed(Path(path).parent.parts):
+        name = part.lower()
+        if "unposted" in name:
+            return False
+        if "posted" in name:
+            return True
+    return False
+
+
 def keeper_key(row: ImageRow) -> tuple:
-    """Sorts best first."""
-    return (-row.pixels, not row.has_meta, -row.size, row.mtime, row.path)
+    """Sorts best first (the user's rule, 2026-10-24): never from REJECT,
+    highest resolution, posted folders, metadata, bigger, older, path."""
+    return (in_reject(row.path), -row.pixels, not is_posted(row.path), not row.has_meta,
+            -row.size, row.mtime, row.path)
+
+
+def extras_by_folder(sets: List["DupSet"], top: int = 5) -> List[Tuple[str, int]]:
+    """Where a batch's extras would be taken from, most first."""
+    counts = Counter(str(Path(e.path).parent) for s in sets for e in s.extras)
+    return sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:top]
 
 
 def with_keeper(s: DupSet, row: ImageRow) -> DupSet:
@@ -144,6 +173,11 @@ def find_sets(rows: List[ImageRow], strictness: str = "Normal",
 LOG_NAME = "_trash_log.jsonl"
 SIDECAR_EXTS = (".txt", ".json")
 
+# One lock for every read or write of a trash log: the review window trashes on
+# a worker thread while Restore/Empty can run on the main one, and a log rewrite
+# must not drop a line appended in between.
+LOG_LOCK = threading.RLock()
+
 
 @dataclass
 class TrashResult:
@@ -152,24 +186,42 @@ class TrashResult:
     bytes: int = 0
 
 
-def _free_path(target: Path, tag: str = "") -> Path:
-    """target, or <stem><tag>, <stem><tag>_2 … when taken (tag '' → _2, _3 …)."""
-    if tag:
-        candidate = target.with_name(f"{target.stem}{tag}{target.suffix}")
-        n = 2
-        while candidate.exists():
-            candidate = target.with_name(f"{target.stem}{tag}_{n}{target.suffix}")
-            n += 1
-        return candidate
-    candidate, n = target, 2
-    while candidate.exists():
-        candidate = target.with_name(f"{target.stem}_{n}{target.suffix}")
+def _free_path(target: Path, tag: str = "", sidecar_exts: Iterable[str] = ()) -> Path:
+    """target, or <stem><tag>, <stem><tag>_2 … — the first name that is free
+    for the image AND for each sidecar extension it will bring along."""
+    exts = tuple(sidecar_exts)
+
+    def free(p: Path) -> bool:
+        return not p.exists() and not any(p.with_suffix(e).exists() for e in exts)
+
+    first = target.with_name(f"{target.stem}{tag}{target.suffix}") if tag else target
+    if free(first):
+        return first
+    n = 2
+    while True:
+        candidate = target.with_name(f"{target.stem}{tag}_{n}{target.suffix}")
+        if free(candidate):
+            return candidate
         n += 1
-    return candidate
 
 
 def _sidecars(path: Path) -> List[Path]:
+    """`.txt`/`.json` files that belong to this image only. When another image
+    in the folder shares the stem (x.png + x.webp + x.txt) the sidecar is left
+    where it is — it may well be the keeper's."""
+    pattern = glob.escape(str(path.with_suffix(""))) + ".*"
+    siblings = [p for p in glob.glob(pattern)
+                if Path(p).suffix.lower() in IMAGE_EXTS and Path(p) != path]
+    if siblings:
+        return []
     return [path.with_suffix(ext) for ext in SIDECAR_EXTS if path.with_suffix(ext).exists()]
+
+
+def _same_file(a: str, b: str) -> bool:
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        return False
 
 
 def _trash_dirs(folders: List[str]) -> List[Path]:
@@ -177,17 +229,30 @@ def _trash_dirs(folders: List[str]) -> List[Path]:
 
 
 def _read_log(trash: Path) -> List[dict]:
+    """Every line of the log; one that isn't valid JSON (torn write, hand
+    edit) comes back as {"_raw": line} so it is kept, but never acted on."""
     log = trash / LOG_NAME
     if not log.exists():
         return []
-    return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines() if line.strip()]
+    entries = []
+    for line in log.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+            if not isinstance(entry, dict) or "trashed" not in entry or "original" not in entry:
+                raise ValueError
+            entries.append(entry)
+        except ValueError:
+            entries.append({"_raw": line})
+    return entries
 
 
 def _write_log(trash: Path, entries: List[dict]) -> None:
     log = trash / LOG_NAME
     if entries:
-        log.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries),
-                       encoding="utf-8")
+        log.write_text("".join((e["_raw"] if "_raw" in e else json.dumps(e, ensure_ascii=False))
+                               + "\n" for e in entries), encoding="utf-8")
     elif log.exists():
         log.unlink()
 
@@ -215,6 +280,10 @@ def trash_sets(sets: List[DupSet], progress: Optional[Callable[[int, int, str], 
         for extra in s.extras:
             done += 1
             src = Path(extra.path)
+            if _same_file(extra.path, s.keeper.path):
+                # Two paths to one file (junction, symlink): never a duplicate
+                result.skipped.append((extra.path, "same file as keeper"))
+                continue
             try:
                 st = src.stat()
             except OSError:
@@ -225,27 +294,30 @@ def trash_sets(sets: List[DupSet], progress: Optional[Callable[[int, int, str], 
                 continue
             root = Path(extra.root)
             trash = root / TRASH_DIR
-            try:
-                dest = _free_path(trash / src.relative_to(root))
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                os.replace(src, dest)
-            except OSError as e:
-                result.skipped.append((extra.path, f"locked: {e}"))
-                continue
-            moved_sidecars = []
-            for side in _sidecars(src):
-                side_dest = dest.with_suffix(side.suffix)
+            sidecars = _sidecars(src)
+            with LOG_LOCK:
                 try:
-                    os.replace(side, side_dest)
-                    moved_sidecars.append([str(side), str(side_dest)])
-                except OSError:
-                    pass
-            with open(trash / LOG_NAME, "a", encoding="utf-8") as log:
-                log.write(json.dumps({
-                    "original": str(src), "trashed": str(dest), "sidecars": moved_sidecars,
-                    "keeper": s.keeper.path, "kind": s.kind,
-                    "time": datetime.now().isoformat(timespec="seconds")},
-                    ensure_ascii=False) + "\n")
+                    dest = _free_path(trash / src.relative_to(root),
+                                      sidecar_exts=[p.suffix for p in sidecars])
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    os.replace(src, dest)
+                except OSError as e:
+                    result.skipped.append((extra.path, f"locked: {e}"))
+                    continue
+                moved_sidecars = []
+                for side in sidecars:
+                    side_dest = dest.with_suffix(side.suffix)
+                    try:
+                        os.replace(side, side_dest)
+                        moved_sidecars.append([str(side), str(side_dest)])
+                    except OSError:
+                        pass
+                with open(trash / LOG_NAME, "a", encoding="utf-8") as log:
+                    log.write(json.dumps({
+                        "original": str(src), "trashed": str(dest), "sidecars": moved_sidecars,
+                        "keeper": s.keeper.path, "kind": s.kind,
+                        "time": datetime.now().isoformat(timespec="seconds")},
+                        ensure_ascii=False) + "\n")
             result.moved.append(extra.path)
             result.bytes += extra.size
             if progress:
@@ -255,73 +327,84 @@ def trash_sets(sets: List[DupSet], progress: Optional[Callable[[int, int, str], 
 
 def restore_all(folders: List[str]) -> TrashResult:
     result = TrashResult()
-    for trash in _trash_dirs(folders):
-        remaining = []
-        for entry in _read_log(trash):
-            trashed = Path(entry["trashed"])
-            if not trashed.exists():
-                continue                    # removed by hand; nothing to restore
-            original = Path(entry["original"])
-            target = original if not original.exists() else _free_path(original, "_restored")
-            try:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                size = trashed.stat().st_size
-                os.replace(trashed, target)
-            except OSError as e:
-                result.skipped.append((str(trashed), f"locked: {e}"))
-                remaining.append(entry)
-                continue
-            for orig_side, trashed_side in entry.get("sidecars", []):
-                side_target = target.with_suffix(Path(orig_side).suffix)
-                if side_target.exists():
-                    side_target = _free_path(side_target, "_restored")
+    with LOG_LOCK:
+        for trash in _trash_dirs(folders):
+            remaining = []
+            for entry in _read_log(trash):
+                if "_raw" in entry:
+                    remaining.append(entry)
+                    continue
+                trashed = Path(entry["trashed"])
+                if not trashed.exists():
+                    continue                    # removed by hand; nothing to restore
+                original = Path(entry["original"])
+                target = original if not original.exists() else _free_path(original, "_restored")
                 try:
-                    os.replace(trashed_side, side_target)
-                except OSError:
-                    pass
-            result.moved.append(str(target))
-            result.bytes += size
-        _write_log(trash, remaining)
-        _prune_empty_dirs(trash)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    size = trashed.stat().st_size
+                    os.replace(trashed, target)
+                except OSError as e:
+                    result.skipped.append((str(trashed), f"locked: {e}"))
+                    remaining.append(entry)
+                    continue
+                for orig_side, trashed_side in entry.get("sidecars", []):
+                    side_target = target.with_suffix(Path(orig_side).suffix)
+                    if side_target.exists():
+                        side_target = _free_path(side_target, "_restored")
+                    try:
+                        os.replace(trashed_side, side_target)
+                    except OSError:
+                        pass
+                result.moved.append(str(target))
+                result.bytes += size
+            _write_log(trash, remaining)
+            _prune_empty_dirs(trash)
     return result
 
 
 def empty_trash(folders: List[str]) -> TrashResult:
     result = TrashResult()
-    for trash in _trash_dirs(folders):
-        remaining = []
-        for entry in _read_log(trash):
-            files = [entry["trashed"]] + [t for _o, t in entry.get("sidecars", [])]
-            failed = False
-            for f in files:
-                p = Path(f)
-                if not p.exists():
+    with LOG_LOCK:
+        for trash in _trash_dirs(folders):
+            remaining = []
+            for entry in _read_log(trash):
+                if "_raw" in entry:
+                    remaining.append(entry)
                     continue
-                try:
-                    size = p.stat().st_size
-                    p.unlink()
-                    result.bytes += size
-                except OSError as e:
-                    result.skipped.append((f, f"locked: {e}"))
-                    failed = True
-            if failed:
-                remaining.append(entry)
-            else:
-                result.moved.append(entry["trashed"])
-        _write_log(trash, remaining)
-        _prune_empty_dirs(trash)
+                files = [entry["trashed"]] + [t for _o, t in entry.get("sidecars", [])]
+                failed = False
+                for f in files:
+                    p = Path(f)
+                    if not p.exists():
+                        continue
+                    try:
+                        size = p.stat().st_size
+                        p.unlink()
+                        result.bytes += size
+                    except OSError as e:
+                        result.skipped.append((f, f"locked: {e}"))
+                        failed = True
+                if failed:
+                    remaining.append(entry)
+                else:
+                    result.moved.append(entry["trashed"])
+            _write_log(trash, remaining)
+            _prune_empty_dirs(trash)
     return result
 
 
 def trash_summary(folders: List[str]) -> Tuple[int, int]:
     files = size = 0
-    for trash in _trash_dirs(folders):
-        for entry in _read_log(trash):
-            trashed = Path(entry["trashed"])
-            if not trashed.exists():
-                continue
-            files += 1
-            size += trashed.stat().st_size
-            size += sum(Path(t).stat().st_size for _o, t in entry.get("sidecars", [])
-                        if Path(t).exists())
+    with LOG_LOCK:
+        for trash in _trash_dirs(folders):
+            for entry in _read_log(trash):
+                if "_raw" in entry:
+                    continue
+                trashed = Path(entry["trashed"])
+                if not trashed.exists():
+                    continue
+                files += 1
+                size += trashed.stat().st_size
+                size += sum(Path(t).stat().st_size for _o, t in entry.get("sidecars", [])
+                            if Path(t).exists())
     return files, size

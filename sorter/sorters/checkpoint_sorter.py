@@ -28,6 +28,7 @@ from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.enhanced_metadata_formatter import EnhancedMetadataFormatter
 from core.diagnostics import SortLogger
 from core.file_operations import FileOperationsHandler
+from core.image_index import walk_skipping_trash
 
 class CheckpointSorter:
     """Sort images by their base checkpoint/model"""
@@ -142,7 +143,7 @@ class CheckpointSorter:
         
         if preserve_structure:
             # Recursively find files, preserving relative paths
-            for root, dirs, files in os.walk(source_dir):
+            for root, dirs, files in walk_skipping_trash(source_dir):
                 for file in files:
                     if file.lower().endswith('.png'):
                         full_path = os.path.join(root, file)

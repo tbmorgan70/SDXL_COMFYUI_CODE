@@ -140,6 +140,72 @@ def test_page_keys(win):
     assert win.page == 0
 
 
+def extra_label(win, set_index=0):
+    s = win.probable[set_index]
+    return s, win.thumb_labels[(set_index, s.extras[0].path)]
+
+
+def test_single_click_on_extra_makes_it_keeper(root, win):
+    win.show_tab("Probable")
+    root.update()
+    s, label = extra_label(win)
+    label._label.event_generate("<Button-1>", x=5, y=5)
+    pump(root, lambda: False, timeout=0.5)
+    assert win.probable[0].keeper.path == s.extras[0].path
+
+
+def test_double_click_on_extra_opens_it_and_keeps_keeper(root, win, monkeypatch):
+    opened = []
+    monkeypatch.setattr(duplicates_window.os, "startfile", opened.append, raising=False)
+    win.show_tab("Probable")
+    root.update()
+    s, label = extra_label(win)
+    t0 = int(time.time() * 1000) & 0x7FFFFFFF
+    for t in (t0, t0 + 100):                    # two presses, 100 ms apart = a double-click
+        label._label.event_generate("<ButtonPress-1>", x=5, y=5, time=t)
+        label._label.event_generate("<ButtonRelease-1>", x=5, y=5, time=t + 10)
+    pump(root, lambda: False, timeout=0.5)
+    assert opened == [s.extras[0].path]
+    assert win.probable[0].keeper.path == s.keeper.path
+
+
+def slow_trash(monkeypatch, delay=0.6, fail=None):
+    real = duplicates_window.trash_sets
+
+    def slow(sets, *a, **k):
+        time.sleep(delay)
+        return real(sets, *a, **k)
+    monkeypatch.setattr(duplicates_window, "trash_sets", slow)
+
+
+def test_edits_are_ignored_while_a_batch_is_moving(root, win, monkeypatch):
+    slow_trash(monkeypatch)
+    win.show_tab("Probable")
+    before = (win.probable[1].keeper.path, len(win.probable))
+    win.trash_ticked_page(confirm=False)
+    assert win.busy()
+    win.set_keeper(1, win.probable[1].extras[0])
+    win.mark_not_duplicates(1)
+    assert (win.probable[1].keeper.path, len(win.probable)) == before
+    assert pump(root, lambda: not win.busy())
+
+
+def test_busy_clears_even_if_finishing_fails(root, win, monkeypatch):
+    def boom(_paths):
+        raise RuntimeError("index unavailable")
+    monkeypatch.setattr(win.index, "drop", boom)
+    win.trash_certain(confirm=False)
+    assert pump(root, lambda: not win.busy())
+
+
+def test_certain_confirm_says_where_extras_come_from(win, monkeypatch):
+    asked = []
+    monkeypatch.setattr(duplicates_window.messagebox, "askyesno",
+                        lambda title, msg, **k: asked.append(msg) or False)
+    win.trash_certain(confirm=True)
+    assert asked and "3 × " in asked[0] and "copies" in asked[0]
+
+
 def test_double_click_opens_file(win, monkeypatch):
     opened = []
     monkeypatch.setattr(duplicates_window.os, "startfile", opened.append, raising=False)

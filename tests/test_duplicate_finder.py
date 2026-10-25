@@ -265,3 +265,152 @@ def test_with_keeper_swaps_roles():
     s = find_sets([row("big", w=3328, h=4864, dhash=0), row("small", dhash=1)])[1][0]
     swapped = with_keeper(s, s.extras[0])
     assert swapped.keeper.path == "small" and [r.path for r in swapped.extras] == ["big"]
+
+
+# ================================================================ review fixes
+
+import threading  # noqa: E402
+
+from sorters.duplicate_finder import (  # noqa: E402
+    DupSet, extras_by_folder, in_reject, is_posted)
+
+
+def junction(link: Path, target: Path):
+    import _winapi
+    _winapi.CreateJunction(str(target), str(link))
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows junctions")
+def test_junction_alias_is_not_a_duplicate_of_itself(tmp_path):
+    lib = tmp_path / "lib"
+    save(picture(), lib / "real" / "only_copy.png")
+    junction(lib / "alias", lib / "real")
+    index = ImageIndex(tmp_path / "idx.db")
+    stats = index.scan([str(lib)], workers=1)
+    assert stats.found == 1
+    assert find_sets(index.rows([str(lib)])) == ([], [])
+    index.close()
+
+
+def test_trash_refuses_extra_that_is_the_keepers_file(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    rows = {Path(r.path).name: r for r in index.rows([str(lib)])}
+    keeper = rows["orig.png"]
+    alias = ImageRow(**{**keeper.__dict__, "path": str(lib / "sub" / "." / "orig.png")})
+    result = trash_sets([DupSet("certain", keeper, [alias], 0, True)])
+    assert result.moved == [] and result.skipped == [(alias.path, "same file as keeper")]
+    assert orig.exists()
+    index.close()
+
+
+def test_sidecar_stays_when_another_image_shares_its_stem(tmp_path):
+    lib = tmp_path / "lib"
+    img = picture()
+    save(img, lib / "x.png", meta=True)                          # keeper
+    img.save(lib / "x.webp", lossless=True)                      # extra, same pixels
+    (lib / "x.txt").write_text("keeper's caption", encoding="utf-8")
+    index = ImageIndex(tmp_path / "idx.db")
+    index.scan([str(lib)], workers=1)
+    certain = certain_sets(index, lib)
+    assert certain[0].keeper.path.endswith("x.png")
+    trash_sets(certain)
+    assert (lib / "x.txt").exists() and not (lib / "x.webp").exists()
+    index.close()
+
+
+def test_trashed_sidecar_never_overwrites_a_file_in_the_trash(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))                          # -> copy.png, copy.txt
+    stray = lib / TRASH_DIR / "sub" / "copy_2.txt"
+    stray.write_text("someone else's", encoding="utf-8")
+    save(picture(), copy)
+    copy.with_suffix(".txt").write_text("caption 2", encoding="utf-8")
+    index.scan([str(lib)], workers=1)
+    trash_sets(certain_sets(index, lib))
+    assert stray.read_text(encoding="utf-8") == "someone else's"
+    assert (lib / TRASH_DIR / "sub" / "copy_3.png").exists()
+    assert (lib / TRASH_DIR / "sub" / "copy_3.txt").read_text(encoding="utf-8") == "caption 2"
+    index.close()
+
+
+def test_torn_or_bom_log_lines_are_kept_and_ignored(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))
+    log = lib / TRASH_DIR / LOG_NAME
+    text = log.read_text(encoding="utf-8")
+    log.write_bytes(b"\xef\xbb\xbf" + (text + '{"original": "torn').encode("utf-8"))
+    assert trash_summary([str(lib)])[0] == 1
+    restore_all([str(lib)])
+    assert copy.exists()
+    assert log.read_text(encoding="utf-8-sig").strip() == '{"original": "torn'
+    index.close()
+
+
+def test_log_rewrites_wait_for_the_log_lock(tmp_path):
+    from sorters import duplicate_finder as df
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))
+    done = threading.Event()
+    with df.LOG_LOCK:
+        t = threading.Thread(target=lambda: (restore_all([str(lib)]), done.set()))
+        t.start()
+        assert not done.wait(0.3)                                 # blocked on the lock
+    assert done.wait(5) and copy.exists()
+    index.close()
+
+
+# ---------------------------------------------------------------- keeper: REJECT / posted
+
+@pytest.mark.parametrize("path,expected", [
+    (r"D:\out\CROP\REJECT\a.png", True),
+    (r"D:\out\rejects\a.png", True),
+    (r"D:\out\Rejected Batch\a.png", True),
+    (r"D:\out\posted\a.png", False),
+])
+def test_in_reject(path, expected):
+    assert in_reject(path) is expected
+
+
+@pytest.mark.parametrize("path,expected", [
+    (r"D:\out\Posted Projects\Feeling Lucky\batch3_posted\a.png", True),
+    (r"D:\out\new_batch13_POSTED\a.png", True),
+    (r"D:\out\Posted Projects\New Vintage Girls_Posted\unposted\a.png", False),
+    (r"D:\out\unposted\a.png", False),
+    (r"D:\out\2026-10-07\a.png", False),
+])
+def test_is_posted_nearest_folder_decides(path, expected):
+    assert is_posted(path) is expected
+
+
+def test_never_keep_from_reject_even_at_higher_resolution():
+    rej = row(r"D:\o\REJECT\a.png", w=3328, h=4864, dhash=0, meta=True)
+    ok = row(r"D:\o\keep\a.png", w=832, h=1216, dhash=0)
+    _, probable = find_sets([rej, ok])
+    assert probable[0].keeper.path == ok.path
+
+
+def test_all_copies_in_reject_still_keeps_one():
+    a = row(r"D:\o\REJECT\a.png", pixel="P", size=2)
+    b = row(r"D:\o\REJECT\b.png", pixel="P", size=1)
+    certain, _ = find_sets([a, b])
+    assert certain[0].keeper.path == a.path
+
+
+def test_posted_copy_kept_at_equal_resolution():
+    big_unposted = row(r"D:\o\placeholder\a.png", pixel="P", size=5000, meta=True)
+    posted = row(r"D:\o\batch3_posted\a.png", pixel="P", size=1000)
+    certain, _ = find_sets([big_unposted, posted])
+    assert certain[0].keeper.path == posted.path
+
+
+def test_resolution_beats_posted():
+    posted_small = row(r"D:\o\batch_posted\a.png", w=832, h=1216, dhash=0)
+    big = row(r"D:\o\output\a.png", w=3328, h=4864, dhash=0)
+    _, probable = find_sets([posted_small, big])
+    assert probable[0].keeper.path == big.path
+
+
+def test_extras_by_folder_counts_where_extras_come_from():
+    sets = [DupSet("certain", row(r"D:\k\1.png"), [row(r"D:\a\1.png"), row(r"D:\b\1.png")], 0, True),
+            DupSet("certain", row(r"D:\k\2.png"), [row(r"D:\a\2.png")], 0, True)]
+    assert extras_by_folder(sets) == [(r"D:\a", 2), (r"D:\b", 1)]

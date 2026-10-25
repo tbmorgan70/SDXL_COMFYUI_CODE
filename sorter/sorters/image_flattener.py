@@ -17,6 +17,7 @@ sys.path.append(parent_dir)
 
 from core.diagnostics import SortLogger
 from core.file_operations import FileOperationsHandler
+from core.image_index import walk_skipping_trash
 
 class ImageFlattener:
     """Enhanced image flattening with progress tracking and logging"""
@@ -57,7 +58,7 @@ class ImageFlattener:
         
         # Find all image files
         image_files = []
-        for root, dirs, files in os.walk(source_path):
+        for root, dirs, files in walk_skipping_trash(source_path):
             for file in files:
                 file_path = Path(root) / file
                 if file_path.suffix.lower() in self.image_extensions:
@@ -188,7 +189,7 @@ class ImageFlattener:
         folder_stats = {}
         total_images = 0
         
-        for root, dirs, files in os.walk(source_path):
+        for root, dirs, files in walk_skipping_trash(source_path):
             folder = Path(root)
             image_count = 0
             
@@ -213,7 +214,7 @@ class ImageFlattener:
         
         # Check for potential name conflicts
         all_filenames = []
-        for root, dirs, files in os.walk(source_path):
+        for root, dirs, files in walk_skipping_trash(source_path):
             for file in files:
                 file_path = Path(root) / file
                 if file_path.suffix.lower() in self.image_extensions:

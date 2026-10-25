@@ -242,6 +242,63 @@ def test_not_duplicate_pairs_roundtrip(tmp_path):
     idx.close()
 
 
+# ---------------------------------------------------------------- review fixes
+
+sys.path.insert(0, os.path.dirname(__file__))      # crash_hasher, importable by workers
+import crash_hasher  # noqa: E402
+
+
+def test_worker_crash_marks_only_that_file_and_scan_finishes(tmp_path):
+    lib = tmp_path / "lib"
+    make_lib(lib, 6)
+    scene(seed=50).save(lib / "CRASH.png")
+    idx = ImageIndex(tmp_path / "idx.db")
+    stats = idx.scan([str(lib)], workers=2, hasher=crash_hasher.crashy_hash)
+    assert stats.errors == 1 and len(idx.rows([str(lib)])) == 6
+    errors = dict(idx.error_rows([str(lib)]))
+    assert list(errors) == [str((lib / "CRASH.png").resolve())]
+    assert "worker crashed" in errors[str((lib / "CRASH.png").resolve())]
+    idx.close()
+
+
+def test_error_rows_are_retried_next_scan(tmp_path):
+    lib = tmp_path / "lib"
+    make_lib(lib, 3)
+    scene(seed=60).save(lib / "FLAKY.png")
+    idx = ImageIndex(tmp_path / "idx.db")
+    first = idx.scan([str(lib)], workers=1, hasher=crash_hasher.flaky_hash)
+    assert first.errors == 1 and len(idx.rows([str(lib)])) == 3
+    second = idx.scan([str(lib)], workers=1)
+    assert (second.hashed, second.cached, second.errors) == (1, 3, 0)
+    assert len(idx.rows([str(lib)])) == 4
+    idx.close()
+
+
+def test_pool_keeps_a_bounded_number_of_files_in_flight(tmp_path, monkeypatch):
+    import concurrent.futures as cf
+    from core import image_index as ii
+    peak = {"now": 0, "max": 0}
+
+    class Spy(cf.ProcessPoolExecutor):
+        def submit(self, *a, **k):
+            fut = super().submit(*a, **k)
+            peak["now"] += 1
+            peak["max"] = max(peak["max"], peak["now"])
+
+            def done(_f):
+                peak["now"] -= 1
+            fut.add_done_callback(done)
+            return fut
+
+    monkeypatch.setattr(ii, "ProcessPoolExecutor", Spy)
+    lib = tmp_path / "lib"
+    make_lib(lib, 12)
+    idx = ImageIndex(tmp_path / "idx.db")
+    idx.scan([str(lib)], workers=2)
+    assert len(idx.rows([str(lib)])) == 12 and peak["max"] <= 4
+    idx.close()
+
+
 def test_corrupt_index_raises_and_rebuild_moves_it_aside(tmp_path):
     db = tmp_path / "idx.db"
     db.write_bytes(b"this is not sqlite" * 100)

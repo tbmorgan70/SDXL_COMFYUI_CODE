@@ -62,6 +62,34 @@ def test_scan_workers_capped():
     assert default_workers() == max(1, min(MAX_WORKERS, (os.cpu_count() or 2) - 1))
 
 
+def test_closing_sorter_cancels_a_running_scan(tmp_path):
+    run_app("""
+from types import SimpleNamespace
+app = gui.SorterGUI(); app.withdraw()
+pw = SimpleNamespace(cancelled=False)
+assert app._dup_should_cancel(pw) is False
+real_destroy = app.destroy
+app.destroy = lambda: None
+app._on_app_close()
+assert app._dup_should_cancel(pw) is True
+real_destroy(); print("OK")
+""", tmp_path)
+
+
+def test_damaged_trash_log_does_not_stop_sorter_starting(tmp_path):
+    folder = tmp_path / "pics"
+    trash = folder / "_duplicates_trash"
+    trash.mkdir(parents=True)
+    (trash / "_trash_log.jsonl").write_bytes(b'\\xef\\xbb\\xbf{"original": "torn')
+    (tmp_path / "settings.json").write_text(
+        json.dumps({"folders": [str(folder.resolve())], "strictness": "Normal"}), encoding="utf-8")
+    run_app("""
+app = gui.SorterGUI(); app.withdraw(); app.update()
+assert app.dup_trash_label.cget("text").startswith("🗑 Duplicates trash: 0 files")
+app.destroy(); print("OK")
+""", tmp_path)
+
+
 def test_trash_panel_reports_counts(tmp_path):
     folder = tmp_path / "pics"
     trash = folder / "_duplicates_trash"
