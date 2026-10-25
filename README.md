@@ -13,6 +13,7 @@ This unified repository contains these tools:
 - **Advanced ComfyUI Image Organizer**
 - Sort by Base Checkpoint (SDXL, Pony, etc.)
 - **v3.6** ✂️ Manual Crop - Fixed frame at exact preset sizes, image floats underneath; press C in Triage, Tab cycles sizes, O flips orientation
+- **v3.7** 🔍 Find Duplicates - Identical copies and look-alikes across folders; keeps the highest-resolution copy; restorable trash
 - **v3.5** 🔍 AI Upscale - Your ComfyUI upscale models on the GPU, to a target long edge, metadata kept
 - **v3.1** 🏷️ Civitai Prep - Embeds checkpoint/LoRA/VAE/embedding hashes so Civitai auto-detects resources on upload; traces KSampler and custom-sampler (Krea2, Flux) workflows
 - **v3.0** 📦 Extract Images - Pull images from PDF/EPUB/MOBI/CBR/CBZ and other archives with auto-crop presets and face-centered cropping

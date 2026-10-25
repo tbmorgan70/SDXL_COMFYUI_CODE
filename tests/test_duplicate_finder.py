@@ -55,14 +55,16 @@ def test_probable_4x_upscale_matched_and_preticked():
     assert s.distance == 1 and s.pretick
 
 
-def test_integer_scale_pretick_at_distance_5():
+def test_scaled_pair_beyond_distance_2_is_not_preticked():
+    # On the user's library, every 2x/4x pair at distance 3-6 was a different
+    # picture (neighbouring img2img outputs); real upscales sat at 0-2.
     big = row("big", w=3328, h=4864, dhash=0)
     small = row("small", w=832, h=1216, dhash=0b11111)                 # 4x, distance 5
     _, probable = find_sets([big, small], "Normal")
+    assert len(probable) == 1 and not probable[0].pretick
+    near = row("near", w=832, h=1216, dhash=0b11)                       # 4x, distance 2
+    _, probable = find_sets([big, near], "Normal")
     assert probable[0].pretick
-    a, b = row("a", dhash=0), row("b", dhash=0b11111)                  # same size, distance 5
-    _, probable = find_sets([a, b], "Normal")
-    assert not probable[0].pretick
 
 
 @pytest.mark.parametrize("strictness,expected", [("Strict", 0), ("Normal", 1), ("Loose", 1)])

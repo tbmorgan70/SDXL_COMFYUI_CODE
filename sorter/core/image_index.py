@@ -34,6 +34,13 @@ TRASH_DIR = "_duplicates_trash"
 THUMB_EDGE = 256
 THUMB_QUALITY = 80
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "image_index.db"
+# Each worker can hold ~1 GB while decoding a 150 MP image, and re-imports
+# the launching script on Windows; more than 8 rarely helps a disk-bound scan
+MAX_WORKERS = 8
+
+
+def default_workers() -> int:
+    return max(1, min(MAX_WORKERS, (os.cpu_count() or 2) - 1))
 
 # Sorter's own output folders are deliberate copies, never duplicates
 _EXCLUDED_PREFIXES = ("cropped__", "upscaled__")
@@ -296,7 +303,7 @@ class ImageIndex:
             if len(batch) >= _BATCH:
                 self._flush(batch)
 
-        workers = workers or max(1, (os.cpu_count() or 2) - 1)
+        workers = workers or default_workers()
         total = len(todo)
         if workers <= 1 or total <= 1:
             for path in todo:

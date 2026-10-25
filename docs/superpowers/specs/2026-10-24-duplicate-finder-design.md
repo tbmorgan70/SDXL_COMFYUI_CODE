@@ -88,9 +88,14 @@ button: **Trash N extras (Y GB)**, with a confirmation.
 
 ### Pre-ticked probable rows
 
-A row is pre-ticked when every extra in it is either within distance **2** of the keeper, or the same
-picture at **2×, 3× or 4×** (keeper-to-extra linear scale within 1% of an integer 2–4) within the
-Strictness distance. Other rows start unticked.
+A row is pre-ticked when every extra in it is within distance **2** of the keeper. Other rows start
+unticked.
+
+*(Revised during implementation.)* The approved draft also pre-ticked any 2×/3×/4× size pair within
+the Strictness distance. On the user's library (11,228 images) real upscale pairs sat at distance
+0–2, while every scaled pair at distance 3–6 that the rule added (28 sets) was a different picture —
+neighbouring img2img outputs such as `img198` vs `img199`. Those rows are still listed, just not
+pre-ticked.
 
 ### Ordering
 

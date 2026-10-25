@@ -5,6 +5,7 @@ Beautiful, compact interface for all sorting operations with real-time progress 
 Built on the rock-solid command-line backend for maximum reliability.
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -37,6 +38,11 @@ from sorters.image_extractor import (ImageExtractorSorter, CROP_PRESETS,
 from sorters.manual_sorter import ManualSorter, IMAGE_EXTENSIONS, TRASH_BUCKET
 from sorters.crop_tool import CROP_SIZE_PRESETS, DEFAULT_CROP_PRESET
 from crop_editor import CropEditor
+from core.image_index import (ImageIndex, IndexCorrupt, rebuild_index,
+                              DEFAULT_DB as DEFAULT_INDEX_DB)
+from sorters.duplicate_finder import (STRICTNESS, find_sets, restore_all, empty_trash,
+                                      trash_summary)
+from duplicates_window import DuplicatesWindow
 from sorters.civitai_prep import CivitaiPrep
 from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
                               DEFAULT_UPSCALE_PRESET, TARGET_SIZES,
@@ -44,6 +50,10 @@ from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
                               resolve_preset, list_upscale_models,
                               DEFAULT_MODELS_DIR as DEFAULT_UPSCALE_MODELS_DIR)
 from PIL import Image
+
+# Find Duplicates: where its index and remembered settings live
+DUP_SETTINGS_PATH = Path(current_dir) / "duplicate_finder_settings.json"
+DUP_INDEX_PATH = DEFAULT_INDEX_DB
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("dark")  # "light" or "dark"
@@ -808,7 +818,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.6.1 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.7.0 - Advanced ComfyUI Image Organizer")
         self.geometry("750x700")
         
         # Center window
@@ -856,7 +866,7 @@ class SorterGUI(ctk.CTk):
         self.mode_menu = ctk.CTkOptionMenu(
             mode_inner, 
             variable=self.mode_var,
-            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "AI Upscale", "Manual Sort (Triage)", "Manual Crop", "Civitai Prep", "Generate Metadata", "View Session Logs"],
+            values=["Sort by Checkpoint", "Sort by LoRA Stack", "Search & Sort", "Sort by Color", "Flatten Images", "Extract Images", "AI Upscale", "Manual Sort (Triage)", "Manual Crop", "Find Duplicates", "Civitai Prep", "Generate Metadata", "View Session Logs"],
             command=self._switch_mode
         )
         self.mode_menu.pack(side="left", padx=(10, 0))
@@ -874,6 +884,7 @@ class SorterGUI(ctk.CTk):
         self.extract_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.manual_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.crop_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
+        self.dup_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.civitai_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.upscale_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
         self.metadata_frame = ctk.CTkFrame(self.forms_frame, corner_radius=10)
@@ -888,6 +899,7 @@ class SorterGUI(ctk.CTk):
         self._build_extract_form()
         self._build_manual_form()
         self._build_crop_form()
+        self._build_dup_form()
         self._build_civitai_form()
         self._build_upscale_form()
         self._build_metadata_form()
@@ -1555,6 +1567,192 @@ class SorterGUI(ctk.CTk):
                 "ai": bool(self.crop_ai_var.get()),
                 "model": self._crop_models.get(self.crop_model_var.get())}
 
+    # ------------------------------------------------------------------ Find Duplicates
+
+    def _dup_load_settings(self) -> dict:
+        try:
+            data = json.loads(Path(DUP_SETTINGS_PATH).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+        folders = [str(f) for f in data.get("folders", []) if isinstance(f, str)]
+        strictness = data.get("strictness")
+        return {"folders": folders,
+                "strictness": strictness if strictness in STRICTNESS else "Normal"}
+
+    def _dup_save_settings(self) -> None:
+        try:
+            Path(DUP_SETTINGS_PATH).write_text(json.dumps(
+                {"folders": self.dup_folders, "strictness": self.dup_strictness_var.get()},
+                indent=2), encoding="utf-8")
+        except OSError as e:
+            self.log_message(f"⚠ Couldn't save duplicate finder settings: {e}")
+
+    def _build_dup_form(self):
+        """Build the Find Duplicates form."""
+        f = self.dup_frame
+        settings = self._dup_load_settings()
+        self.dup_folders = settings["folders"]
+
+        row = ctk.CTkFrame(f)
+        row.pack(fill="x", padx=15, pady=(15, 5))
+        ctk.CTkLabel(row, text="Folders to scan:").pack(side="left")
+        ctk.CTkButton(row, text="➕ Add folder", width=110,
+                      command=self._dup_add_folder).pack(side="left", padx=(10, 4))
+        ctk.CTkButton(row, text="➖ Remove selected", width=140, fg_color="#555",
+                      command=self._dup_remove_folder).pack(side="left", padx=4)
+
+        self.dup_listbox = tk.Listbox(f, height=4, selectmode="extended", bg="#2b2b2b",
+                                      fg="#dddddd", selectbackground="#1f6aa5",
+                                      highlightthickness=0, borderwidth=0)
+        self.dup_listbox.pack(fill="x", padx=15, pady=5)
+
+        strict_row = ctk.CTkFrame(f)
+        strict_row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(strict_row, text="Look-alike strictness:").pack(side="left")
+        self.dup_strictness_var = ctk.StringVar(value=settings["strictness"])
+        ctk.CTkSegmentedButton(strict_row, values=list(STRICTNESS),
+                               variable=self.dup_strictness_var,
+                               command=lambda _v: self._dup_save_settings()
+                               ).pack(side="left", padx=(10, 0))
+
+        trash_row = ctk.CTkFrame(f)
+        trash_row.pack(fill="x", padx=15, pady=5)
+        self.dup_trash_label = ctk.CTkLabel(trash_row, text="")
+        self.dup_trash_label.pack(side="left")
+        ctk.CTkButton(trash_row, text="Empty", width=80, fg_color="#B71C1C",
+                      hover_color="#7F0000", command=self._dup_empty_trash).pack(side="right", padx=4)
+        ctk.CTkButton(trash_row, text="Restore all", width=100,
+                      command=self._dup_restore_all).pack(side="right", padx=4)
+
+        ctk.CTkLabel(
+            f,
+            text="🔍 Finds identical copies and look-alikes (e.g. a post_sampler image and its 4x upscale)\n"
+                 "across all listed folders and keeps the highest-resolution copy. Extras go to\n"
+                 "_duplicates_trash inside each folder; nothing is deleted until you press Empty.",
+            text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
+        ).pack(padx=15, pady=(5, 15))
+
+        self._dup_refresh_list()
+        self._dup_refresh_trash()
+
+    def _dup_refresh_list(self) -> None:
+        self.dup_listbox.delete(0, "end")
+        for folder in self.dup_folders:
+            self.dup_listbox.insert("end", folder)
+
+    def _dup_refresh_trash(self) -> None:
+        files, size = trash_summary(self.dup_folders)
+        self.dup_trash_label.configure(
+            text=f"🗑 Duplicates trash: {files} files · {size / 1e9:.1f} GB")
+
+    def _dup_add_folder(self) -> None:
+        start = self.dup_folders[-1] if self.dup_folders else r"D:\ComfyUI_windows_portable\ComfyUI\output"
+        directory = filedialog.askdirectory(title="Add a folder to scan for duplicates",
+                                            initialdir=start)
+        if not directory:
+            return
+        folder = str(Path(directory).resolve())
+        if folder not in self.dup_folders:
+            self.dup_folders.append(folder)
+            self._dup_save_settings()
+            self._dup_refresh_list()
+            self._dup_refresh_trash()
+
+    def _dup_remove_folder(self) -> None:
+        for i in sorted(self.dup_listbox.curselection(), reverse=True):
+            del self.dup_folders[i]
+        self._dup_save_settings()
+        self._dup_refresh_list()
+        self._dup_refresh_trash()
+
+    def _dup_restore_all(self) -> None:
+        files, size = trash_summary(self.dup_folders)
+        if not files:
+            messagebox.showinfo("Duplicates trash", "The duplicates trash is empty.")
+            return
+        if not messagebox.askyesno("Restore all",
+                                   f"Put {files} files ({size / 1e9:.1f} GB) back where they came from?"):
+            return
+        result = restore_all(self.dup_folders)
+        self.log_message(f"↩ Restored {len(result.moved)} files from the duplicates trash")
+        for path, reason in result.skipped:
+            self.log_message(f"  ⚠ {Path(path).name}: {reason}")
+        self._dup_refresh_trash()
+
+    def _dup_empty_trash(self) -> None:
+        files, size = trash_summary(self.dup_folders)
+        if not files:
+            messagebox.showinfo("Duplicates trash", "The duplicates trash is empty.")
+            return
+        if not messagebox.askyesno(
+                "Empty duplicates trash",
+                f"Permanently delete {files} files ({size / 1e9:.1f} GB) from the duplicates trash?\n\n"
+                "This can't be undone."):
+            return
+        result = empty_trash(self.dup_folders)
+        self.log_message(f"🗑 Emptied the duplicates trash: {len(result.moved)} files, "
+                         f"{result.bytes / 1e9:.2f} GB freed")
+        for path, reason in result.skipped:
+            self.log_message(f"  ⚠ {Path(path).name}: {reason}")
+        self._dup_refresh_trash()
+
+    def find_duplicates(self):
+        """Index the listed folders, group duplicates, open the review window."""
+        if not self.dup_folders:
+            messagebox.showerror("Error", "Add at least one folder to scan.")
+            return
+        try:
+            index = ImageIndex(DUP_INDEX_PATH)
+        except IndexCorrupt:
+            if not messagebox.askyesno(
+                    "Damaged index",
+                    "The duplicate index is damaged. Move it aside and build a new one?"):
+                return
+            rebuild_index(DUP_INDEX_PATH)
+            index = ImageIndex(DUP_INDEX_PATH)
+
+        folders = list(self.dup_folders)
+        strictness = self.dup_strictness_var.get()
+        progress_window = ProgressWindow(self, "Finding Duplicates")
+
+        def run():
+            try:
+                progress_window.enqueue(("operation", "Indexing images…"))
+                stats = index.scan(
+                    folders,
+                    progress=lambda d, t, n: progress_window.enqueue(("progress", (d, t, n))),
+                    cancel=lambda: progress_window.cancelled)
+                for missing in stats.missing_folders:
+                    progress_window.enqueue(("log", f"⚠ Folder not found: {missing}"))
+                summary = (f"🔍 Indexed {stats.found} images ({stats.hashed} read, "
+                           f"{stats.cached} from cache, {stats.errors} unreadable)")
+                progress_window.enqueue(("log", summary))
+                self.after(0, self.log_message, summary)
+                if stats.cancelled:
+                    progress_window.enqueue(("complete", False))
+                    return
+                progress_window.enqueue(("operation", "Grouping duplicates…"))
+                certain, probable = find_sets(index.rows(folders), strictness,
+                                              index.not_duplicate_pairs())
+                progress_window.enqueue(("complete", True))
+                self.after(0, self._dup_open_results, progress_window, index, certain, probable)
+            except Exception as e:
+                progress_window.enqueue(("error", str(e)))
+                self.logger.log_error(f"Find duplicates failed: {e}", folders[0], "Find Duplicates")
+
+        Thread(target=run, daemon=True).start()
+
+    def _dup_open_results(self, progress_window, index, certain, probable) -> None:
+        try:
+            progress_window.destroy()
+        except Exception:
+            pass
+        if not certain and not probable:
+            messagebox.showinfo("Find Duplicates", "No duplicates found.")
+            return
+        window = DuplicatesWindow(self, index, certain, probable, self.log_message)
+        window.bind("<Destroy>", lambda e: e.widget is window and self._dup_refresh_trash())
+
     def manual_crop(self):
         """Open the crop-only triage window for the selected folder."""
         if not self.source_dir or not os.path.isdir(self.source_dir):
@@ -1971,7 +2169,7 @@ class SorterGUI(ctk.CTk):
     def _switch_mode(self, choice=None):
         """Switch between different sorting modes"""
         # Hide all frames
-        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.upscale_frame, self.manual_frame, self.crop_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
+        for frame in [self.checkpoint_frame, self.lora_frame, self.search_frame, self.color_frame, self.flatten_frame, self.extract_frame, self.upscale_frame, self.manual_frame, self.crop_frame, self.dup_frame, self.civitai_frame, self.metadata_frame, self.logs_frame]:
             frame.pack_forget()
         
         # Show selected frame
@@ -2003,6 +2201,10 @@ class SorterGUI(ctk.CTk):
         elif mode == "Manual Crop":
             self.crop_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("✂️ Manual crop mode selected")
+        elif mode == "Find Duplicates":
+            self.dup_frame.pack(fill="x", padx=0, pady=0)
+            self._dup_refresh_trash()
+            self.log_message("🔍 Find duplicates mode selected")
         elif mode == "Civitai Prep":
             self.civitai_frame.pack(fill="x", padx=0, pady=0)
             self.log_message("🏷️ Civitai Prep mode selected")
@@ -2041,6 +2243,8 @@ class SorterGUI(ctk.CTk):
             self.manual_sort()
         elif mode == "Manual Crop":
             self.manual_crop()
+        elif mode == "Find Duplicates":
+            self.find_duplicates()
         elif mode == "Civitai Prep":
             self.civitai_prep()
         elif mode == "Generate Metadata":

@@ -2,6 +2,35 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.7.0] - 2026-10-24 - "Find Duplicates" 🔍
+
+Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](../docs/superpowers/specs/2026-10-24-duplicate-finder-design.md).
+
+### 🎉 New: Find Duplicates mode
+
+- **Pick the folders** to scan (remembered); duplicates are matched across
+  all of them. Sorter's own `cropped__`, `upscaled__` and `civitai_ready`
+  folders are left out
+- **Certain** sets — identical bytes or identical pixels with different
+  metadata — are handled in bulk after a spot-check
+- **Probable** sets — look-alikes, including the same picture at 2×/3×/4×
+  like a `post_sampler` image and its upscale — come in pages of 15,
+  closest first, pre-ticked when very close. Untick, click another
+  thumbnail to keep it instead, or mark "Not duplicates" (remembered)
+- **Keeper**: most pixels, then the copy carrying the prompt/workflow,
+  then the bigger file, then the older one
+- **Restorable**: extras (and their `.txt`/`.json`) move to
+  `_duplicates_trash` inside the scanned folder, logged; Restore all puts
+  them back, Empty deletes them for good after a confirmation
+- **Fast re-scans**: a SQLite index (`sorter/image_index.db`) remembers
+  every file's hashes and a thumbnail; only new or changed files are read.
+  The same index will power the planned Source Finder
+
+### ⚡ Faster start-up
+
+- ultralytics/torch now load only when face detection is used: importing
+  the GUI went from 2.7 s to 0.5 s (and scan workers stay small)
+
 ## [3.6.3] - 2026-10-20 - Sampler label + docs
 
 - **Civitai Prep labels `er_sde` as "ER SDE"** (Karras/Exponential appended

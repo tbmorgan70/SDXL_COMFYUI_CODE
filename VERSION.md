@@ -1,16 +1,21 @@
 # 📌 Version Information
 
-**Last Updated:** October 20, 2026
+**Last Updated:** October 24, 2026
 
 ---
 
-## 🎯 Repository Version: 3.7.0
+## 🎯 Repository Version: 3.8.0
 
-**Release Date:** October 4, 2026  
+**Release Date:** October 24, 2026  
 **Status:** ✅ Released  
-**Codename:** "Manual Crop"
+**Codename:** "Find Duplicates"
 
-### What's New in 3.7:
+### What's New in 3.8:
+- ✅ **Sorter 3.7** — Find Duplicates: identical copies and look-alikes across the folders you pick, highest-resolution copy kept, extras to a restorable trash
+- ✅ Image index (SQLite, parallel scan, thumbnails) that the planned Source Finder will reuse
+- ✅ Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](docs/superpowers/specs/2026-10-24-duplicate-finder-design.md)
+
+### What Was New in 3.7:
 - ✅ **Sorter 3.6** — Manual Crop: a fixed frame at an exact preset size with the image floating underneath; press C in Triage or use the Manual Crop mode
 - ✅ Resolution badge (native / AI-upscale / too soft) and AI upscale of just the cropped region when needed
 - ✅ Crops are metadata-preserving copies in `cropped__<W>x<H>/` — originals are never touched

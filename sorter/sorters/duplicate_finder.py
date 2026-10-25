@@ -25,8 +25,6 @@ from core.image_index import TRASH_DIR, ImageRow
 STRICTNESS = {"Strict": 4, "Normal": 6, "Loose": 10}
 ASPECT_TOLERANCE = 0.03
 PRETICK_DISTANCE = 2
-SCALE_STEPS = (2, 3, 4)
-SCALE_TOLERANCE = 0.01
 _BLOCK = 512
 
 _M1 = np.uint64(0x5555555555555555)
@@ -85,11 +83,6 @@ def _aspect_ok(a: ImageRow, b: ImageRow) -> bool:
     return abs(ra / rb - 1) <= ASPECT_TOLERANCE
 
 
-def _scale_step(keeper: ImageRow, extra: ImageRow) -> bool:
-    scale = keeper.width / max(extra.width, 1)
-    return any(abs(scale / k - 1) <= SCALE_TOLERANCE for k in SCALE_STEPS)
-
-
 def find_sets(rows: List[ImageRow], strictness: str = "Normal",
               not_dupes: Set[Tuple[str, str]] = frozenset()) -> Tuple[List[DupSet], List[DupSet]]:
     limit = STRICTNESS[strictness]
@@ -131,7 +124,10 @@ def find_sets(rows: List[ImageRow], strictness: str = "Normal",
         keeper = reps[i]
         dist = dict(claimed)
         extras = sorted((reps[j] for j in dist), key=keeper_key)
-        pretick = all(dist[j] <= PRETICK_DISTANCE or _scale_step(keeper, reps[j]) for j in dist)
+        # Only near-identical rows start ticked. A 2x/4x size gap is NOT a reason
+        # on its own: on the user's library every scaled pair at distance 3+
+        # was a different picture; real upscales sat at 0-2.
+        pretick = all(d <= PRETICK_DISTANCE for d in dist.values())
         probable.append(DupSet("probable", keeper, extras, max(dist.values()), pretick))
     probable.sort(key=lambda s: (s.distance, -s.reclaim_bytes))
     return certain, probable

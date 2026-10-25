@@ -44,11 +44,10 @@ try:
 except ImportError:
     HAS_CV2 = False
 
-try:
-    from ultralytics import YOLO
-    HAS_ULTRALYTICS = True
-except ImportError:
-    HAS_ULTRALYTICS = False
+# Checked, not imported: ultralytics pulls in torch (~2 s, ~500 MB), which
+# only face detection needs. It is imported when a FaceDetector is built.
+import importlib.util
+HAS_ULTRALYTICS = importlib.util.find_spec("ultralytics") is not None
 
 # Where to look for a YOLO face model (first hit wins). ComfyUI users
 # typically already have face_yolov8m.pt for FaceDetailer/Impact Pack.
@@ -129,6 +128,7 @@ class FaceDetector:
             for path in candidates:
                 if path and os.path.isfile(path):
                     try:
+                        from ultralytics import YOLO
                         self._model = YOLO(path)
                         self.backend = 'yolo'
                         self._log(f"  Face detection: YOLO ({Path(path).name})")

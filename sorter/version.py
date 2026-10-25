@@ -1,7 +1,7 @@
-# Sorter 3.6.3 - Custom Sampler Tracing
-VERSION = "3.6.3"
-BUILD_DATE = "2026-10-20"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Custom Sampler Tracing"
+# Sorter 3.7.0 - Find Duplicates
+VERSION = "3.7.0"
+BUILD_DATE = "2026-10-24"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates"
 
 # Features included in this build:
 FEATURES = [
@@ -26,7 +26,8 @@ FEATURES = [
     "Self-Describing Output Folders + Manifests",  # v3.4.1
     "AI Upscale (ComfyUI models via spandrel)",   # v3.5.0
     "Extract: AI Upscale When Needed",            # v3.5.0
-    "Manual Crop (fixed frame, exact presets, metadata kept)",  # NEW in v3.6.0!
+    "Manual Crop (fixed frame, exact presets, metadata kept)",  # v3.6.0
+    "Find Duplicates (Certain/Probable, highest-resolution keeper, restorable trash)",  # NEW in v3.7.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -38,4 +39,4 @@ FEATURES = [
 ]
 
 # Crop by hand without leaving Triage
-NOTES = ("Manual Crop: a fixed frame at an exact preset size with the image floating underneath. Drag, scroll, and Enter saves a metadata-preserving copy and moves on. Press C in Manual Sort (Triage), or use the Manual Crop mode.")
+NOTES = ("Find Duplicates: indexes the folders you pick, groups identical copies and look-alikes (e.g. a post_sampler image and its 4x upscale), keeps the highest-resolution copy, and moves extras to a restorable _duplicates_trash.")
