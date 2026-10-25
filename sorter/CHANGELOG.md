@@ -17,8 +17,15 @@ Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](
   like a `post_sampler` image and its upscale — come in pages of 15,
   closest first, pre-ticked when very close. Untick, click another
   thumbnail to keep it instead, or mark "Not duplicates" (remembered)
-- **Keeper**: most pixels, then the copy carrying the prompt/workflow,
-  then the bigger file, then the older one
+- **Keeper**: never a copy in a REJECT folder (unless every copy is there),
+  then most pixels, then a copy in a "posted" folder (the nearest
+  posted/unposted folder decides), then the copy carrying the
+  prompt/workflow, then the bigger file, then the older one. The Certain
+  confirmation lists which folders the extras come from
+- **Safe with junctions/symlinks**: they aren't followed, and a file is never
+  treated as a duplicate of itself
+- **The trash stays put**: Checkpoint sort, Flatten, Filename cleanup,
+  Generate Metadata, Civitai Prep and AI Upscale all skip `_duplicates_trash`
 - **Restorable**: extras (and their `.txt`/`.json`) move to
   `_duplicates_trash` inside the scanned folder, logged; Restore all puts
   them back, Empty deletes them for good after a confirmation
