@@ -206,3 +206,9 @@ extracted_images/
 
 # Machine-specific model hash cache
 sorter/civitai_hash_cache.json
+
+# Duplicate Finder index and settings (machine-specific)
+sorter/image_index.db
+sorter/image_index.db-*
+sorter/image_index.broken-*
+sorter/duplicate_finder_settings.json
