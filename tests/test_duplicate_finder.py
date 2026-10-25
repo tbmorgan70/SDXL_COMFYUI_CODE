@@ -116,3 +116,150 @@ def test_twenty_thousand_rows_under_ten_seconds():
     t0 = time.perf_counter()
     find_sets(rows, "Loose")
     assert time.perf_counter() - t0 < 10
+
+
+# ================================================================ trash / restore / empty
+
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from PIL import Image  # noqa: E402
+from PIL.PngImagePlugin import PngInfo  # noqa: E402
+
+from core.image_index import TRASH_DIR, ImageIndex  # noqa: E402
+from sorters.duplicate_finder import (  # noqa: E402
+    LOG_NAME, empty_trash, restore_all, trash_sets, trash_summary, with_keeper)
+
+
+def picture(seed=0, size=(120, 160)):
+    rng = np.random.default_rng(seed)
+    return Image.fromarray(rng.integers(0, 255, (size[1], size[0], 3), dtype=np.uint8))
+
+
+def save(img, path, meta=False):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    info = None
+    if meta:
+        info = PngInfo()
+        info.add_text("parameters", "prompt\nSteps: 20")
+    img.save(path, pnginfo=info)
+    return path
+
+
+def library(tmp_path, orig_name="orig.png", copy_name="copy.png"):
+    """lib/sub/orig.png (with metadata, the keeper) + lib/sub/copy.png (+ copy.txt)."""
+    lib = tmp_path / "lib"
+    img = picture()
+    orig = save(img, lib / "sub" / orig_name, meta=True)
+    copy = save(img, lib / "sub" / copy_name)
+    copy.with_suffix(".txt").write_text("caption", encoding="utf-8")
+    index = ImageIndex(tmp_path / "idx.db")
+    index.scan([str(lib)], workers=1)
+    return lib, orig, copy, index
+
+
+def certain_sets(index, lib):
+    certain, _ = find_sets(index.rows([str(lib)]))
+    return certain
+
+
+def test_trash_moves_extra_with_sidecars_and_logs(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    result = trash_sets(certain_sets(index, lib))
+    trash = lib / TRASH_DIR
+    assert result.moved == [str(copy.resolve())] and result.skipped == []
+    assert (trash / "sub" / "copy.png").exists() and (trash / "sub" / "copy.txt").exists()
+    assert orig.exists() and not copy.exists() and not copy.with_suffix(".txt").exists()
+    entry = json.loads((trash / LOG_NAME).read_text(encoding="utf-8").strip())
+    assert entry["kind"] == "certain" and entry["original"] == str(copy.resolve())
+    assert entry["keeper"] == str(orig.resolve()) and len(entry["sidecars"]) == 1
+    index.close()
+
+
+def test_trash_skips_changed_since_scan(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    st = copy.stat()
+    os.utime(copy, (st.st_atime, st.st_mtime + 10))
+    result = trash_sets(certain_sets(index, lib))
+    assert result.moved == [] and result.skipped == [(str(copy.resolve()), "changed since scan")]
+    assert copy.exists()
+    index.close()
+
+
+def test_trash_skips_set_when_keeper_missing(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    sets = certain_sets(index, lib)
+    orig.unlink()
+    result = trash_sets(sets)
+    assert result.skipped == [(str(copy.resolve()), "keeper missing")] and copy.exists()
+    index.close()
+
+
+def test_trash_name_clash_gets_suffix(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))
+    save(picture(), copy)
+    index.scan([str(lib)], workers=1)
+    result = trash_sets(certain_sets(index, lib))
+    assert len(result.moved) == 1
+    assert (lib / TRASH_DIR / "sub" / "copy_2.png").exists()
+    index.close()
+
+
+def test_unicode_names_trash_and_restore(tmp_path):
+    lib, orig, copy, index = library(tmp_path, "Feelin' Lucky ✨.png", "Feelin' Lucky ✨ copy.png")
+    trash_sets(certain_sets(index, lib))
+    log = (lib / TRASH_DIR / LOG_NAME).read_text(encoding="utf-8")
+    assert "Feelin' Lucky ✨ copy.png" in log
+    result = restore_all([str(lib)])
+    assert copy.exists() and len(result.moved) == 1
+    index.close()
+
+
+def test_restore_all_handles_taken_spot(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))
+    save(picture(seed=5), copy)                     # something new now lives there
+    restore_all([str(lib)])
+    assert (lib / "sub" / "copy_restored.png").exists()
+    assert np.array_equal(np.asarray(Image.open(copy)), np.asarray(picture(seed=5)))
+    assert trash_summary([str(lib)]) == (0, 0)
+    index.close()
+
+
+def test_empty_deletes_only_logged_files(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    size = copy.stat().st_size + copy.with_suffix(".txt").stat().st_size
+    trash_sets(certain_sets(index, lib))
+    stray = save(picture(seed=9), lib / TRASH_DIR / "stray.png")
+    result = empty_trash([str(lib)])
+    assert result.bytes == size and not (lib / TRASH_DIR / "sub" / "copy.png").exists()
+    assert stray.exists() and orig.exists()
+    assert trash_summary([str(lib)]) == (0, 0)
+    index.close()
+
+
+def test_trash_summary_counts(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    size = copy.stat().st_size + copy.with_suffix(".txt").stat().st_size
+    trash_sets(certain_sets(index, lib))
+    assert trash_summary([str(lib)]) == (1, size)
+    index.close()
+
+
+def test_rescan_after_trash_and_restore(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    trash_sets(certain_sets(index, lib))
+    index.scan([str(lib)], workers=1)
+    paths = {r.path for r in index.rows([str(lib)])}
+    assert str(copy.resolve()) not in paths and str(orig.resolve()) in paths
+    restore_all([str(lib)])
+    index.scan([str(lib)], workers=1)
+    assert str(copy.resolve()) in {r.path for r in index.rows([str(lib)])}
+    index.close()
+
+
+def test_with_keeper_swaps_roles():
+    s = find_sets([row("big", w=3328, h=4864, dhash=0), row("small", dhash=1)])[1][0]
+    swapped = with_keeper(s, s.extras[0])
+    assert swapped.keeper.path == "small" and [r.path for r in swapped.extras] == ["big"]
