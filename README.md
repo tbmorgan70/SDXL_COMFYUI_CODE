@@ -1,7 +1,7 @@
 # 🎯 SDXL ComfyUI Code - Complete Toolkit
 **The ultimate collection of tools for managing, sorting, and optimizing AI image generation workflows.**
 
-> 🆕 **Version 3.8 - Sorter 3.7.2** (November 2026): Find Duplicates, Manual Crop at exact preset sizes, Civitai Prep that reads custom-sampler workflows (Krea2, Flux), and AI Upscale with your ComfyUI models — all inside the main Sorter. 3.7.1/3.7.2 make Sort by Checkpoint use the checkpoint that actually ran, not pieces of the filename.
+> 🆕 **Version 3.8 - Sorter 3.7.3** (November 2026): Find Duplicates, Manual Crop at exact preset sizes, Civitai Prep that reads custom-sampler workflows (Krea2, Flux), and AI Upscale with your ComfyUI models — all inside the main Sorter. 3.7.1/3.7.2 make Sort by Checkpoint use the checkpoint that actually ran, not pieces of the filename. 3.7.3 adds output folders for Manual Sort/Crop and starred crop sizes.
 
 📚 **[Knowledge Index](KNOWLEDGE_INDEX.md)** | 📋 **[Version Info](VERSION.md)** | 🔀 **[Git Workflow](GIT_WORKFLOW.md)** | 🗺️ **[Roadmap](ROADMAP.md)**
 

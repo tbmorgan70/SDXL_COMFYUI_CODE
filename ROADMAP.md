@@ -1,6 +1,6 @@
 # 🗺️ Development Roadmap - Unified Repository
 
-## 🎯 Current Status (v3.8, Sorter 3.7.2 — November 2026)
+## 🎯 Current Status (v3.8, Sorter 3.7.3 — November 2026)
 - ✅ Repository consolidation complete
 - ✅ Clean folder structure implemented
 - ✅ Sorter 3.0 production ready (Extract Images, Manual Sort/Triage, HSV color engine)
@@ -13,6 +13,7 @@
   REJECT folder, then most pixels, then a copy in a posted folder, then the one with metadata, then the bigger file
 - ✅ Cleanup (3.7.1): Sort by Checkpoint uses the workflow's checkpoint, Extract face framing, Manual Crop review
   fixes, Find Duplicates polish
+- ✅ 3.7.3: Triage crop waits for a bucket; output folder for Manual Sort / Manual Crop; starred crop sizes
 - ✅ HTML builders available
 - ✅ Legacy tools archived
 - 🗑️ CivitAI converter removed; standalone ImageExtractor deprecated
@@ -23,6 +24,9 @@
   face crops, Manual Crop, Find Duplicates on a drive root
 - [ ] **Manual Crop tab's model list** still reads the default upscale models folder at startup; the editor
   itself now uses the AI Upscale tab's folder
+- [ ] **Output folder for the other modes** (3.7.3 covered Manual Sort and Manual Crop): check which of
+  Extract, Upscale, Sort by Checkpoint etc. still lack a chooser
+- [ ] The Manual Crop tab's own Size dropdown doesn't list starred sizes first (the editor does)
 - [ ] **Confirm 3.6.2 on Civitai** — prep a Krea2 image and upload it; prompt, settings and resources should all appear
 - [ ] **Upscaling Phase 3** — face restore, colorize, denoise ([plan](docs/UPSCALING_PLAN.md))
 - [ ] Re-tune Extract's face confidence threshold (0.6) on more than one magazine

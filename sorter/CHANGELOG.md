@@ -2,6 +2,24 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.7.3] - 2026-11-14 - Triage and crop quality of life
+
+### 🐛 Fixed
+
+- **Cropping in Triage no longer skips past an unsorted image.** Enter saves
+  the crop and stays until you pick a bucket (1-4 or Del), which moves on as
+  usual. Images that already have a bucket still move on at Enter, and the
+  Manual Crop window is unchanged.
+
+### ✨ Added
+
+- **Output folder for Manual Sort and Manual Crop.** Each tab has an optional
+  Output folder field. Blank keeps the old behaviour (bucket folders and
+  `cropped__<size>/` inside the image folder).
+- **Favourite crop sizes.** ☆ next to the size menu (or S) stars the current
+  size. Starred sizes head the menu; Tab and Shift+Tab cycle only through them
+  while you're on one. Saved in `sorter/crop_favorites.json`.
+
 ## [3.7.2] - 2026-11-14 - Comparison images
 
 ### 🐛 Fixed

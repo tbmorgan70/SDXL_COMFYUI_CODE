@@ -8,11 +8,13 @@ be tested without a window.
 """
 
 import io
+import json
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image, ImageOps
@@ -118,6 +120,45 @@ def step_preset(sizes: Dict[str, Tuple[int, int]], current: str, step: int) -> s
         return current
     i = cycle.index(current) if current in cycle else -1
     return cycle[(i + step) % len(cycle)]
+
+
+# Favourite sizes: starred in the editor, listed first in its size menu
+FAVORITE_MARK = "★ "
+FAVORITES_DIVIDER = "──────── all sizes ────────"
+CUSTOM_LABEL_RE = re.compile(r"^Custom (\d+)×(\d+)$")
+
+
+def load_favorites(path) -> List[str]:
+    """Starred preset labels, in the order they were starred. A missing or
+    damaged file, or a label this version doesn't know, is skipped."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    if not isinstance(data, list):
+        return []
+    known = {k for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)}
+    out = []
+    for label in data:
+        if (isinstance(label, str) and label not in out
+                and (label in known or CUSTOM_LABEL_RE.match(label))):
+            out.append(label)
+    return out
+
+
+def save_favorites(path, labels) -> None:
+    try:
+        Path(path).write_text(json.dumps(list(labels), ensure_ascii=False, indent=1),
+                              encoding="utf-8")
+    except OSError:
+        pass        # favourites are a convenience; never block a crop over them
+
+
+def preset_menu_values(labels, favorites) -> List[str]:
+    """The size menu: starred sizes first, a divider, then every size."""
+    if not favorites:
+        return list(labels)
+    return [FAVORITE_MARK + f for f in favorites] + [FAVORITES_DIVIDER] + list(labels)
 
 
 # ----------------------------------------------------------------------

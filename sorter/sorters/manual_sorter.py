@@ -41,6 +41,8 @@ class ManualSorter:
         )
         # path -> bucket name (or absent = unassigned)
         self.assignments = {}
+        # Where the bucket folders go; None = inside source_dir
+        self.dest_root = None
 
     def _log(self, msg):
         if self.logger:
@@ -72,11 +74,13 @@ class ManualSorter:
 
     # ------------------------------------------------------------------
 
-    def execute(self, progress_callback=None):
-        """Move assigned images into bucket subfolders under source_dir.
+    def execute(self, progress_callback=None, dest_root=None):
+        """Move assigned images into bucket subfolders under dest_root
+        (or self.dest_root, or source_dir when neither is set).
 
         Unassigned images are left in place. Returns stats dict.
         """
+        root = Path(dest_root or self.dest_root or self.source_dir)
         stats = {b: 0 for b in self.buckets}
         errors = []
         items = list(self.assignments.items())
@@ -88,8 +92,8 @@ class ManualSorter:
             if progress_callback:
                 progress_callback(i, total, src.name)
             try:
-                dest_dir = self.source_dir / bucket
-                dest_dir.mkdir(exist_ok=True)
+                dest_dir = root / bucket
+                dest_dir.mkdir(parents=True, exist_ok=True)
                 dest = dest_dir / src.name
                 # Avoid clobbering existing files with the same name
                 if dest.exists():

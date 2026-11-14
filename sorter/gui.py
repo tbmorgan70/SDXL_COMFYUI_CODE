@@ -54,6 +54,7 @@ from PIL import Image
 
 # Find Duplicates: where its index and remembered settings live
 DUP_SETTINGS_PATH = Path(current_dir) / "duplicate_finder_settings.json"
+CROP_FAVORITES_PATH = Path(current_dir) / "crop_favorites.json"
 DUP_INDEX_PATH = DEFAULT_INDEX_DB
 
 # Set appearance mode and color theme
@@ -394,7 +395,7 @@ class TriageWindow(ctk.CTkToplevel):
                       command=lambda: self._change_page(1)).pack(side="left", padx=4)
         if self.crop_only:
             hint = ("Click a thumbnail to crop • drag/scroll to frame • Enter save & next • "
-                    "Shift+Enter save & stay • Tab size • O flip • F face • R reset • "
+                    "Shift+Enter save & stay • Tab size • O flip • S star size • F face • R reset • "
                     "✂ = show crops • Esc = gallery")
         else:
             hint = ("Click a thumbnail to view • ←/→ navigate • 1-4 assign • 0 clear • "
@@ -557,10 +558,21 @@ class TriageWindow(ctk.CTkToplevel):
             upscaler_factory=d.get("upscaler_factory"),
             on_saved=self._on_crop_saved,
             on_error=self._on_crop_error,
-            on_advance=lambda: self._nav(1),
+            on_advance=self._advance_after_crop,
             log=self.log_fn,
             models_dir=d.get("models_dir"),
+            output_root=d.get("output_root"),
+            favorites_path=d.get("favorites_path"),
         )
+
+    def _advance_after_crop(self):
+        """Enter in the crop editor. Triage only moves on once the image has a
+        bucket, so a crop never leaves its source unsorted behind you."""
+        path = self.sorter.images[self.current_index] if self.current_index is not None else None
+        if self.crop_only or path is None or self.sorter.get_assignment(path):
+            self._nav(1)
+        else:
+            self._update_viewer_info(path)
 
     def _set_crop_mode(self, on: bool):
         self.crop_mode = on
@@ -606,6 +618,8 @@ class TriageWindow(ctk.CTkToplevel):
             return
         bucket = self.sorter.get_assignment(path)
         tag = f"  →  {bucket}" if bucket else "  →  (unassigned)"
+        if not bucket and self.crop_mode:
+            tag += "  — pick a bucket (1-4) to move on"
         color = self.bucket_colors.get(bucket, "#aaa") if bucket else "#aaa"
         self.viewer_info.configure(
             text=f"{self.current_index + 1} / {len(self.sorter.images)}   {path.name}{tag}{cut}",
@@ -829,7 +843,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.7.2 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.7.3 - Advanced ComfyUI Image Organizer")
         self._app_closing = False
         self.protocol("WM_DELETE_WINDOW", self._on_app_close)
         self.geometry("750x700")
@@ -1506,6 +1520,9 @@ class SorterGUI(ctk.CTk):
         ctk.CTkLabel(buckets_row, text=f"+ {TRASH_BUCKET} (always)",
                      text_color="#F44336").pack(side="left", padx=(10, 0))
 
+        self.manual_out_entry = self._output_row(self.manual_frame,
+                                                 "bucket folders go inside the image folder")
+
         # Info
         ctk.CTkLabel(
             self.manual_frame,
@@ -1513,6 +1530,30 @@ class SorterGUI(ctk.CTk):
                  "then Execute to move them into labeled subfolders. Unassigned images stay in place.",
             text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
         ).pack(padx=15, pady=(5, 15))
+
+    def _output_row(self, parent, blank_means: str):
+        """An optional output-folder field with a Browse button; returns the entry."""
+        row = ctk.CTkFrame(parent)
+        row.pack(fill="x", padx=15, pady=5)
+        ctk.CTkLabel(row, text="Output folder:").pack(side="left")
+        entry = ctk.CTkEntry(row, width=380, placeholder_text=f"(blank = {blank_means})")
+        entry.pack(side="left", padx=5)
+
+        def browse():
+            chosen = filedialog.askdirectory(title="Choose output folder")
+            if chosen:
+                entry.delete(0, "end")
+                entry.insert(0, chosen)
+
+        ctk.CTkButton(row, text="Browse", width=70, command=browse).pack(side="left")
+        ctk.CTkButton(row, text="Clear", width=50, fg_color="#555",
+                      command=lambda: entry.delete(0, "end")).pack(side="left", padx=5)
+        return entry
+
+    @staticmethod
+    def _output_root(entry):
+        text = entry.get().strip() if entry is not None else ""
+        return Path(text) if text else None
 
     def manual_sort(self):
         """Open the triage window for the selected folder."""
@@ -1525,6 +1566,7 @@ class SorterGUI(ctk.CTk):
             bucket_names = ["Keep"]
 
         sorter = ManualSorter(self.logger, self.source_dir, bucket_names)
+        sorter.dest_root = self._output_root(self.manual_out_entry)
 
         if not sorter.images:
             messagebox.showerror("Error", "No images found in the selected folder.\n"
@@ -1567,10 +1609,13 @@ class SorterGUI(ctk.CTk):
         ctk.CTkOptionMenu(ai_row, variable=self.crop_model_var, values=names,
                           width=220).pack(side="left", padx=(5, 0))
 
+        self.crop_out_entry = self._output_row(f, "cropped__<size>/ next to each image")
+
         ctk.CTkLabel(
             f,
             text="✂ Frame stays fixed — drag the image under it, scroll to zoom. "
                  "Enter saves a copy to cropped__<size>/ and moves on.\n"
+                 "☆ or S stars a size: starred sizes head the list and Tab cycles them.\n"
                  "These settings also apply when you press C in Manual Sort (Triage).",
             text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
         ).pack(padx=15, pady=(5, 15))
@@ -1584,7 +1629,9 @@ class SorterGUI(ctk.CTk):
         return {"preset": self.crop_preset_var.get(),
                 "ai": bool(self.crop_ai_var.get()),
                 "model": in_folder.get(name) or self._crop_models.get(name),
-                "models_dir": models_dir}
+                "models_dir": models_dir,
+                "output_root": self._output_root(getattr(self, "crop_out_entry", None)),
+                "favorites_path": CROP_FAVORITES_PATH}
 
     # ------------------------------------------------------------------ Find Duplicates
 

@@ -62,7 +62,7 @@ def pump(root, cond, timeout=8.0):
 def make_editor(root):
     made = []
 
-    def _make(boxes=(), preset=DEFAULT_CROP_PRESET, upscaler=None):
+    def _make(boxes=(), preset=DEFAULT_CROP_PRESET, upscaler=None, **extra):
         rec = SimpleNamespace(saved=[], errors=[], advances=0)
         det = FakeDetector(boxes)
         up = upscaler or StubUpscaler()
@@ -75,7 +75,7 @@ def make_editor(root):
                         upscaler_factory=lambda p: up,
                         on_saved=lambda p, r: rec.saved.append((p, r)),
                         on_error=lambda p, m: rec.errors.append((p, m)),
-                        on_advance=advance)
+                        on_advance=advance, **extra)
         ed.pack(fill="both", expand=True)
         root.update()
         made.append(ed)

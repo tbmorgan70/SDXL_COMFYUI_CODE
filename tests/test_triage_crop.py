@@ -131,6 +131,7 @@ def test_enter_saves_navigates_and_badges(root, open_window, tmp_path):
     win._on_keypress(key("c"))
     pump_until_loaded(root, win)
     first = win.sorter.images[0]
+    win.sorter.assign(first, "Keep")            # already bucketed: Enter moves on
     assert win._on_keypress(key("Return")) == "break"
     assert win.current_index == 1
     assert pump(root, lambda: win.crop_counts.get(first) == 1)
@@ -314,3 +315,68 @@ def test_failed_crop_save_is_logged_once(root, open_window, tmp_path):
     assert pump(root, lambda: win.crop_editor.pending_saves() == 0)
     root.update()
     assert sum("Save failed" in m for m in logs) == 1, logs
+
+
+# ---------------------------------------------------------------- 3.7.3
+
+def test_enter_on_unbucketed_image_stays_until_a_bucket_is_picked(root, open_window):
+    win = open_window()
+    win._open_viewer(0)
+    win._on_keypress(key("c"))
+    pump_until_loaded(root, win)
+    first = win.sorter.images[0]
+    win._on_keypress(key("Return"))
+    assert win.current_index == 0
+    assert pump(root, lambda: win.crop_counts.get(first) == 1)
+    assert "pick a bucket" in win.viewer_info.cget("text")
+    win._on_keypress(key("1"))
+    assert win.sorter.get_assignment(first) == "Keep" and win.current_index == 1
+
+
+def test_enter_in_crop_only_still_advances(root, open_window):
+    win = open_window(crop_only=True)
+    win._open_viewer(0)
+    pump_until_loaded(root, win)
+    win._on_keypress(key("Return"))
+    assert win.current_index == 1
+
+
+def test_crop_output_root_from_defaults(root, tmp_path):
+    make_images(tmp_path, 1)
+    out = tmp_path / "elsewhere"
+    d = dict(crop_defaults(), output_root=out)
+    win = TriageWindow(root, ManualSorter(None, tmp_path, ["Keep"]), lambda m: None,
+                       crop_only=True, crop_defaults=d)
+    try:
+        win._open_viewer(0)
+        pump_until_loaded(root, win)
+        win._on_keypress(key("Return", 0x1))
+        assert pump(root, lambda: (out / "cropped__1024x1024" / "a.png").exists())
+    finally:
+        win.crop_editor.shutdown()
+        win.destroy()
+        root.update()
+
+
+OUTPUT_CHECK = r"""
+from pathlib import Path
+from gui import SorterGUI
+app = SorterGUI()
+app.withdraw()
+assert app._output_root(app.manual_out_entry) is None
+app.manual_out_entry.insert(0, r"C:\sorted")
+assert app._output_root(app.manual_out_entry) == Path(r"C:\sorted")
+assert app._crop_defaults()["output_root"] is None
+app.crop_out_entry.insert(0, r"C:\crops")
+assert app._crop_defaults()["output_root"] == Path(r"C:\crops")
+assert app._crop_defaults()["favorites_path"].name == "crop_favorites.json"
+app.destroy()
+print("OUT-OK")
+"""
+
+
+def test_gui_output_folder_fields():
+    sorter_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sorter"))
+    done = subprocess.run([sys.executable, "-c", OUTPUT_CHECK], cwd=sorter_dir,
+                          capture_output=True, text=True, timeout=120)
+    assert "OUT-OK" in done.stdout, done.stderr[-2000:]

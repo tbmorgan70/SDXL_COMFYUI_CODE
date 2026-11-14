@@ -1,7 +1,7 @@
-# Sorter 3.7.2 - Comparison images by checkpoint used
-VERSION = "3.7.2"
+# Sorter 3.7.3 - Triage crop waits for a bucket, output folders, favourite sizes
+VERSION = "3.7.3"
 BUILD_DATE = "2026-11-14"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.2)"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.3)"
 
 # Features included in this build:
 FEATURES = [

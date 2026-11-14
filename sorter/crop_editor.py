@@ -24,7 +24,9 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 
 from sorters.crop_tool import (CROP_SIZE_PRESETS, GRADE_COLORS, CropRect, clamp, face_seed,
-                               flipped, step_preset,
+                               flipped, step_preset, CUSTOM_LABEL_RE, FAVORITE_MARK,
+                               FAVORITES_DIVIDER, load_favorites, output_dir_for,
+                               preset_menu_values, save_favorites,
                                grade, largest_fit, open_oriented, pan, save_crop, workable,
                                zoom_at)
 from sorters.upscaler import DEFAULT_MODELS_DIR, list_upscale_models
@@ -81,9 +83,14 @@ class CropEditor(ctk.CTkFrame):
                  on_error: Optional[Callable] = None,
                  on_advance: Optional[Callable[[], None]] = None,
                  log: Optional[Callable[[str], None]] = None,
-                 models_dir: Optional[str] = None):
+                 models_dir: Optional[str] = None,
+                 output_root=None,
+                 favorites_path=None):
         super().__init__(master)
         self.models_dir = models_dir or DEFAULT_MODELS_DIR
+        # Crops go to <output_root>/cropped__WxH/, or next to each image when unset
+        self.output_root = Path(output_root) if output_root else None
+        self.favorites_path = Path(favorites_path) if favorites_path else None
         self._log = log or (lambda m: None)
         self._log_q = queue.Queue()
         thread_log = self._log_q.put        # workers log through the poller
@@ -103,6 +110,11 @@ class CropEditor(ctk.CTkFrame):
         self.face_detection: Optional[bool] = None   # set by the loader once known
 
         self._custom_sizes = {}
+        self.favorites = load_favorites(self.favorites_path) if self.favorites_path else []
+        for label in self.favorites:
+            m = CUSTOM_LABEL_RE.match(label)
+            if m:
+                self._custom_sizes[label] = (int(m.group(1)), int(m.group(2)))
         self.preset_label = preset_label
         self.out_size = self._size_for(preset_label) or (1024, 1024)
         self.ai_enabled = ai_enabled
@@ -145,13 +157,19 @@ class CropEditor(ctk.CTkFrame):
         bar = ctk.CTkFrame(self)
         bar.pack(fill="x", padx=4, pady=(4, 2))
 
-        labels = list(CROP_SIZE_PRESETS.keys())
-        if self.preset_label not in labels:
-            labels.insert(-1, self.preset_label)
-        self.preset_menu = ctk.CTkOptionMenu(bar, values=labels, width=230,
-                                             command=self._on_preset_menu)
+        self._base_labels = list(CROP_SIZE_PRESETS.keys())
+        for label in [*self._custom_sizes, self.preset_label]:
+            if label not in self._base_labels:
+                self._base_labels.insert(len(self._base_labels) - 1, label)
+        self.preset_menu = ctk.CTkOptionMenu(
+            bar, values=preset_menu_values(self._base_labels, self.favorites), width=230,
+            command=self._on_preset_menu)
         self.preset_menu.set(self.preset_label)
         self.preset_menu.pack(side="left", padx=4)
+        self.star_btn = ctk.CTkButton(bar, text="☆", width=28, fg_color="#444",
+                                      hover_color="#666", command=self.toggle_favorite)
+        self.star_btn.pack(side="left")
+        self._refresh_star()
 
         self.ai_var = tk.BooleanVar(value=self.ai_enabled)
         ctk.CTkCheckBox(bar, text="AI upscale when needed", variable=self.ai_var,
@@ -222,6 +240,7 @@ class CropEditor(ctk.CTkFrame):
         self.preset_label, self.out_size = label, size
         if self.preset_menu.get() != label:
             self.preset_menu.set(label)
+        self._refresh_star()
         if self.rect is not None:
             area = self.rect.w * self.rect.h
             w = (area * self._ar) ** 0.5
@@ -231,6 +250,11 @@ class CropEditor(ctk.CTkFrame):
         self._changed(sharp=True)
 
     def _on_preset_menu(self, choice):
+        if choice == FAVORITES_DIVIDER:
+            self.preset_menu.set(self.preset_label)
+            return
+        if choice.startswith(FAVORITE_MARK):
+            choice = choice[len(FAVORITE_MARK):]
         if CROP_SIZE_PRESETS.get(choice) != "custom":
             self.set_preset(choice)
             return
@@ -248,11 +272,33 @@ class CropEditor(ctk.CTkFrame):
         """A 'Custom W×H' preset, added to the menu if it isn't there yet."""
         label = f"Custom {w}×{h}"
         self._custom_sizes[label] = (w, h)
-        values = list(self.preset_menu.cget("values"))
-        if label not in values:
-            values.insert(len(values) - 1, label)
-            self.preset_menu.configure(values=values)
+        if label not in self._base_labels:
+            self._base_labels.insert(len(self._base_labels) - 1, label)
+            self._refresh_menu()
         return label
+
+    def _refresh_menu(self):
+        self.preset_menu.configure(values=preset_menu_values(self._base_labels, self.favorites))
+        self.preset_menu.set(self.preset_label)
+
+    def _refresh_star(self):
+        starred = self.preset_label in self.favorites
+        self.star_btn.configure(text="★" if starred else "☆",
+                                text_color="#FFC107" if starred else "white")
+
+    def toggle_favorite(self) -> None:
+        """☆ / S: star or unstar the current size; starred sizes head the menu."""
+        label = self.preset_label
+        if label in self.favorites:
+            self.favorites.remove(label)
+            self._set_status(f"Removed {label} from favourites")
+        else:
+            self.favorites.append(label)
+            self._set_status(f"★ {label} added to favourites")
+        if self.favorites_path is not None:
+            save_favorites(self.favorites_path, self.favorites)
+        self._refresh_menu()
+        self._refresh_star()
 
     def _all_sizes(self):
         sizes = {k: v for k, v in CROP_SIZE_PRESETS.items() if isinstance(v, tuple)}
@@ -260,7 +306,13 @@ class CropEditor(ctk.CTkFrame):
         return sizes
 
     def step_preset(self, step: int) -> None:
-        """Tab / Shift+Tab: the next size of the same orientation."""
+        """Tab / Shift+Tab: the next favourite when on one (and there are two
+        or more), otherwise the next size of the same orientation."""
+        favs = [f for f in self.favorites if self._size_for(f)]
+        if self.preset_label in favs and len(favs) > 1:
+            i = favs.index(self.preset_label)
+            self.set_preset(favs[(i + step) % len(favs)])
+            return
         self.set_preset(step_preset(self._all_sizes(), self.preset_label, step))
 
     def flip_orientation(self) -> None:
@@ -366,7 +418,8 @@ class CropEditor(ctk.CTkFrame):
         w, h = self.out_size
         use_ai = self._ai_ready
         self._pending += 1
-        self._save_q.put((self.path, self.rect, w, h, use_ai, self.model_path))
+        out_dir = output_dir_for(self.output_root, w, h) if self.output_root else None
+        self._save_q.put((self.path, self.rect, w, h, use_ai, self.model_path, out_dir))
         self._set_status(f"Saving… ({self._pending})")
         if advance and self.on_advance:
             self.on_advance()
@@ -377,7 +430,7 @@ class CropEditor(ctk.CTkFrame):
             job = self._save_q.get()
             if job is None:
                 return
-            path, rect, w, h, use_ai, model_path = job
+            path, rect, w, h, use_ai, model_path, out_dir = job
             up = None
             if use_ai and w / rect.w > 1.0:
                 if self._upscaler is None or self._upscaler_path != model_path:
@@ -388,7 +441,8 @@ class CropEditor(ctk.CTkFrame):
                     self._upscaler_path = model_path
                 up = self._upscaler
             try:
-                self._save_results.put((path, save_crop(path, rect, w, h, upscaler=up), None))
+                self._save_results.put((path, save_crop(path, rect, w, h, upscaler=up,
+                                                             out_dir=out_dir), None))
             except Exception as e:
                 self._save_results.put((path, None, f"Save failed for {path.name}: {e}"))
 
@@ -631,6 +685,9 @@ class CropEditor(ctk.CTkFrame):
             return True
         if k in ("o", "O"):
             self.flip_orientation()
+            return True
+        if k in ("s", "S"):
+            self.toggle_favorite()
             return True
         if shift and k in _ARROWS and self.rect is None:
             return True     # a nudge, not navigation, even before the image is ready

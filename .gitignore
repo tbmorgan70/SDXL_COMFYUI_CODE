@@ -212,3 +212,5 @@ sorter/image_index.db
 sorter/image_index.db-*
 sorter/image_index.broken-*
 sorter/duplicate_finder_settings.json
+# Manual Crop starred sizes (per user)
+sorter/crop_favorites.json
