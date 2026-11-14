@@ -381,3 +381,102 @@ def test_skipped_images_are_not_loaded(root, tmp_path):
     finally:
         ed.shutdown()
         ed.destroy()
+
+
+# ---------------------------------------------------------------- 3.7.1 fixes
+
+class NoDetector:
+    available = False
+
+    def detect(self, img):
+        return []
+
+
+def _bare_editor(root, made, **kw):
+    args = dict(preset_label=DEFAULT_CROP_PRESET, ai_enabled=True, model_path=None,
+                face_detector_factory=lambda: FakeDetector([]),
+                upscaler_factory=lambda p: StubUpscaler())
+    args.update(kw)
+    ed = CropEditor(root, **args)
+    ed.pack(fill="both", expand=True)
+    root.update()
+    made.append(ed)
+    return ed
+
+
+@pytest.fixture
+def bare(root):
+    made = []
+    yield lambda **kw: _bare_editor(root, made, **kw)
+    for ed in made:
+        ed.shutdown()
+        ed.destroy()
+    root.update()
+
+
+def test_editor_lists_models_from_the_given_folder(root, bare, tmp_path):
+    models = tmp_path / "models"
+    models.mkdir()
+    (models / "MyUpscaler_4x.pth").write_bytes(b"x")
+    ed = bare(models_dir=str(models))
+    assert "MyUpscaler_4x" in ed.model_menu.cget("values")
+    assert ed.model_path == models / "MyUpscaler_4x.pth"
+
+
+def test_badge_says_resize_when_no_model_is_set(root, bare, tmp_path):
+    empty = tmp_path / "none"
+    empty.mkdir()
+    ed = bare(models_dir=str(empty))
+    loaded(root, ed, png(tmp_path / "small.png", (600, 600)))     # 600 -> 1024: enlarges
+    assert ed.current_grade.level == "upscale"
+    assert "resize" in ed.current_grade.label and "AI" not in ed.current_grade.label
+
+
+def test_f_without_a_face_detector_says_so(root, bare, tmp_path):
+    ed = bare(face_detector_factory=lambda: NoDetector())
+    loaded(root, ed, png(tmp_path / "a.png"))
+    ed.handle_key(key("f"))
+    assert ed.status_text != "No face found"
+    assert "face detection" in ed.status_text.lower()
+
+
+def test_enter_on_an_unreadable_image_does_not_say_still_loading(root, bare, tmp_path):
+    bad = tmp_path / "broken.png"
+    bad.write_bytes(b"not an image")
+    ed = bare()
+    ed.load(bad)
+    assert pump(root, lambda: ed.status_text.startswith("Cannot open"))
+    assert ed.handle_key(key("Return")) is True
+    assert "Still loading" not in ed.status_text
+    assert ed.status_text.startswith("Cannot open")
+
+
+def test_shift_arrow_while_loading_is_swallowed(root, bare, tmp_path):
+    ed = bare()
+    ed.load(png(tmp_path / "a.png"))
+    assert ed.rect is None
+    assert ed.handle_key(key("Right", 0x1)) is True
+    assert ed.handle_key(key("Left", 0x1)) is True
+
+
+def test_custom_size_dialog_takes_focus_and_applies(root, bare, tmp_path):
+    ed = bare()
+    loaded(root, ed, png(tmp_path / "a.png"))
+    seen = {}
+
+    def answer():
+        dialogs = [w for w in root.winfo_children() if isinstance(w, ctk.CTkInputDialog)]
+        if not dialogs:
+            root.after(50, answer)
+            return
+        d = dialogs[0]
+        focus = d.focus_get()
+        seen["focus"] = str(focus) if focus is not None else ""
+        seen["dialog"] = str(d)
+        d._entry.insert(0, "1200x1500")
+        d._ok_event()
+
+    root.after(400, answer)
+    ed._on_preset_menu("Custom...")
+    assert seen["focus"].startswith(seen["dialog"]), seen
+    assert ed.out_size == (1200, 1500)

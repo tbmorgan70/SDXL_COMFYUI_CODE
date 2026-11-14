@@ -80,8 +80,10 @@ class CropEditor(ctk.CTkFrame):
                  on_saved: Optional[Callable] = None,
                  on_error: Optional[Callable] = None,
                  on_advance: Optional[Callable[[], None]] = None,
-                 log: Optional[Callable[[str], None]] = None):
+                 log: Optional[Callable[[str], None]] = None,
+                 models_dir: Optional[str] = None):
         super().__init__(master)
+        self.models_dir = models_dir or DEFAULT_MODELS_DIR
         self._log = log or (lambda m: None)
         self._log_q = queue.Queue()
         thread_log = self._log_q.put        # workers log through the poller
@@ -97,6 +99,8 @@ class CropEditor(ctk.CTkFrame):
         self.current_grade = None
         self.last_render_ms = 0.0
         self.status_text = ""
+        self.load_error: Optional[str] = None
+        self.face_detection: Optional[bool] = None   # set by the loader once known
 
         self._custom_sizes = {}
         self.preset_label = preset_label
@@ -153,7 +157,7 @@ class CropEditor(ctk.CTkFrame):
         ctk.CTkCheckBox(bar, text="AI upscale when needed", variable=self.ai_var,
                         command=self._on_ai_toggle).pack(side="left", padx=8)
 
-        self._models = {p.stem: p for p in list_upscale_models(DEFAULT_MODELS_DIR)}
+        self._models = {p.stem: p for p in list_upscale_models(self.models_dir)}
         if self.model_path is not None:
             self._models.setdefault(self.model_path.stem, self.model_path)
         names = list(self._models) or [NO_MODEL]
@@ -271,6 +275,12 @@ class CropEditor(ctk.CTkFrame):
 
     def _on_model_menu(self, stem):
         self.model_path = self._models.get(stem)
+        self._update_grade()
+
+    @property
+    def _ai_ready(self) -> bool:
+        """AI upscaling will actually be used: enabled and a model chosen."""
+        return self.ai_enabled and self.model_path is not None
 
     # ------------------------------------------------------------------ loading
 
@@ -279,7 +289,7 @@ class CropEditor(ctk.CTkFrame):
         # Anything still queued that isn't this image or the next is skipped
         self._wanted = frozenset(p for p in (self.path, Path(prefetch) if prefetch else None) if p)
         self.rect = self.src_size = self.face_box = self._proxy = None
-        self.current_grade = None
+        self.current_grade = self.load_error = None
         cached = self._cache.get(self.path)
         if cached is not None:
             self._apply_loaded(cached)
@@ -315,6 +325,8 @@ class CropEditor(ctk.CTkFrame):
                     except Exception as e:
                         self._log_q.put(f"  Face detection unavailable ({e})")
                         self._detector = False
+                    self.face_detection = bool(self._detector) and bool(
+                        getattr(self._detector, "available", False))
                 if self._detector and getattr(self._detector, "available", False):
                     faces = self._detector.detect(proxy)
                     if faces:
@@ -329,6 +341,7 @@ class CropEditor(ctk.CTkFrame):
     def _apply_loaded(self, result):
         path, proxy, src_size, face, error = result
         if error:
+            self.load_error = error
             self._set_status(error)
             self._show_message(error)
             return
@@ -344,11 +357,14 @@ class CropEditor(ctk.CTkFrame):
     # ------------------------------------------------------------------ saving
 
     def save(self, advance: bool) -> bool:
+        if self.load_error:
+            self._set_status(self.load_error)
+            return False
         if self.rect is None or self.path is None:
             self._set_status("Still loading…")
             return False
         w, h = self.out_size
-        use_ai = self.ai_enabled and self.model_path is not None
+        use_ai = self._ai_ready
         self._pending += 1
         self._save_q.put((self.path, self.rect, w, h, use_ai, self.model_path))
         self._set_status(f"Saving… ({self._pending})")
@@ -486,7 +502,7 @@ class CropEditor(ctk.CTkFrame):
     def _update_grade(self):
         if self.rect is None:
             return
-        g = grade(self.rect, *self.out_size, self.ai_enabled)
+        g = grade(self.rect, *self.out_size, self._ai_ready)
         if g.label != getattr(self.current_grade, "label", None):
             self.badge.configure(text=g.label, fg_color=GRADE_COLORS[g.level])
         self.current_grade = g
@@ -616,6 +632,8 @@ class CropEditor(ctk.CTkFrame):
         if k in ("o", "O"):
             self.flip_orientation()
             return True
+        if shift and k in _ARROWS and self.rect is None:
+            return True     # a nudge, not navigation, even before the image is ready
         if self.rect is None:
             return False
         if shift and k in _ARROWS:
@@ -632,7 +650,8 @@ class CropEditor(ctk.CTkFrame):
             return True
         if k in ("f", "F"):
             if self.face_box is None:
-                self._set_status("No face found")
+                self._set_status("No face found" if self.face_detection is not False else
+                                 "Face detection isn't installed (needs ultralytics or OpenCV)")
             else:
                 self.rect = face_seed(*self.src_size, self._ar, self.face_box)
                 self._changed(sharp=True)

@@ -312,6 +312,7 @@ class TriageWindow(ctk.CTkToplevel):
         self.crop_saved_total = 0
         self._badges = {}                   # Path -> badge label, current page only
         self._execute_waiting = False
+        self._close_waiting = False
 
         if crop_only:
             self.title(f"✂️ Manual Crop — {sorter.source_dir.name}  ({len(sorter.images)} images)")
@@ -557,6 +558,7 @@ class TriageWindow(ctk.CTkToplevel):
             on_error=self._on_crop_error,
             on_advance=lambda: self._nav(1),
             log=self.log_fn,
+            models_dir=d.get("models_dir"),
         )
 
     def _set_crop_mode(self, on: bool):
@@ -663,7 +665,7 @@ class TriageWindow(ctk.CTkToplevel):
                     f" ({result.method})")
 
     def _on_crop_error(self, path, message):
-        self.log_fn(f"✗ {message}")
+        pass    # the editor has already shown and logged it
 
     def _refresh_badge(self, path):
         n = self.crop_counts.get(path, 0)
@@ -715,6 +717,8 @@ class TriageWindow(ctk.CTkToplevel):
 
         if bucket is not None:
             self._nav(1)  # auto-advance after assignment
+        elif self.crop_mode:
+            self._update_viewer_info(path)   # reloading would reset the framing
         else:
             self._show_current()
 
@@ -796,7 +800,9 @@ class TriageWindow(ctk.CTkToplevel):
         pending = self.crop_editor.pending_saves() if self.crop_editor is not None else 0
         if pending:
             self.status_label.configure(text=f"Finishing {pending} saves…")
-            self.after(200, self._on_close)
+            if not self._close_waiting:      # more clicks don't add more retries
+                self._close_waiting = True
+                self.after(200, self._close_retry)
             return
         if self.sorter.assignments:
             if not messagebox.askyesno(
@@ -809,6 +815,10 @@ class TriageWindow(ctk.CTkToplevel):
         if self.crop_editor is not None:
             self.crop_editor.shutdown()
         self.destroy()
+
+    def _close_retry(self):
+        self._close_waiting = False
+        self._on_close()
 
 
 class SorterGUI(ctk.CTk):
@@ -1565,9 +1575,15 @@ class SorterGUI(ctk.CTk):
         ).pack(padx=15, pady=(5, 15))
 
     def _crop_defaults(self) -> dict:
+        # The editor lists models from the AI Upscale tab's folder
+        entry = getattr(self, "upscale_models_entry", None)
+        models_dir = (entry.get().strip() if entry is not None else "") or DEFAULT_UPSCALE_MODELS_DIR
+        name = self.crop_model_var.get()
+        in_folder = {p.stem: p for p in list_upscale_models(models_dir)}
         return {"preset": self.crop_preset_var.get(),
                 "ai": bool(self.crop_ai_var.get()),
-                "model": self._crop_models.get(self.crop_model_var.get())}
+                "model": in_folder.get(name) or self._crop_models.get(name),
+                "models_dir": models_dir}
 
     # ------------------------------------------------------------------ Find Duplicates
 

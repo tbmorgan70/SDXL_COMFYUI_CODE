@@ -265,3 +265,52 @@ def test_tab_in_crop_mode_changes_size_instead_of_focus(root, open_window):
     assert win._on_keypress(key("Tab")) == "break"
     assert win.crop_editor.preset_label != before
     assert win._on_keypress(key("o")) == "break"
+
+
+# ---------------------------------------------------------------- 3.7.1 fixes
+
+def test_clear_in_crop_mode_keeps_the_framing(root, open_window):
+    win = open_window()
+    win._open_viewer(0)
+    win._on_keypress(key("c"))
+    pump_until_loaded(root, win)
+    win._on_keypress(key("plus"))
+    framed = win.crop_editor.rect
+    win._on_keypress(key("0"))
+    root.update()
+    assert win.crop_editor.rect == framed
+
+
+def test_repeated_close_clicks_do_not_stack_retries(root, open_window):
+    win = open_window(crop_only=True, upscaler=StubUpscaler(delay=1.5), n=1)
+    win._open_viewer(0)
+    pump_until_loaded(root, win)
+    win._on_keypress(key("Return", 0x1))
+    calls = []
+    original = win._on_close
+
+    def counting():
+        calls.append(1)
+        original()
+
+    win._on_close = counting
+    for _ in range(4):
+        counting()
+    pump(root, lambda: False, timeout=0.7)       # one chain: ~3 retries; four chains: ~12
+    assert win.winfo_exists()
+    assert len(calls) - 4 <= 5, len(calls)
+    assert pump(root, lambda: not win.winfo_exists())
+
+
+def test_failed_crop_save_is_logged_once(root, open_window, tmp_path):
+    logs = []
+    win = open_window(crop_only=True, n=1)
+    win.log_fn = logs.append
+    win.crop_editor = None
+    win._open_viewer(0)
+    pump_until_loaded(root, win)
+    (tmp_path / "a.png").unlink()                # the save re-reads the source
+    win._on_keypress(key("Return", 0x1))
+    assert pump(root, lambda: win.crop_editor.pending_saves() == 0)
+    root.update()
+    assert sum("Save failed" in m for m in logs) == 1, logs

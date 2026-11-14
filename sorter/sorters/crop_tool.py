@@ -253,6 +253,14 @@ def workable(img: Image.Image) -> Image.Image:
     return img
 
 
+def _color_family(mode: str) -> str:
+    if mode in ("RGB", "RGBA", "RGBX", "RGBa", "P", "PA"):
+        return "rgb"
+    if mode in ("L", "LA", "La", "1"):
+        return "gray"
+    return mode     # CMYK, I;16, F, LAB... never match an RGB/L output
+
+
 def save_with_metadata(img: Image.Image, src_img: Image.Image, dest_stem: Path) -> Path:
     """Write `img` next to `dest_stem` in the source's format family, carrying
     its PNG text chunks, EXIF (orientation reset) and ICC profile.
@@ -276,8 +284,10 @@ def save_with_metadata(img: Image.Image, src_img: Image.Image, dest_stem: Path) 
                 info.add_text(k, v)
             kwargs["pnginfo"] = info
 
+    # A profile describes one colour space; after a CMYK or 16-bit -> RGB
+    # conversion the source's profile would mis-colour the output
     icc = src_img.info.get("icc_profile")
-    if icc:
+    if icc and _color_family(src_img.mode) == _color_family(img.mode):
         kwargs["icc_profile"] = icc
     exif = src_img.getexif()
     if len(exif):
@@ -343,7 +353,8 @@ def save_crop(src_path: Path, rect: CropRect, out_w: int, out_h: int,
             method = f"AI {upscaler.name}"
         except Exception as e:
             result = img.resize((out_w, out_h), Image.LANCZOS, box=box)
-            method = f"resize (AI failed: {e})"
+            # One manifest line per crop: CUDA errors span several lines
+            method = f"resize (AI failed: {' '.join(str(e).split())})"
 
     out_dir = Path(out_dir) if out_dir else output_dir_for(src_path.parent, out_w, out_h)
     out_dir.mkdir(parents=True, exist_ok=True)

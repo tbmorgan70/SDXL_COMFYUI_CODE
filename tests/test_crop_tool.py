@@ -389,3 +389,32 @@ def test_tab_from_square_enters_portraits_and_landscape_stays_landscape():
 
 def test_flipped_swaps_sides():
     assert flipped((832, 1216)) == (1216, 832)
+
+
+# ---------------------------------------------------------------- 3.7.1 fixes
+
+def test_multiline_ai_error_stays_on_one_manifest_line(tmp_path):
+    src = make_png(tmp_path / "m.png", (600, 600))
+    res = save_crop(src, CropRect(0, 0, 300, 300), 1024, 1024,
+                    StubUpscaler(fail="CUDA error\n  out of memory\n"))
+    assert "\n" not in res.method
+    lines = (tmp_path / "cropped__1024x1024" / "_crop_info.txt").read_text(encoding="utf-8").splitlines()
+    assert lines[-1].startswith("m.png |") and "out of memory" in lines[-1]
+
+
+def test_cmyk_icc_profile_not_copied_onto_rgb_output(tmp_path):
+    rgb_icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    src = tmp_path / "cmyk.jpg"
+    # Any profile stands in: what matters is that it describes CMYK pixels
+    Image.new("CMYK", (600, 600), (0, 50, 50, 0)).save(src, "JPEG", icc_profile=rgb_icc)
+    res = save_crop(src, CropRect(0, 0, 600, 600), 512, 512)
+    out = Image.open(res.path)
+    assert out.mode == "RGB" and "icc_profile" not in out.info
+
+
+def test_16bit_gray_icc_profile_not_copied_onto_rgb_output(tmp_path):
+    icc = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    src = tmp_path / "deep_icc.png"
+    Image.new("I;16", (300, 300), 1000).save(src, "PNG", icc_profile=icc)
+    out = Image.open(save_crop(src, CropRect(0, 0, 300, 300), 256, 256).path)
+    assert out.mode == "RGB" and "icc_profile" not in out.info
