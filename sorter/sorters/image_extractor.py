@@ -478,12 +478,17 @@ class ImageExtractorSorter:
         # Bias the crop slightly above the face centre so the subject's eyes
         # land nearer the upper third rather than dead centre.
         cx = int(face_cx * scale)
-        cy = int(face_cy * scale - target_h * 0.08)
+        # (Moving the window's centre BELOW the face moves the face UP.)
+        cy = int(face_cy * scale + target_h * self.FACE_RAISE)
 
         left = max(0, min(cx - target_w // 2, new_w - target_w))
         top = max(0, min(cy - target_h // 2, new_h - target_h))
 
         return img_scaled.crop((left, top, left + target_w, top + target_h))
+
+    # Face centre sits this fraction of the crop height above the middle
+    # (0.08 -> 42% down), putting the eyes near the upper third
+    FACE_RAISE = 0.08
 
     # Source pixels kept around the face window before AI-upscaling it, so the
     # model's edge artefacts fall outside the part that is actually kept
@@ -517,7 +522,7 @@ class ImageExtractorSorter:
         # Window in source pixels, eyes biased toward the upper third
         win_w, win_h = target_w / scale, target_h / scale
         left = min(max(face_cx - win_w / 2, 0.0), src_w - win_w)
-        top = min(max(face_cy - (target_h * 0.08) / scale - win_h / 2, 0.0), src_h - win_h)
+        top = min(max(face_cy + (target_h * self.FACE_RAISE) / scale - win_h / 2, 0.0), src_h - win_h)
 
         m = self.AI_REGION_MARGIN
         rx0, ry0 = max(0, int(left - m)), max(0, int(top - m))
