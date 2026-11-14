@@ -14,6 +14,23 @@
 - 🗑️ CivitAI converter removed; standalone ImageExtractor deprecated
 
 ## ⏭️ Next Up
+
+- [ ] **Sorter 3.7.1 cleanup (in progress, branch `worktree-sorter-3.7.1-cleanup`)** — nothing fixed yet:
+  - **Sort by Checkpoint trusts the filename too much.** On 1,786 sampled real PNGs, 266 (15%) were
+    sorted under a filename fragment (`00013`, `sampler`, `Show`); 244 of those workflows named the real
+    checkpoint. Failing tests are written in `tests/test_extract_primary_checkpoint.py` (8 fail, 4 pass);
+    the fix in `MetadataAnalyzer.extract_primary_checkpoint` is not written. Plan: read `ckpt_name` /
+    `unet_name` from any node class (following links), trust the filename hint only when it matches one,
+    otherwise trace the model link back from the base sampler; digits-only hint → no checkpoint.
+  - **Extract face framing**: the face lands ~58% down the crop instead of the upper third (sign of the
+    `target_h * 0.08` offset in `_face_crop` / `_face_crop_ai`, `sorter/sorters/image_extractor.py`).
+  - **Find Duplicates leftovers**: page counter shows "3 / 2" after a last-row "Not duplicates"; no ETA
+    or trash progress; drive-root scans include `$RECYCLE.BIN`; phantom sets from offline folders;
+    DecompressionBombWarning spam on huge images.
+  - **Tests**: bare `pytest` from the repo root crashes on `archive/legacy_scripts/diagnostic_test.py`
+    (needs a pytest config with `testpaths = tests`).
+  - **Docs**: this file's header still says Sorter 3.6.3 (code is 3.7.0); Parked Ideas still lists the
+    duplicate finder, which shipped in 3.7 with a different keeper rule.
 - [ ] **Confirm 3.6.2 on Civitai** — prep a Krea2 image and upload it; prompt, settings and resources should all appear
 - [ ] **Manual Crop minor fixes** (from code review, not yet fixed):
   - Multi-line AI upscale errors break the manifest line
