@@ -2,6 +2,21 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.7.1] - unreleased - cleanup
+
+### 🐛 Fixed
+
+- **Sort by Checkpoint no longer files images under a piece of the
+  filename.** A name like `ComfyUI_00013_.png` or `post_sampler_00007_.png`
+  used to become a folder called `00013` or `sampler` — about 15% of a
+  1,786-image sample. The filename now counts only when it names a
+  checkpoint that is in the workflow; otherwise the checkpoint is the one
+  whose model actually feeds the base sampler (traced through LoRA loaders,
+  guiders and pipe nodes). Checkpoint names held by Image Saver's loader and
+  `easy ckptNames` are now read too. On the same sample: 0 wrong folders
+  (was 266); images whose filename already named the model keep the same
+  folder.
+
 ## [3.7.0] - 2026-10-24 - "Find Duplicates" 🔍
 
 Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](../docs/superpowers/specs/2026-10-24-duplicate-finder-design.md).

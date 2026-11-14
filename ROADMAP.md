@@ -15,13 +15,11 @@
 
 ## ⏭️ Next Up
 
-- [ ] **Sorter 3.7.1 cleanup (in progress, branch `worktree-sorter-3.7.1-cleanup`)** — nothing fixed yet:
-  - **Sort by Checkpoint trusts the filename too much.** On 1,786 sampled real PNGs, 266 (15%) were
-    sorted under a filename fragment (`00013`, `sampler`, `Show`); 244 of those workflows named the real
-    checkpoint. Failing tests are written in `tests/test_extract_primary_checkpoint.py` (8 fail, 4 pass);
-    the fix in `MetadataAnalyzer.extract_primary_checkpoint` is not written. Plan: read `ckpt_name` /
-    `unet_name` from any node class (following links), trust the filename hint only when it matches one,
-    otherwise trace the model link back from the base sampler; digits-only hint → no checkpoint.
+- [ ] **Sorter 3.7.1 cleanup (in progress, branch `worktree-sorter-3.7.1-cleanup`)**:
+  - [x] **Sort by Checkpoint trusted the filename too much** — fixed (see CHANGELOG 3.7.1). Open
+    question: on 35 of 1,500 sampled images the filename says `artaixRealismSDXL_v30` but the model
+    feeding the sampler is a different checkpoint (looks like a checkpoint-comparison workflow with a
+    fixed save name). The filename still wins there, as before; not yet confirmed which is right.
   - **Extract face framing**: the face lands ~58% down the crop instead of the upper third (sign of the
     `target_h * 0.08` offset in `_face_crop` / `_face_crop_ai`, `sorter/sorters/image_extractor.py`).
   - **Find Duplicates leftovers**: page counter shows "3 / 2" after a last-row "Not duplicates"; no ETA

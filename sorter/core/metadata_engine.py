@@ -215,22 +215,17 @@ class MetadataAnalyzer:
                 
             class_type = entry.get('class_type', '')
             inputs = entry.get('inputs', {})
+            if not isinstance(inputs, dict):
+                continue
             node_title = str(node_id).lower()
 
-            # Skip non-checkpoint loading nodes
-            if class_type not in ['CheckpointLoaderSimple', 'CheckpointLoader', 'UNETLoader']:
+            # Any node that names a checkpoint counts: Image Saver's loader
+            # and "easy ckptNames" carry ckpt_name too, and a loader's name
+            # may be a link to such a node.
+            ckpt_name = MetadataAnalyzer._node_checkpoint_name(metadata, inputs)
+            if not ckpt_name or ckpt_name in all_checkpoints:
                 continue
 
-            # Get checkpoint name
-            ckpt_name = None
-            if 'ckpt_name' in inputs:
-                ckpt_name = inputs['ckpt_name']
-            elif 'unet_name' in inputs:
-                ckpt_name = inputs['unet_name']
-            
-            if not ckpt_name:
-                continue
-                
             # Track all checkpoints
             all_checkpoints.append(ckpt_name)
             
@@ -251,19 +246,99 @@ class MetadataAnalyzer:
                 base_checkpoints.append(ckpt_name)
 
         # Priority order:
-        # 1. Model name from filename (highest priority)
-        # 2. First base checkpoint found from workflow
-        # 3. First checkpoint overall from workflow
-        
-        if filename_model:
+        # 1. Filename hint, but only when it names a checkpoint in the
+        #    workflow (Image Saver writes the model into the name; a plain
+        #    "ComfyUI_00013_" or "post_sampler_00007_" does not)
+        # 2. The checkpoint whose model feeds the base sampler
+        # 3. First base checkpoint, then first checkpoint overall
+        # 4. No checkpoint in the workflow: the hint, unless it is a number
+
+        if not all_checkpoints:
+            if filename_model and not filename_model.isdigit():
+                return filename_model
+            return None
+
+        if filename_model and MetadataAnalyzer._hint_matches(filename_model, all_checkpoints):
             return filename_model
-        elif base_checkpoints:
+
+        traced = MetadataAnalyzer._traced_checkpoint(metadata)
+        if traced:
+            return traced
+        if base_checkpoints:
             return base_checkpoints[0]
-        elif all_checkpoints:
-            return all_checkpoints[0]
-        
+        return all_checkpoints[0]
+
+    @staticmethod
+    def _node_checkpoint_name(metadata: Dict[str, Any], inputs: Dict[str, Any]) -> Optional[str]:
+        """The checkpoint a node names in ckpt_name/unet_name, links followed."""
+        for key in ('ckpt_name', 'unet_name'):
+            if key in inputs:
+                name = WorkflowTrace.deref(metadata, inputs[key], key_hint=key)
+                if isinstance(name, str) and name.strip():
+                    return name
         return None
-    
+
+    @staticmethod
+    def _norm_model(name: str) -> str:
+        stem = re.split(r'[\\/]', name)[-1]
+        stem = re.sub(r'\.(safetensors|ckpt|pt|pth|bin|gguf)$', '', stem, flags=re.I)
+        return re.sub(r'[^a-z0-9]', '', stem.lower())
+
+    @staticmethod
+    def _hint_matches(hint: str, checkpoints: List[str]) -> bool:
+        """Does the filename hint name one of the workflow's checkpoints?"""
+        h = MetadataAnalyzer._norm_model(hint)
+        if len(h) < 4:
+            return False
+        for ckpt in checkpoints:
+            c = MetadataAnalyzer._norm_model(ckpt)
+            if c and (c.startswith(h) or h.startswith(c)):
+                return True
+        return False
+
+    @staticmethod
+    def _traced_checkpoint(metadata: Dict[str, Any]) -> Optional[str]:
+        """Follow the base sampler's model link back to the checkpoint.
+
+        Walks through LoRA loaders and other model patches, guiders (for the
+        custom-sampler family) and pipe bundles. Samplers are tried best
+        base-pass score first.
+        """
+        ranked = sorted(WorkflowTrace._samplers(metadata),
+                        key=lambda s: WorkflowTrace._sampler_score(metadata, s[0], s[1]),
+                        reverse=True)
+        for entry, _settings in ranked:
+            inputs = entry.get('inputs', {})
+            start = inputs.get('model')
+            if start is None:
+                guider = WorkflowTrace._linked_node(metadata, inputs.get('guider'))
+                start = guider['inputs'].get('model') if guider else None
+            found = MetadataAnalyzer._walk_model_link(metadata, start, set())
+            if found:
+                return found
+        return None
+
+    @staticmethod
+    def _walk_model_link(metadata: Dict[str, Any], link: Any, seen: set,
+                         depth: int = 0) -> Optional[str]:
+        node = WorkflowTrace._linked_node(metadata, link)
+        if node is None or depth > 25 or str(link[0]) in seen:
+            return None
+        seen.add(str(link[0]))
+        inputs = node['inputs']
+        name = MetadataAnalyzer._node_checkpoint_name(metadata, inputs)
+        if name:
+            return name
+        # Model line first, then pipes, then anything else that is a link
+        order = sorted(inputs, key=lambda k: (k != 'model', 'pipe' not in k.lower()))
+        for key in order:
+            value = inputs[key]
+            if isinstance(value, list) and len(value) == 2:
+                found = MetadataAnalyzer._walk_model_link(metadata, value, seen, depth + 1)
+                if found:
+                    return found
+        return None
+
     @staticmethod
     def _extract_model_from_filename(filename: str) -> Optional[str]:
         """
