@@ -21,6 +21,7 @@ import os
 import sqlite3
 import stat
 import threading
+import warnings
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
@@ -46,7 +47,8 @@ def default_workers() -> int:
 
 # Sorter's own output folders are deliberate copies, never duplicates
 _EXCLUDED_PREFIXES = ("cropped__", "upscaled__")
-_EXCLUDED_NAMES = {"civitai_ready", TRASH_DIR}
+# ...and Windows' own folders at a drive root hold deleted or system files
+_EXCLUDED_NAMES = {"civitai_ready", TRASH_DIR, "$RECYCLE.BIN", "System Volume Information"}
 _BATCH = 200
 _META_KEYS = ("prompt", "workflow", "parameters")
 _EXIF_IFD, _USER_COMMENT = 0x8769, 37510
@@ -177,8 +179,12 @@ def hash_image(path: str) -> dict:
         out["size"], out["mtime"] = st.st_size, st.st_mtime
         data = Path(path).read_bytes()
         out["file_sha256"] = hashlib.sha256(data).hexdigest()
-        img = Image.open(io.BytesIO(data))
-        img.load()
+        # Big scans and panoramas trip Pillow's "decompression bomb" warning
+        # once per file; these are the user's own images, so stay quiet
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", Image.DecompressionBombWarning)
+            img = Image.open(io.BytesIO(data))
+            img.load()
         out["has_meta"] = _has_meta(img)
         params = img.info.get("parameters")
         out["parameters"] = params if isinstance(params, str) else None
@@ -455,7 +461,9 @@ class ImageIndex:
     # ------------------------------------------------------------------ queries
 
     def rows(self, folders: List[str]) -> List[ImageRow]:
-        roots = [_norm(f) for f in folders]
+        # An offline drive keeps its rows for next time, but they can't be
+        # reviewed or trashed now, so they'd only show up as phantom sets
+        roots = [r for r in (_norm(f) for f in folders) if os.path.isdir(r)]
         with self._lock:
             found = self._conn.execute(
                 "SELECT path, root, size, mtime, width, height, file_sha256, pixel_sha256, "

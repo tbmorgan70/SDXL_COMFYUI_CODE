@@ -1,6 +1,6 @@
 # 📌 Version Information
 
-**Last Updated:** October 24, 2026
+**Last Updated:** November 14, 2026
 
 ---
 
@@ -14,6 +14,7 @@
 - ✅ **Sorter 3.7** — Find Duplicates: identical copies and look-alikes across the folders you pick, highest-resolution copy kept, extras to a restorable trash
 - ✅ Image index (SQLite, parallel scan, thumbnails) that the planned Source Finder will reuse
 - ✅ Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](docs/superpowers/specs/2026-10-24-duplicate-finder-design.md)
+- ✅ Since 3.8.0: Sorter 3.7.1 cleanup — Sort by Checkpoint no longer uses filename fragments, Extract face framing fixed, ten Manual Crop fixes, Find Duplicates polish (see [sorter/CHANGELOG.md](sorter/CHANGELOG.md))
 
 ### What Was New in 3.7:
 - ✅ **Sorter 3.6** — Manual Crop: a fixed frame at an exact preset size with the image floating underneath; press C in Triage or use the Manual Crop mode
@@ -82,7 +83,7 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.6.3** ✅ Production Ready
+### Main Sorter - **v3.7.1** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
 **Last Updated:** October 20, 2026

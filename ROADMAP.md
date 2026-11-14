@@ -1,6 +1,6 @@
 # 🗺️ Development Roadmap - Unified Repository
 
-## 🎯 Current Status (v3.7, Sorter 3.6.3 — October 2026)
+## 🎯 Current Status (v3.8, Sorter 3.7.1 — November 2026)
 - ✅ Repository consolidation complete
 - ✅ Clean folder structure implemented
 - ✅ Sorter 3.0 production ready (Extract Images, Manual Sort/Triage, HSV color engine)
@@ -9,42 +9,30 @@
 - ✅ AI Upscale with the ComfyUI upscale models (3.5)
 - ✅ Manual Crop at exact preset sizes, inside Triage or on its own (3.6, 3.6.1)
 - ✅ Custom-sampler workflows (Krea2, Flux) traced for Civitai Prep and reports (3.6.2)
+- ✅ Find Duplicates: identical copies and look-alikes, restorable trash (3.7). Keeper rule: never a copy in a
+  REJECT folder, then most pixels, then a copy in a posted folder, then the one with metadata, then the bigger file
+- ✅ Cleanup (3.7.1): Sort by Checkpoint uses the workflow's checkpoint, Extract face framing, Manual Crop review
+  fixes, Find Duplicates polish
 - ✅ HTML builders available
 - ✅ Legacy tools archived
 - 🗑️ CivitAI converter removed; standalone ImageExtractor deprecated
 
 ## ⏭️ Next Up
 
-- [ ] **Sorter 3.7.1 cleanup (in progress, branch `worktree-sorter-3.7.1-cleanup`)**:
-  - [x] **Sort by Checkpoint trusted the filename too much** — fixed (see CHANGELOG 3.7.1). Open
-    question: on 35 of 1,500 sampled images the filename says `artaixRealismSDXL_v30` but the model
-    feeding the sampler is a different checkpoint (looks like a checkpoint-comparison workflow with a
-    fixed save name). The filename still wins there, as before; not yet confirmed which is right.
-  - **Extract face framing**: the face lands ~58% down the crop instead of the upper third (sign of the
-    `target_h * 0.08` offset in `_face_crop` / `_face_crop_ai`, `sorter/sorters/image_extractor.py`).
-  - **Find Duplicates leftovers**: page counter shows "3 / 2" after a last-row "Not duplicates"; no ETA
-    or trash progress; drive-root scans include `$RECYCLE.BIN`; phantom sets from offline folders;
-    DecompressionBombWarning spam on huge images.
-  - **Tests**: bare `pytest` from the repo root crashes on `archive/legacy_scripts/diagnostic_test.py`
-    (needs a pytest config with `testpaths = tests`).
-  - **Docs**: this file's header still says Sorter 3.6.3 (code is 3.7.0); Parked Ideas still lists the
-    duplicate finder, which shipped in 3.7 with a different keeper rule.
+- [ ] **Try Sorter 3.7.1 on real folders**: Sort by Checkpoint (fewer odd folders like `00013`), Extract
+  face crops, Manual Crop, Find Duplicates on a drive root
+- [ ] **Checkpoint-comparison images**: on 35 of 1,500 sampled images the filename says
+  `artaixRealismSDXL_v30` but a different checkpoint fed the sampler. The filename still decides the
+  folder there; switch to the traced checkpoint if that's what's wanted
+- [ ] **Manual Crop tab's model list** still reads the default upscale models folder at startup; the editor
+  itself now uses the AI Upscale tab's folder
 - [ ] **Confirm 3.6.2 on Civitai** — prep a Krea2 image and upload it; prompt, settings and resources should all appear
-- [ ] **Manual Crop minor fixes** (from code review, not yet fixed):
-  - Multi-line AI upscale errors break the manifest line
-  - ICC profile copied after a CMYK/16-bit → RGB conversion
-  - Editor ignores the AI Upscale tab's models folder; badge says "AI upscale" with no model set
-  - F says "No face found" when no face detector is installed
-  - Save errors logged twice; Enter on an unreadable image says "Still loading…"
-  - 0/Clear in crop mode resets the framing; repeated close clicks stack retries
-  - Shift+arrow while loading navigates; Custom… size dialog focus unverified
-- [ ] **Extract face framing** — face lands about 58% down the crop, not in the upper third (sign of the `target_h * 0.08` offset)
 - [ ] **Upscaling Phase 3** — face restore, colorize, denoise ([plan](docs/UPSCALING_PLAN.md))
 - [ ] Re-tune Extract's face confidence threshold (0.6) on more than one magazine
 
 ## 💡 Parked Ideas
 - **Civitai Prep as a standalone one-button tool** anyone could use
-- **Duplicate finder** with Certain/Probable groups; default keeper = the largest file
+- **Source Finder**: given an image, find where it came from in the indexed library (reuses the Find Duplicates index)
 - **VAE auto-detection on Civitai** — still not showing after the 3.4.3 fix; cause unknown
 
 ## 🚀 Longer-Term Features

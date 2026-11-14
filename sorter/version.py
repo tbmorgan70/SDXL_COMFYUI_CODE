@@ -1,7 +1,7 @@
-# Sorter 3.7.0 - Find Duplicates
-VERSION = "3.7.0"
-BUILD_DATE = "2026-10-24"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates"
+# Sorter 3.7.1 - Cleanup
+VERSION = "3.7.1"
+BUILD_DATE = "2026-11-14"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.1 cleanup)"
 
 # Features included in this build:
 FEATURES = [

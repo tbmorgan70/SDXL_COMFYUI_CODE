@@ -59,6 +59,7 @@ class DuplicatesWindow(ctk.CTkToplevel):
         self._thumb_q: "queue.Queue" = queue.Queue()
         self._done_q: "queue.Queue" = queue.Queue()
         self._loader_q: "queue.Queue" = queue.Queue()
+        self._moving_q: "queue.Queue" = queue.Queue()      # (done, total) while trashing
         self._closed = False
         self._click_job = None
         self.thumb_labels: Dict[tuple, ctk.CTkLabel] = {}   # (set index, path) -> label
@@ -193,7 +194,7 @@ class DuplicatesWindow(ctk.CTkToplevel):
 
         def run():
             try:
-                result = trash_sets(sets)
+                result = trash_sets(sets, progress=lambda d, t, _n: self._moving_q.put((d, t)))
             except Exception as e:          # never leave the window stuck "busy"
                 result = TrashResult(skipped=[("", f"error: {e}")])
             self._done_q.put((kind, sets, indices, result))
@@ -216,8 +217,6 @@ class DuplicatesWindow(ctk.CTkToplevel):
                 for i, s in keep.items():
                     self.probable[i] = s
                 self._remove_probable(set(indices) - set(keep))
-                if self.page and self.page * self.PAGE_SIZE >= len(self.probable):
-                    self.page -= 1
             self.log_fn(f"🗑 Trashed {len(result.moved)} files ({_gb(result.bytes):.2f} GB)")
             for path, reason in result.skipped:
                 self.log_fn(f"  ⚠ Skipped {Path(path).name}: {reason}")
@@ -236,6 +235,9 @@ class DuplicatesWindow(ctk.CTkToplevel):
         kept = [(i, s) for i, s in enumerate(self.probable) if i not in gone]
         self.ticked = {n: self.ticked.get(i, False) for n, (i, _s) in enumerate(kept)}
         self.probable = [s for _i, s in kept]
+        # Emptying the last page steps back onto the new last page
+        last = max(0, (len(self.probable) - 1) // self.PAGE_SIZE)
+        self.page = min(self.page, last)
 
     # ------------------------------------------------------------------ rendering
 
@@ -396,6 +398,14 @@ class DuplicatesWindow(ctk.CTkToplevel):
                 for label in self._waiting.pop(path, []):
                     if label.winfo_exists():
                         label.configure(image=img, text="")
+            latest = None
+            while True:
+                try:
+                    latest = self._moving_q.get_nowait()
+                except queue.Empty:
+                    break
+            if latest is not None and self._busy:
+                self.status_label.configure(text=f"Moving… {latest[0]} / {latest[1]}")
             while True:
                 try:
                     self._finish_trash(*self._done_q.get_nowait())

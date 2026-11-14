@@ -267,6 +267,18 @@ def _prune_empty_dirs(trash: Path) -> None:
             pass
 
 
+def eta_text(done: int, total: int, elapsed: float) -> str:
+    """'about 12 min left' from the pace so far ('' when there's no estimate)."""
+    if done <= 0 or done >= total or elapsed <= 0:
+        return ""
+    left = elapsed / done * (total - done)
+    if left < 60:
+        return f"about {max(5, round(left))} s left"
+    if left < 90 * 60:
+        return f"about {round(left / 60)} min left"
+    return f"about {round(left / 3600)} h left"
+
+
 def trash_sets(sets: List[DupSet], progress: Optional[Callable[[int, int, str], None]] = None
                ) -> TrashResult:
     result = TrashResult()

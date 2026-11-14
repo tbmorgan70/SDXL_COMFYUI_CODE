@@ -2,9 +2,37 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
-## [3.7.1] - unreleased - cleanup
+## [3.7.1] - 2026-11-14 - Cleanup 🧹
 
 ### 🐛 Fixed
+
+- **Extract face crop puts the face above the middle.** The eye-line bias
+  had the wrong sign, so faces landed about 58% of the way down the crop;
+  they now sit at 42%, with the eyes near the upper third
+- **Manual Crop** (from the 3.6 code review):
+  - A multi-line AI upscale error no longer breaks the `_crop_info.txt` line
+  - A CMYK or 16-bit source's colour profile is no longer copied onto the
+    RGB crop (it would mis-colour it)
+  - The editor lists models from the AI Upscale tab's models folder, and the
+    badge says "resize" when no model is chosen
+  - F says when face detection isn't installed instead of "No face found"
+  - A failed save is logged once, not twice
+  - Enter on an image that can't be opened shows that error, not
+    "Still loading…"
+  - 0 / Clear in crop mode clears the bucket without resetting the framing
+  - Clicking close repeatedly while crops are saving no longer piles up retries
+  - Shift+arrow while an image is still loading no longer jumps to the next image
+  - The Custom… size dialog takes keyboard focus (now covered by a test)
+- **Find Duplicates:**
+  - The page counter no longer shows "3 / 2" after "Not duplicates" empties
+    the last page
+  - The scan shows time remaining, and trashing shows "Moving… n / total"
+  - `$RECYCLE.BIN` and `System Volume Information` are skipped when you scan
+    a drive root
+  - Folders on an unplugged drive no longer show up as phantom duplicate sets
+  - No more "DecompressionBombWarning" lines for very large images
+- **Tests:** running plain `pytest` from the repo root works (a `pytest.ini`
+  keeps it to `tests/`); the checkpoint test file loads again
 
 - **Sort by Checkpoint no longer files images under a piece of the
   filename.** A name like `ComfyUI_00013_.png` or `post_sampler_00007_.png`

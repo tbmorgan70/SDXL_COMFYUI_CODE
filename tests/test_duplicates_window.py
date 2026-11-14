@@ -212,3 +212,33 @@ def test_double_click_opens_file(win, monkeypatch):
     path = win.probable[0].keeper.path
     win.open_image(path)
     assert opened == [path]
+
+
+# ---------------------------------------------------------------- 3.7.1 fixes
+
+def test_page_counter_after_not_duplicates_empties_the_last_page(win):
+    win.show_tab("Probable")
+    win.change_page(1)
+    assert win.page == 1
+    for _ in range(5):                       # every row on page 2
+        win.mark_not_duplicates(15)
+    assert win.page == 0
+    assert win.page_label.cget("text") == "Page 1 / 1"
+
+
+def test_trash_shows_progress_while_moving(root, win, monkeypatch):
+    import threading
+    gate = threading.Event()
+
+    def slow_trash(sets, progress=None):
+        progress(1, 3, "a.png")
+        gate.wait(5)
+        return duplicates_window.TrashResult()
+
+    monkeypatch.setattr(duplicates_window, "trash_sets", slow_trash)
+    win.trash_certain(confirm=False)
+    try:
+        assert pump(root, lambda: win.status_label.cget("text") == "Moving… 1 / 3", timeout=3)
+    finally:
+        gate.set()
+    assert pump(root, lambda: not win.busy())

@@ -414,3 +414,54 @@ def test_extras_by_folder_counts_where_extras_come_from():
     sets = [DupSet("certain", row(r"D:\k\1.png"), [row(r"D:\a\1.png"), row(r"D:\b\1.png")], 0, True),
             DupSet("certain", row(r"D:\k\2.png"), [row(r"D:\a\2.png")], 0, True)]
     assert extras_by_folder(sets) == [(r"D:\a", 2), (r"D:\b", 1)]
+
+
+# ---------------------------------------------------------------- 3.7.1 fixes
+
+import warnings  # noqa: E402
+
+from core.image_index import hash_image, walk_images  # noqa: E402
+from sorters.duplicate_finder import eta_text  # noqa: E402
+
+
+def test_drive_root_system_folders_are_not_scanned(tmp_path):
+    for sub in ("$RECYCLE.BIN", "System Volume Information", "photos"):
+        save(picture(), tmp_path / sub / "a.png")
+    found = [Path(p).parent.name for p in walk_images(str(tmp_path))]
+    assert found == ["photos"]
+
+
+def test_offline_folder_gives_no_rows(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    assert certain_sets(index, lib)
+    lib.rename(tmp_path / "unplugged")              # the drive went away
+    assert index.rows([str(lib)]) == []
+    assert certain_sets(index, lib) == []
+
+
+def test_huge_image_warning_is_not_printed(tmp_path, monkeypatch):
+    path = save(picture(size=(12, 12)), tmp_path / "big.png")
+    monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 100)     # 144 px: a "bomb" warning
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        result = hash_image(str(path))
+    assert result["error"] is None
+    assert not [w for w in caught if issubclass(w.category, Image.DecompressionBombWarning)]
+
+
+@pytest.mark.parametrize("done,total,elapsed,expected", [
+    (0, 100, 5.0, ""),                      # nothing to go on yet
+    (5, 100, 10.0, "about 3 min left"),     # 190 s
+    (50, 100, 30.0, "about 30 s left"),
+    (10, 100, 1200.0, "about 3 h left"),    # 10800 s
+    (100, 100, 60.0, ""),
+])
+def test_eta_text(done, total, elapsed, expected):
+    assert eta_text(done, total, elapsed) == expected
+
+
+def test_trash_reports_progress_per_file(tmp_path):
+    lib, orig, copy, index = library(tmp_path)
+    seen = []
+    trash_sets(certain_sets(index, lib), progress=lambda d, t, n: seen.append((d, t)))
+    assert seen == [(1, 1)]

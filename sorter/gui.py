@@ -1,4 +1,4 @@
-﻿"""
+"""
 Sorter 3.0 - Modern GUI Interface
 
 Beautiful, compact interface for all sorting operations with real-time progress tracking.
@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import customtkinter as ctk
@@ -40,8 +41,8 @@ from sorters.crop_tool import CROP_SIZE_PRESETS, DEFAULT_CROP_PRESET
 from crop_editor import CropEditor
 from core.image_index import (ImageIndex, IndexCorrupt, rebuild_index,
                               DEFAULT_DB as DEFAULT_INDEX_DB)
-from sorters.duplicate_finder import (STRICTNESS, find_sets, restore_all, empty_trash,
-                                      trash_summary)
+from sorters.duplicate_finder import (STRICTNESS, eta_text, find_sets, restore_all,
+                                      empty_trash, trash_summary)
 from duplicates_window import DuplicatesWindow
 from sorters.civitai_prep import CivitaiPrep
 from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
@@ -828,7 +829,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.7.0 - Advanced ComfyUI Image Organizer")
+        self.title("🚀 Sorter 3.7.1 - Advanced ComfyUI Image Organizer")
         self._app_closing = False
         self.protocol("WM_DELETE_WINDOW", self._on_app_close)
         self.geometry("750x700")
@@ -1747,12 +1748,20 @@ class SorterGUI(ctk.CTk):
         strictness = self.dup_strictness_var.get()
         progress_window = ProgressWindow(self, "Finding Duplicates")
 
+        started = []
+
+        def scan_progress(done, total, name):
+            if not started:
+                started.append(time.monotonic())
+            eta = eta_text(done, total, time.monotonic() - started[0])
+            progress_window.enqueue(("progress", (done, total, f"{eta} · {name}" if eta else name)))
+
         def run():
             try:
                 progress_window.enqueue(("operation", "Indexing images…"))
                 stats = index.scan(
                     folders,
-                    progress=lambda d, t, n: progress_window.enqueue(("progress", (d, t, n))),
+                    progress=scan_progress,
                     cancel=lambda: self._dup_should_cancel(progress_window))
                 for missing in stats.missing_folders:
                     progress_window.enqueue(("log", f"⚠ Folder not found: {missing}"))
