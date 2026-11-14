@@ -1,6 +1,6 @@
 # 🗺️ Development Roadmap - Unified Repository
 
-## 🎯 Current Status (v3.8, Sorter 3.7.1 — November 2026)
+## 🎯 Current Status (v3.8, Sorter 3.7.2 — November 2026)
 - ✅ Repository consolidation complete
 - ✅ Clean folder structure implemented
 - ✅ Sorter 3.0 production ready (Extract Images, Manual Sort/Triage, HSV color engine)
@@ -21,9 +21,6 @@
 
 - [ ] **Try Sorter 3.7.1 on real folders**: Sort by Checkpoint (fewer odd folders like `00013`), Extract
   face crops, Manual Crop, Find Duplicates on a drive root
-- [ ] **Checkpoint-comparison images**: on 35 of 1,500 sampled images the filename says
-  `artaixRealismSDXL_v30` but a different checkpoint fed the sampler. The filename still decides the
-  folder there; switch to the traced checkpoint if that's what's wanted
 - [ ] **Manual Crop tab's model list** still reads the default upscale models folder at startup; the editor
   itself now uses the AI Upscale tab's folder
 - [ ] **Confirm 3.6.2 on Civitai** — prep a Krea2 image and upload it; prompt, settings and resources should all appear

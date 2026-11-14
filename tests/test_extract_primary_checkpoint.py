@@ -182,3 +182,28 @@ def test_checkpoint_name_supplied_by_a_name_node_is_followed():
         MetadataAnalyzer.extract_primary_checkpoint(metadata, "ComfyUI_00005_.png")
         == "named.safetensors"
     )
+
+
+def test_checkpoint_that_fed_the_sampler_beats_a_filename_naming_another():
+    # Checkpoint-comparison workflows save every image under one name
+    metadata = {
+        "1": {"class_type": "CheckpointLoaderSimple",
+              "inputs": {"ckpt_name": "REALISM\\artaixRealismSDXL_v30.safetensors"}},
+        "2": {"class_type": "CheckpointLoaderSimple",
+              "inputs": {"ckpt_name": "REALISM\\midnight_v50.safetensors"}},
+        "9": _ksampler(["2", 0]),
+    }
+    name = "2026-09-02-101500_artaixRealismSDXL_v30_123456789_01.png"
+    assert (MetadataAnalyzer.extract_primary_checkpoint(metadata, name)
+            == "REALISM\\midnight_v50.safetensors")
+
+
+def test_hint_kept_when_it_agrees_with_the_sampler():
+    # Same model either way: keep the hint so existing folder names don't change
+    metadata = {
+        "1": {"class_type": "CheckpointLoaderSimple",
+              "inputs": {"ckpt_name": "SDXL\\ultraRealisticByStable_v25.safetensors"}},
+        "9": _ksampler(["1", 0]),
+    }
+    name = "2026-08-01-142436_ultraRealisticByStable_v25_757337583580541_03.png"
+    assert MetadataAnalyzer.extract_primary_checkpoint(metadata, name) == "ultraRealisticByStable"

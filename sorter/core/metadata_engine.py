@@ -246,10 +246,12 @@ class MetadataAnalyzer:
                 base_checkpoints.append(ckpt_name)
 
         # Priority order:
-        # 1. Filename hint, but only when it names a checkpoint in the
-        #    workflow (Image Saver writes the model into the name; a plain
-        #    "ComfyUI_00013_" or "post_sampler_00007_" does not)
-        # 2. The checkpoint whose model feeds the base sampler
+        # 1. The checkpoint whose model feeds the base sampler — written as
+        #    the filename hint when the two agree, so folder names stay put
+        #    (a checkpoint-comparison workflow saves every image under one
+        #    model's name; the sampler says which model really ran)
+        # 2. Filename hint, when it names a checkpoint in the workflow
+        #    (a plain "ComfyUI_00013_" or "post_sampler_00007_" does not)
         # 3. First base checkpoint, then first checkpoint overall
         # 4. No checkpoint in the workflow: the hint, unless it is a number
 
@@ -258,12 +260,14 @@ class MetadataAnalyzer:
                 return filename_model
             return None
 
-        if filename_model and MetadataAnalyzer._hint_matches(filename_model, all_checkpoints):
-            return filename_model
-
+        hint_ok = bool(filename_model) and MetadataAnalyzer._hint_matches(filename_model, all_checkpoints)
         traced = MetadataAnalyzer._traced_checkpoint(metadata)
         if traced:
+            if hint_ok and MetadataAnalyzer._hint_matches(filename_model, [traced]):
+                return filename_model
             return traced
+        if hint_ok:
+            return filename_model
         if base_checkpoints:
             return base_checkpoints[0]
         return all_checkpoints[0]

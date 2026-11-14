@@ -1,7 +1,7 @@
-# Sorter 3.7.1 - Cleanup
-VERSION = "3.7.1"
+# Sorter 3.7.2 - Comparison images by checkpoint used
+VERSION = "3.7.2"
 BUILD_DATE = "2026-11-14"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.1 cleanup)"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.2)"
 
 # Features included in this build:
 FEATURES = [

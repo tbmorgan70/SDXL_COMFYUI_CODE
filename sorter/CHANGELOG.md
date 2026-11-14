@@ -2,6 +2,17 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.7.2] - 2026-11-14 - Comparison images
+
+### 🐛 Fixed
+
+- **Sort by Checkpoint follows the checkpoint that actually ran.** A
+  checkpoint-comparison workflow saves every image under one model's name
+  (e.g. `artaixRealismSDXL_v30_…`); each image now goes to the folder of the
+  checkpoint that fed its sampler (e.g. `midnight_v50`). When the filename and
+  the sampler agree, the folder name is unchanged. About 2% of a 1,500-image
+  sample moves.
+
 ## [3.7.1] - 2026-11-14 - Cleanup 🧹
 
 ### 🐛 Fixed
