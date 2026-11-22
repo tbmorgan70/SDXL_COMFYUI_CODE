@@ -41,6 +41,7 @@ sys.path.append(parent_dir)
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer, WorkflowTrace
 from core.image_index import in_duplicates_trash
+from core.prompt_scrubber import PromptScrubber, ensure_user_rules
 
 MODEL_EXTENSIONS = {'.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.sft'}
 
@@ -473,9 +474,12 @@ class CivitaiPrep:
     local model file and produce AutoV2 hashes."""
 
     def __init__(self, logger, models_dir: str, cache_path: Optional[str] = None,
-                 api_lookup: bool = True):
+                 api_lookup: bool = True, rules_path: Optional[str] = None):
         self.logger = logger
         self.models_dir = models_dir
+        self.rules_path = rules_path
+        self._scrubber: Optional[PromptScrubber] = None
+        self._scrubber_loaded = False
         self.extractor = MetadataExtractor()
         self.index = ModelIndex(models_dir)
         cache_file = cache_path or os.path.join(parent_dir, 'civitai_hash_cache.json')
@@ -708,9 +712,39 @@ class CivitaiPrep:
             self._log(f"  ✗ Write failed for {Path(image_path).name}: {e}")
             return False
 
+    def _get_scrubber(self) -> Optional[PromptScrubber]:
+        """Load the Prompt Scrubber once. None (logged) if no rules file."""
+        if self._scrubber_loaded:
+            return self._scrubber
+        self._scrubber_loaded = True
+        path = Path(self.rules_path) if self.rules_path else ensure_user_rules(parent_dir)
+        if path is None or not path.is_file():
+            self._log("⚠️  Prompt Scrubber off: no rules file found")
+            return None
+        self._scrubber = PromptScrubber.from_file(path)
+        for err in self._scrubber.errors:
+            self._log(f"  ⚠️ scrub rules {err}")
+        return self._scrubber
+
+    @staticmethod
+    def _write_scrub_report(path: Path, changed: List[Tuple[str, str, str]],
+                            flagged: List[Tuple[str, str, str]],
+                            prompts_changed: int, flagged_images: int):
+        lines = [f"Prompt Scrubber: {prompts_changed} prompts changed "
+                 f"({len(changed)} changes); {flagged_images} images flagged", ""]
+        if flagged:
+            lines.append("== Flagged (check these) ==")
+            lines += [f"{name} | {word} | ...{ctx}..." for name, word, ctx in flagged]
+            lines.append("")
+        if changed:
+            lines.append("== Changed ==")
+            lines += [f"{name} | {before} → {after or '(removed)'}"
+                      for name, before, after in changed]
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
     def process_folder(self, source_dir: str, in_place: bool = False,
                        clean_level: str = 'keep', enrich: bool = True,
-                       recursive: bool = False,
+                       recursive: bool = False, scrub: bool = True,
                        progress_callback=None) -> Dict[str, Any]:
         """Phase 3 batch: analyze every PNG and write Civitai-ready copies.
 
@@ -736,6 +770,12 @@ class CivitaiPrep:
                  'resources_linked': 0}
         unresolved_names: Dict[str, str] = {}
 
+        scrubber = self._get_scrubber() if scrub else None
+        scrub_changed: List[Tuple[str, str, str]] = []
+        scrub_flagged: List[Tuple[str, str, str]] = []
+        prompts_changed = 0
+        flagged_images = 0
+
         for i, png in enumerate(png_files):
             if progress_callback:
                 progress_callback(i, total, png.name)
@@ -748,6 +788,18 @@ class CivitaiPrep:
             if not analysis['has_metadata']:
                 stats['skipped_no_metadata'] += 1
                 continue
+
+            positive = analysis.get('prompts', {}).get('positive')
+            if scrubber and isinstance(positive, str) and positive:
+                res = scrubber.scrub(positive)
+                rel = png.relative_to(source).as_posix()
+                if res.changes:
+                    prompts_changed += 1
+                    analysis['prompts']['positive'] = res.text
+                    scrub_changed += [(rel, b, a) for b, a in res.changes]
+                if res.flags:
+                    flagged_images += 1
+                    scrub_flagged += [(rel, word, ctx) for word, ctx in res.flags]
 
             with Image.open(png) as im:
                 w, h = im.size
@@ -791,8 +843,34 @@ class CivitaiPrep:
         for name, kind in unresolved_names.items():
             self._log(f"  ⚠️ unresolved {kind}: {name}")
 
+        report_path = None
+        if scrubber and (scrub_changed or scrub_flagged):
+            report_path = out_dir / 'scrub_report.txt'
+            self._write_scrub_report(report_path, scrub_changed, scrub_flagged,
+                                     prompts_changed, flagged_images)
+        scrub_info = {
+            'enabled': scrubber is not None,
+            'prompts_changed': prompts_changed,
+            'changes': len(scrub_changed),
+            'flagged_images': flagged_images,
+            'report_path': str(report_path) if report_path else None,
+            'rule_errors': list(scrubber.errors) if scrubber else [],
+        }
+        if scrubber:
+            self._log(self.scrub_summary(scrub_info))
+
         return {'stats': stats, 'unresolved': unresolved_names,
-                'output_dir': str(out_dir)}
+                'output_dir': str(out_dir), 'scrub': scrub_info}
+
+    @staticmethod
+    def scrub_summary(scrub_info: Dict[str, Any]) -> str:
+        """One-line log summary of a scrub run (shared with the GUI)."""
+        line = (f"🧽 Scrubbed {scrub_info['prompts_changed']} prompts "
+                f"({scrub_info['changes']} changes)")
+        if scrub_info['flagged_images']:
+            line += (f"; ⚠️ {scrub_info['flagged_images']} images flagged"
+                     f" — see scrub_report.txt")
+        return line
 
     def analyze_folder(self, source_dir: str, compute_hashes: bool = True,
                        progress_callback=None) -> Dict[str, Any]:
@@ -841,9 +919,11 @@ if __name__ == '__main__':
     ap.add_argument('--no-api', action='store_true', help='skip Civitai API enrichment')
     ap.add_argument('--in-place', action='store_true', help='rewrite originals instead of civitai_ready/ copies')
     ap.add_argument('--strip', action='store_true', help='drop workflow JSON, keep only parameters chunk')
+    ap.add_argument('--no-scrub', action='store_true', help='leave prompts as they are (no Prompt Scrubber)')
+    ap.add_argument('--rules', help='Prompt Scrubber rules file (default sorter/scrub_rules.txt)')
     args = ap.parse_args()
 
-    prep = CivitaiPrep(None, args.models, api_lookup=not args.no_api)
+    prep = CivitaiPrep(None, args.models, api_lookup=not args.no_api, rules_path=args.rules)
     if args.analyze_only or args.no_hash:
         report = prep.analyze_folder(args.source, compute_hashes=not args.no_hash)
         print(json.dumps(report['summary'], indent=2))
@@ -855,5 +935,6 @@ if __name__ == '__main__':
             in_place=args.in_place,
             clean_level='strip' if args.strip else 'keep',
             enrich=not args.no_api,
+            scrub=not args.no_scrub,
         )
         print(json.dumps(report, indent=2))
