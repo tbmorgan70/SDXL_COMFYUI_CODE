@@ -70,6 +70,20 @@ python main.py
 - Smart duplicate handling with automatic renaming
 - Optional empty folder cleanup
 
+### 🧽 Prompt Scrubber (Civitai Prep) ✨ *NEW in 3.8!*
+- Rewrites words that get images blocked on Civitai before prep writes the prompt
+  (positive prompt only; the negative is left alone)
+- Rules live in `scrub_rules.txt`. Click **✏️ Edit rules** on the Civitai Prep tab to open them in Notepad:
+  ```
+  teen girl        => young woman
+  Audrey Hepburn   => (remove)
+  child            => (flag)
+  re:in her late teens,? or early 20s => in her early 20s
+  ```
+- Matching ignores case and only hits whole words. `(flag)` changes nothing and lists the image in
+  `scrub_report.txt` for you to check
+- Uncheck **🧽 Scrub prompts** to turn it off; CLI: `--no-scrub`, `--rules PATH`
+
 ### 📊 Session Logs
 - View detailed logs of previous operations
 - Error tracking and performance statistics

@@ -1,16 +1,20 @@
 # 📌 Version Information
 
-**Last Updated:** November 14, 2026
+**Last Updated:** November 22, 2026
 
 ---
 
-## 🎯 Repository Version: 3.8.0
+## 🎯 Repository Version: 3.9.0
 
-**Release Date:** October 24, 2026  
+**Release Date:** November 22, 2026  
 **Status:** ✅ Released  
-**Codename:** "Find Duplicates"
+**Codename:** "Prompt Scrubber"
 
-### What's New in 3.8:
+### What's New in 3.9:
+- ✅ **Sorter 3.8** — Prompt Scrubber: Civitai Prep rewrites words Civitai flags, using your own `scrub_rules.txt`, and lists images with words that have no safe rewrite in `scrub_report.txt`
+- ✅ Design and plan: [docs/superpowers/specs/2026-11-22-prompt-scrubber-design.md](docs/superpowers/specs/2026-11-22-prompt-scrubber-design.md)
+
+### What Was New in 3.8:
 - ✅ **Sorter 3.7** — Find Duplicates: identical copies and look-alikes across the folders you pick, highest-resolution copy kept, extras to a restorable trash
 - ✅ Image index (SQLite, parallel scan, thumbnails) that the planned Source Finder will reuse
 - ✅ Design and plan: [docs/superpowers/specs/2026-10-24-duplicate-finder-design.md](docs/superpowers/specs/2026-10-24-duplicate-finder-design.md)
@@ -83,10 +87,10 @@
 
 ## 🛠️ Component Versions
 
-### Main Sorter - **v3.7.3** ✅ Production Ready
+### Main Sorter - **v3.8.0** ✅ Production Ready
 **Location:** `sorter/`  
 **Status:** Active Development  
-**Last Updated:** October 20, 2026
+**Last Updated:** November 22, 2026
 
 #### Features:
 - Sort by Base Checkpoint (SDXL, Pony, etc.)

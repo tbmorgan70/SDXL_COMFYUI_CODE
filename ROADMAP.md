@@ -1,6 +1,6 @@
 # 🗺️ Development Roadmap - Unified Repository
 
-## 🎯 Current Status (v3.8, Sorter 3.7.3 — November 2026)
+## 🎯 Current Status (v3.9, Sorter 3.8.0 — November 2026)
 - ✅ Repository consolidation complete
 - ✅ Clean folder structure implemented
 - ✅ Sorter 3.0 production ready (Extract Images, Manual Sort/Triage, HSV color engine)
@@ -14,11 +14,18 @@
 - ✅ Cleanup (3.7.1): Sort by Checkpoint uses the workflow's checkpoint, Extract face framing, Manual Crop review
   fixes, Find Duplicates polish
 - ✅ 3.7.3: Triage crop waits for a bucket; output folder for Manual Sort / Manual Crop; starred crop sizes
+- ✅ Prompt Scrubber (3.8): Civitai Prep rewrites flagged prompt words from `scrub_rules.txt`, lists the rest
+  in `scrub_report.txt`
 - ✅ HTML builders available
 - ✅ Legacy tools archived
 - 🗑️ CivitAI converter removed; standalone ImageExtractor deprecated
 
 ## ⏭️ Next Up
+
+- [ ] **Try the Prompt Scrubber on a real upload batch** and grow `scrub_rules.txt` with whatever Civitai
+  still flags
+- [ ] Civitai Prep CLI crashes printing ⚠️/🧽 when its output is redirected on Windows (cp1252); run with
+  `PYTHONIOENCODING=utf-8` until fixed. The GUI is unaffected
 
 - [ ] **Try Sorter 3.7.1 on real folders**: Sort by Checkpoint (fewer odd folders like `00013`), Extract
   face crops, Manual Crop, Find Duplicates on a drive root
@@ -39,11 +46,10 @@
 ### Ideas added November 2026 (easiest first)
 1. **Pre-upload check** — dry run over a folder: images with flagged prompt words, missing resources, hashes
    that don't resolve. Changes nothing.
-2. **Prompt Scrubber in Civitai Prep** — editable rules file (words, phrases, regex → replacement or removed)
+2. ✅ *Done in Sorter 3.8.* **Prompt Scrubber in Civitai Prep** — editable rules file (words, phrases, regex → replacement or removed)
    for Florence2 captions that Civitai flags ("teen girl", "in her late teens, or early 20s", celebrity names).
    Must clean every text chunk, not just `parameters` (workflow/prompt JSON carry the text too). Also worth a
    string-replace node after Florence2 in the ComfyUI workflow, so the prompt is clean before generating.
-   *Design in progress.*
 3. **Fast prompt search** over `image_index.db` (it already stores `parameters`) instead of re-reading files
 4. **Metadata viewer/editor tab** — every chunk of one image, edit, find/replace across a folder
 5. **Upload Pack chain** — Dedupe → Scrub → Prep (→ Crop/Upscale) into one output folder; grows into the

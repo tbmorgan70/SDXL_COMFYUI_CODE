@@ -1,7 +1,7 @@
-# Sorter 3.7.3 - Triage crop waits for a bucket, output folders, favourite sizes
-VERSION = "3.7.3"
-BUILD_DATE = "2026-11-14"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Find Duplicates (3.7.3)"
+# Sorter 3.8.0 - Prompt Scrubber for Civitai Prep
+VERSION = "3.8.0"
+BUILD_DATE = "2026-11-22"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Prompt Scrubber (3.8.0)"
 
 # Features included in this build:
 FEATURES = [
@@ -27,7 +27,8 @@ FEATURES = [
     "AI Upscale (ComfyUI models via spandrel)",   # v3.5.0
     "Extract: AI Upscale When Needed",            # v3.5.0
     "Manual Crop (fixed frame, exact presets, metadata kept)",  # v3.6.0
-    "Find Duplicates (Certain/Probable, highest-resolution keeper, restorable trash)",  # NEW in v3.7.0!
+    "Find Duplicates (Certain/Probable, highest-resolution keeper, restorable trash)",  # v3.7.0
+    "Prompt Scrubber for Civitai Prep",           # NEW in v3.8.0!
     "View Session Logs",
     "Modern GUI Interface",
     "Command Line Interface",
@@ -38,5 +39,6 @@ FEATURES = [
     "Empty Folder Cleanup"          # Enhanced in v2.4.0
 ]
 
-# Crop by hand without leaving Triage
-NOTES = ("Find Duplicates: indexes the folders you pick, groups identical copies and look-alikes (e.g. a post_sampler image and its 4x upscale), keeps the highest-resolution copy, and moves extras to a restorable _duplicates_trash.")
+NOTES = ("Prompt Scrubber: Civitai Prep rewrites words Civitai flags (rules in scrub_rules.txt, "
+         "Edit rules opens Notepad), leaves words with no safe rewrite alone and lists those images "
+         "in scrub_report.txt.")

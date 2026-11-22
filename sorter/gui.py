@@ -45,6 +45,8 @@ from sorters.duplicate_finder import (STRICTNESS, eta_text, find_sets, restore_a
                                       empty_trash, trash_summary)
 from duplicates_window import DuplicatesWindow
 from sorters.civitai_prep import CivitaiPrep
+from core.prompt_scrubber import ensure_user_rules, DEFAULT_RULES_NAME
+from version import VERSION as SORTER_VERSION
 from sorters.upscaler import (Upscaler, UpscaleSorter, UPSCALE_PRESETS,
                               DEFAULT_UPSCALE_PRESET, TARGET_SIZES,
                               DEFAULT_TARGET_SIZE, OUTPUT_FORMATS,
@@ -873,12 +875,12 @@ class SorterGUI(ctk.CTk):
         header_frame = ctk.CTkFrame(self, corner_radius=10)
         header_frame.pack(fill="x", pady=(0, 15))
         
-        title_label = ctk.CTkLabel(
+        self.title_label = ctk.CTkLabel(
             header_frame,
-            text="🚀 Sorter 3.5.0 - ComfyUI Image Organizer",
+            text=f"🚀 Sorter {SORTER_VERSION} - ComfyUI Image Organizer",
             font=ctk.CTkFont(size=20, weight="bold")
         )
-        title_label.pack(pady=15)
+        self.title_label.pack(pady=15)
         
         # Mode Selection - like unified_sorter
         mode_frame = ctk.CTkFrame(self, corner_radius=10)
@@ -957,7 +959,7 @@ class SorterGUI(ctk.CTk):
         
         # Initialize with first mode
         self._switch_mode("Sort by Checkpoint")
-        self.log_message("🚀 Sorter 3.5.0 initialized. Select your sorting mode and configure options.")
+        self.log_message(f"🚀 Sorter {SORTER_VERSION} initialized. Select your sorting mode and configure options.")
     
     def _build_checkpoint_form(self):
         """Build checkpoint sorting form - matches main.py exactly"""
@@ -1879,6 +1881,7 @@ class SorterGUI(ctk.CTk):
 
             report = prep.process_folder(
                 str(output_dir), recursive=True, enrich=True,
+                scrub=getattr(self, 'civitai_scrub', True),
                 progress_callback=on_progress)
             stats = report['stats']
             progress_window.enqueue(("log",
@@ -1886,6 +1889,8 @@ class SorterGUI(ctk.CTk):
                 f"{stats['resources_linked']} resource links embedded"))
             for name, kind in report['unresolved'].items():
                 progress_window.enqueue(("log", f"⚠️ unresolved {kind}: {name}"))
+            for line in self._scrub_log_lines(report):
+                progress_window.enqueue(("log", line))
         except Exception as e:
             progress_window.enqueue(("log", f"⚠️ Civitai Prep failed: {e}"))
             self.logger.log_error(f"Chained Civitai Prep failed: {e}", str(output_dir), "Civitai Prep")
@@ -2095,13 +2100,52 @@ class SorterGUI(ctk.CTk):
         ctk.CTkCheckBox(opts, text="Rewrite in place", variable=self.civitai_inplace_var).pack(side="left", padx=(0, 15))
         ctk.CTkCheckBox(opts, text="Strip workflow JSON", variable=self.civitai_strip_var).pack(side="left")
 
+        # Prompt Scrubber. The plain bool mirrors the checkbox so sort worker
+        # threads (the 🏷️ chain) can read it without touching Tk.
+        scrub_row = ctk.CTkFrame(self.civitai_frame)
+        scrub_row.pack(fill="x", padx=15, pady=5)
+        self.civitai_scrub_var = ctk.BooleanVar(value=True)
+        self.civitai_scrub = True
+
+        def on_scrub_toggle():
+            self.civitai_scrub = bool(self.civitai_scrub_var.get())
+
+        self.civitai_scrub_check = ctk.CTkCheckBox(
+            scrub_row, text="🧽 Scrub prompts", variable=self.civitai_scrub_var,
+            command=on_scrub_toggle)
+        self.civitai_scrub_check.pack(side="left", padx=(0, 15))
+        ctk.CTkButton(scrub_row, text="✏️ Edit rules", width=110,
+                      command=self._edit_scrub_rules).pack(side="left")
+
         # Info
         ctk.CTkLabel(
             self.civitai_frame,
             text="🏷️ Embeds Model/LoRA/VAE hashes + Civitai resource IDs into PNG metadata so Civitai\n"
-                 "auto-detects every resource on upload. Default writes copies into 'civitai_ready/'.",
+                 "auto-detects every resource on upload. Default writes copies into 'civitai_ready/'.\n"
+                 "🧽 Scrub prompts rewrites flagged words from scrub_rules.txt (positive prompt only).",
             text_color="#aaa", font=ctk.CTkFont(size=11), justify="left",
         ).pack(padx=15, pady=(5, 15))
+
+    def _edit_scrub_rules(self):
+        """Open the Prompt Scrubber rules in Notepad (created from the default)."""
+        sorter_dir = os.path.dirname(os.path.abspath(__file__))
+        path = ensure_user_rules(sorter_dir)
+        if path is None:
+            messagebox.showerror(
+                "Rules not found",
+                f"The starter rules file is missing:\n{os.path.join(sorter_dir, DEFAULT_RULES_NAME)}")
+            return
+        subprocess.Popen(["notepad", str(path)])
+
+    @staticmethod
+    def _scrub_log_lines(report):
+        """Progress-log lines for a prep report's scrub results."""
+        scrub = report.get('scrub') or {}
+        if not scrub.get('enabled'):
+            return []
+        lines = [f"⚠️ scrub rules {err}" for err in scrub.get('rule_errors', [])]
+        lines.append(CivitaiPrep.scrub_summary(scrub))
+        return lines
 
     def civitai_prep(self):
         """Run Civitai Prep on the selected folder."""
@@ -2122,6 +2166,7 @@ class SorterGUI(ctk.CTk):
         enrich = self.civitai_api_var.get()
         in_place = self.civitai_inplace_var.get()
         strip = self.civitai_strip_var.get()
+        scrub = bool(self.civitai_scrub_var.get())
 
         if not messagebox.askyesno(
                 "Confirm Civitai Prep",
@@ -2130,7 +2175,8 @@ class SorterGUI(ctk.CTk):
                 f"   Models: {models_dir}\n"
                 f"   API lookup: {'Yes' if enrich else 'No'}\n"
                 f"   Output: {'REWRITE IN PLACE' if in_place else 'copies in civitai_ready/'}\n"
-                f"   Workflow JSON: {'stripped' if strip else 'preserved'}\n\n"
+                f"   Workflow JSON: {'stripped' if strip else 'preserved'}\n"
+                f"   Scrub prompts: {'Yes (scrub_rules.txt)' if scrub else 'No'}\n\n"
                 f"Proceed?"):
             return
 
@@ -2151,6 +2197,7 @@ class SorterGUI(ctk.CTk):
                     in_place=in_place,
                     clean_level='strip' if strip else 'keep',
                     enrich=enrich,
+                    scrub=scrub,
                     progress_callback=on_progress,
                 )
                 stats = report['stats']
@@ -2159,6 +2206,8 @@ class SorterGUI(ctk.CTk):
                     f"{stats['skipped_no_metadata']} without metadata, {stats['failed']} failed"))
                 for name, kind in report['unresolved'].items():
                     progress_window.enqueue(("log", f"⚠️ unresolved {kind}: {name}"))
+                for line in self._scrub_log_lines(report):
+                    progress_window.enqueue(("log", line))
                 progress_window.enqueue(("complete", True))
             except Exception as e:
                 progress_window.enqueue(("error", str(e)))

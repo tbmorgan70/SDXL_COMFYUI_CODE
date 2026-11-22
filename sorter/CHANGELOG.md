@@ -2,6 +2,33 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.8.0] - 2026-11-22 - Prompt Scrubber
+
+### ✨ Added
+
+- **Prompt Scrubber in Civitai Prep.** Before writing, prep rewrites words in
+  the positive prompt that get images blocked on Civitai: Florence2 phrases
+  like "teen girl" or "in her late teens, or early 20s", and names like
+  "Audrey Hepburn". The rules are in `sorter/scrub_rules.txt`, one per line:
+  `phrase => replacement`, `phrase => (remove)` or `phrase => (flag)`. Lines
+  starting with `re:` are regex. Matching ignores case and only hits whole
+  words, so "teen" never matches "canteen".
+- **Flag list.** Words with no safe rewrite (child, kid, schoolgirl…) are left
+  alone. Those images are listed, with the surrounding text, in
+  `scrub_report.txt` in the output folder, along with every change made.
+  Flagged images are still written.
+- **🧽 Scrub prompts** checkbox (on by default) and **✏️ Edit rules** button
+  (opens the rules in Notepad) on the Civitai Prep tab. The 🏷️ Civitai Prep
+  option after a sort uses the same setting.
+- Your rules file is created from `scrub_rules.default.txt` the first time and
+  git ignores it, so `git pull` never overwrites your edits.
+- CLI: `--no-scrub` and `--rules PATH`.
+
+### 🐛 Fixed
+
+- The window header and startup log line showed "Sorter 3.5.0"; they now read
+  the real version.
+
 ## [3.7.3] - 2026-11-14 - Triage and crop quality of life
 
 ### 🐛 Fixed
