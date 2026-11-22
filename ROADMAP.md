@@ -24,6 +24,10 @@
 
 - [ ] **Try the Prompt Scrubber on a real upload batch** and grow `scrub_rules.txt` with whatever Civitai
   still flags
+- [ ] Prompt Scrubber polish (from review): removing a whole weighted tag leaves `(:1.2)` and a sentence
+  removal leaves `shows .`; `\1` in `re:` rules is inserted literally; an old `scrub_report.txt` stays after a
+  clean re-run; the log doesn't say where the report is; add `teen girls => young women` to the defaults;
+  `teen_girl`-style tags never match
 - [ ] Civitai Prep CLI crashes printing ⚠️/🧽 when its output is redirected on Windows (cp1252); run with
   `PYTHONIOENCODING=utf-8` until fixed. The GUI is unaffected
 
