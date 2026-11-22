@@ -72,3 +72,12 @@ def test_scrub_log_lines():
          "import gui; print(gui.SorterGUI._scrub_log_lines({'scrub': {'enabled': False}}))"],
         cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120, env=UTF8_ENV)
     assert off.stdout.strip() == "[]"
+
+
+def test_scrub_warning_shown_when_scrubber_unavailable():
+    run = {"scrub": {"enabled": False, "warning": "⚠️ Prompt Scrubber off: no rules file found"}}
+    done = subprocess.run(
+        [sys.executable, "-c",
+         "import gui; print(gui.SorterGUI._scrub_log_lines(" + repr(run) + "))"],
+        cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120, env=UTF8_ENV)
+    assert "no rules file found" in done.stdout, done.stderr[-2000:]

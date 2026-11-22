@@ -480,6 +480,7 @@ class CivitaiPrep:
         self.rules_path = rules_path
         self._scrubber: Optional[PromptScrubber] = None
         self._scrubber_loaded = False
+        self._scrub_warning: Optional[str] = None
         self.extractor = MetadataExtractor()
         self.index = ModelIndex(models_dir)
         cache_file = cache_path or os.path.join(parent_dir, 'civitai_hash_cache.json')
@@ -713,15 +714,24 @@ class CivitaiPrep:
             return False
 
     def _get_scrubber(self) -> Optional[PromptScrubber]:
-        """Load the Prompt Scrubber once. None (logged) if no rules file."""
+        """Load the Prompt Scrubber once. None (warning kept) if it can't load.
+
+        A rules file that can't be read never stops the prep run.
+        """
         if self._scrubber_loaded:
             return self._scrubber
         self._scrubber_loaded = True
-        path = Path(self.rules_path) if self.rules_path else ensure_user_rules(parent_dir)
-        if path is None or not path.is_file():
-            self._log("⚠️  Prompt Scrubber off: no rules file found")
+        try:
+            path = Path(self.rules_path) if self.rules_path else ensure_user_rules(parent_dir)
+            if path is None or not path.is_file():
+                self._scrub_warning = "⚠️ Prompt Scrubber off: no rules file found"
+            else:
+                self._scrubber = PromptScrubber.from_file(path)
+        except Exception as e:
+            self._scrub_warning = f"⚠️ Prompt Scrubber off: couldn't read the rules ({e})"
+        if self._scrub_warning:
+            self._log(self._scrub_warning)
             return None
-        self._scrubber = PromptScrubber.from_file(path)
         for err in self._scrubber.errors:
             self._log(f"  ⚠️ scrub rules {err}")
         return self._scrubber
@@ -855,6 +865,7 @@ class CivitaiPrep:
             'flagged_images': flagged_images,
             'report_path': str(report_path) if report_path else None,
             'rule_errors': list(scrubber.errors) if scrubber else [],
+            'warning': self._scrub_warning if scrub else None,
         }
         if scrubber:
             self._log(self.scrub_summary(scrub_info))

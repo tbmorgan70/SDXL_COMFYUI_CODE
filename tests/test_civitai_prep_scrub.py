@@ -121,3 +121,35 @@ def test_non_string_positive_is_skipped(tmp_path, monkeypatch):
     report = prep.process_folder(str(src), enrich=False)
     assert report["stats"]["written"] == 1
     assert report["scrub"]["prompts_changed"] == 0
+
+
+def test_missing_rules_warning_reaches_report(tmp_path):
+    src = tmp_path / "imgs"
+    make_png(src, "a.png", "park")
+    prep = make_prep(tmp_path, rules_path=str(tmp_path / "missing.txt"))
+    report = prep.process_folder(str(src), enrich=False)
+    assert "no rules file" in report["scrub"]["warning"]
+
+
+def test_scrub_off_has_no_warning(tmp_path):
+    src = tmp_path / "imgs"
+    make_png(src, "a.png", "park")
+    prep = make_prep(tmp_path, rules_path=str(tmp_path / "missing.txt"))
+    assert prep.process_folder(str(src), enrich=False, scrub=False)["scrub"]["warning"] is None
+
+
+def test_unreadable_rules_runs_unscrubbed(tmp_path, monkeypatch):
+    from core import prompt_scrubber
+    src = tmp_path / "imgs"
+    make_png(src, "a.png", "teen girl, park")
+    prep = make_prep(tmp_path, "teen girl => young woman")
+
+    def boom(cls, path):
+        raise OSError("locked by another program")
+
+    monkeypatch.setattr(prompt_scrubber.PromptScrubber, "from_file", classmethod(boom))
+    report = prep.process_folder(str(src), enrich=False)
+    assert report["stats"]["written"] == 1
+    assert report["scrub"]["enabled"] is False
+    assert "locked by another program" in report["scrub"]["warning"]
+    assert written_params(src, "a.png").startswith("teen girl, park")

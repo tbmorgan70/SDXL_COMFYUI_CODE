@@ -100,3 +100,17 @@ def test_shipped_default_rules_on_florence_caption():
     assert r.text == ("The image shows a woman in her early 20s, resembling, "
                       "a young woman walking past a canteen")
     assert r.flags == []
+
+
+def test_ansi_rules_file_falls_back_to_cp1252(tmp_path):
+    # Notepad "ANSI" save of a name with an accent
+    p = tmp_path / "r.txt"
+    p.write_bytes("Beyonc\xe9 => (remove)\r\n".encode("cp1252"))
+    s = PromptScrubber.from_file(p)
+    assert s.scrub("portrait, Beyoncé, stage").text == "portrait, stage"
+
+
+def test_regex_matching_empty_text_is_rejected():
+    rules, errors = parse_rules("re:teens| => x\nre: => y\nre:a* => z\nkid => (flag)")
+    assert len(rules) == 1
+    assert [e[:6] for e in errors] == ["line 1", "line 2", "line 3"]

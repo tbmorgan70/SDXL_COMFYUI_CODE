@@ -2142,7 +2142,7 @@ class SorterGUI(ctk.CTk):
         """Progress-log lines for a prep report's scrub results."""
         scrub = report.get('scrub') or {}
         if not scrub.get('enabled'):
-            return []
+            return [scrub['warning']] if scrub.get('warning') else []
         lines = [f"⚠️ scrub rules {err}" for err in scrub.get('rule_errors', [])]
         lines.append(CivitaiPrep.scrub_summary(scrub))
         return lines

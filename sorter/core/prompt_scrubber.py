@@ -71,6 +71,10 @@ def parse_rules(text: str) -> Tuple[List[Rule], List[str]]:
             except re.error as e:
                 errors.append(f"line {n}: bad regex {source[3:].strip()!r} ({e})")
                 continue
+            if pattern.search(""):
+                # e.g. "re:teens|" - would insert text between every character
+                errors.append(f"line {n}: regex {source[3:].strip()!r} matches empty text")
+                continue
         else:
             pattern = _plain_pattern(source)
         rules.append(Rule(pattern, action, replacement, source, n))
@@ -96,7 +100,11 @@ class PromptScrubber:
 
     @classmethod
     def from_file(cls, path: Union[str, Path]) -> "PromptScrubber":
-        text = Path(path).read_text(encoding="utf-8-sig")
+        raw = Path(path).read_bytes()
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw.decode("cp1252", errors="replace")  # Notepad "ANSI" save
         return cls(*parse_rules(text))
 
     def scrub(self, text: str) -> ScrubResult:
