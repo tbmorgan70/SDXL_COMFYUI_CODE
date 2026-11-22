@@ -36,6 +36,25 @@
 - **Source Finder**: given an image, find where it came from in the indexed library (reuses the Find Duplicates index)
 - **VAE auto-detection on Civitai** — still not showing after the 3.4.3 fix; cause unknown
 
+### Ideas added November 2026 (easiest first)
+1. **Pre-upload check** — dry run over a folder: images with flagged prompt words, missing resources, hashes
+   that don't resolve. Changes nothing.
+2. **Prompt Scrubber in Civitai Prep** — editable rules file (words, phrases, regex → replacement or removed)
+   for Florence2 captions that Civitai flags ("teen girl", "in her late teens, or early 20s", celebrity names).
+   Must clean every text chunk, not just `parameters` (workflow/prompt JSON carry the text too). Also worth a
+   string-replace node after Florence2 in the ComfyUI workflow, so the prompt is clean before generating.
+   *Design in progress.*
+3. **Fast prompt search** over `image_index.db` (it already stores `parameters`) instead of re-reading files
+4. **Metadata viewer/editor tab** — every chunk of one image, edit, find/replace across a folder
+5. **Upload Pack chain** — Dedupe → Scrub → Prep (→ Crop/Upscale) into one output folder; grows into the
+   one-button Civitai tool above
+6. **Posted tracker** — remember what was uploaded so packs skip repeats
+7. **Find by face** — pick a reference image, find the same person in a folder (YOLO face + ArcFace
+   embeddings stored in the index; ~10 min first scan per 10k images on the 4060, then instant). Weaker on
+   anime/stylized faces. Pairs with Source Finder.
+8. **Group by face** — cluster the library into same-person sets
+9. **LoRA dataset builder** — face group → Manual Crop → scrubbed captions → training folder
+
 ## 🚀 Longer-Term Features
 
 *The original Q4 2025–Q2 2026 dates have passed; work went to the Sorter features above.*
