@@ -1,0 +1,24 @@
+# Prompt Scrubber rules - used by Civitai Prep on the positive prompt.
+# One rule per line:   phrase => replacement     phrase => (remove)     phrase => (flag)
+# Matching ignores case and only hits whole words ("teen" never matches "canteen").
+# (flag) changes nothing; the image is listed in scrub_report.txt for you to check.
+# Lines starting with re: are regular expressions. They run first, in file order;
+# plain phrases then run longest first. Flags are checked last.
+
+re:in her late teens,? (or|to) (her )?early (20s|twenties) => in her early 20s
+in her late teens => in her early 20s
+teen girl => young woman
+teenage girl => young woman
+teenagers => young adults
+teenager => young woman
+Audrey Hepburn => (remove)
+
+young teen => (flag)
+teen => (flag)
+teens => (flag)
+schoolgirl => (flag)
+little girl => (flag)
+child => (flag)
+children => (flag)
+kid => (flag)
+kids => (flag)

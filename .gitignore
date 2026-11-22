@@ -206,6 +206,7 @@ extracted_images/
 
 # Machine-specific model hash cache
 sorter/civitai_hash_cache.json
+sorter/scrub_rules.txt
 
 # Duplicate Finder index and settings (machine-specific)
 sorter/image_index.db
