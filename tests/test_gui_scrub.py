@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 
 SORTER = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "sorter"))
+# Child processes print emoji; a Windows pipe defaults to cp1252
+UTF8_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 
 def run_app(script: str, tmp_path: Path) -> str:
@@ -15,7 +17,8 @@ gui.DUP_SETTINGS_PATH = Path(r"{tmp_path / 'settings.json'}")
 gui.DUP_INDEX_PATH = Path(r"{tmp_path / 'idx.db'}")
 """
     done = subprocess.run([sys.executable, "-c", prelude + script], cwd=SORTER,
-                          capture_output=True, text=True, encoding="utf-8", timeout=120)
+                          capture_output=True, text=True, encoding="utf-8", timeout=120,
+                          env=UTF8_ENV)
     assert "OK" in done.stdout, done.stderr[-3000:]
     return done.stdout
 
@@ -55,17 +58,17 @@ app.destroy(); print("OK")
 
 
 def test_scrub_log_lines():
-    run ={"scrub": {"enabled": True, "prompts_changed": 2, "changes": 3, "flagged_images": 1,
+    run = {"scrub": {"enabled": True, "prompts_changed": 2, "changes": 3, "flagged_images": 1,
                      "report_path": "x", "rule_errors": ["line 4: bad regex"]}}
     # Exercise the static helper without building the whole GUI
     done = subprocess.run(
         [sys.executable, "-c",
          "import gui; print(gui.SorterGUI._scrub_log_lines(" + repr(run) + "))"],
-        cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120)
+        cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120, env=UTF8_ENV)
     assert "line 4: bad regex" in done.stdout
     assert "Scrubbed 2 prompts (3 changes)" in done.stdout and "1 images flagged" in done.stdout
     off = subprocess.run(
         [sys.executable, "-c",
          "import gui; print(gui.SorterGUI._scrub_log_lines({'scrub': {'enabled': False}}))"],
-        cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120)
+        cwd=SORTER, capture_output=True, text=True, encoding="utf-8", timeout=120, env=UTF8_ENV)
     assert off.stdout.strip() == "[]"
