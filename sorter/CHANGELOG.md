@@ -2,6 +2,14 @@
 
 All notable changes to the Sorter project will be documented in this file.
 
+## [3.8.1] - 2026-11-22 - Version shown everywhere
+
+### 🐛 Fixed
+
+- **The window title bar said "Sorter 3.7.3"** even after updating, which made
+  it look as if the new version hadn't launched. The title bar and the CLI
+  banner now read the real version from `version.py`, like the header does.
+
 ## [3.8.0] - 2026-11-22 - Prompt Scrubber
 
 ### ✨ Added

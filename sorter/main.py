@@ -34,6 +34,7 @@ sys.path.append(parent_dir)
 
 from core.metadata_engine import MetadataExtractor, MetadataAnalyzer
 from core.diagnostics import SortLogger
+from version import VERSION
 from sorters.checkpoint_sorter import CheckpointSorter
 from sorters.metadata_search import MetadataSearchSorter
 from sorters.color_sorter import ColorSorter
@@ -53,7 +54,7 @@ class SorterV2:
     
     def __init__(self):
         self.logger = SortLogger()
-        print("🚀 Sorter 3.5.0 - Advanced ComfyUI Image Organizer")
+        print(f"🚀 Sorter {VERSION} - Advanced ComfyUI Image Organizer")
         print("=" * 60)
     
     def main_menu(self):

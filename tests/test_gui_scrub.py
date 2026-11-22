@@ -53,6 +53,7 @@ def test_window_header_shows_current_version(tmp_path):
 from version import VERSION
 app = gui.SorterGUI(); app.withdraw()
 assert f"Sorter {VERSION} " in app.title_label.cget("text"), app.title_label.cget("text")
+assert f"Sorter {VERSION} " in app.title(), app.title()
 app.destroy(); print("OK")
 """, tmp_path)
 

@@ -845,7 +845,7 @@ class SorterGUI(ctk.CTk):
         super().__init__()
         
         # Configure window - compact size like unified_sorter
-        self.title("🚀 Sorter 3.7.3 - Advanced ComfyUI Image Organizer")
+        self.title(f"🚀 Sorter {SORTER_VERSION} - Advanced ComfyUI Image Organizer")
         self._app_closing = False
         self.protocol("WM_DELETE_WINDOW", self._on_app_close)
         self.geometry("750x700")

@@ -1,7 +1,7 @@
-# Sorter 3.8.0 - Prompt Scrubber for Civitai Prep
-VERSION = "3.8.0"
+# Sorter 3.8.1 - Prompt Scrubber for Civitai Prep; title bar shows the real version
+VERSION = "3.8.1"
 BUILD_DATE = "2026-11-22"
-DESCRIPTION = "Advanced ComfyUI Image Organizer - Prompt Scrubber (3.8.0)"
+DESCRIPTION = "Advanced ComfyUI Image Organizer - Prompt Scrubber (3.8.1)"
 
 # Features included in this build:
 FEATURES = [
